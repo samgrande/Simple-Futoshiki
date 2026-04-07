@@ -1,0 +1,6 @@
+<resources>
+    <!-- Base application theme using Material 3 -->
+    <style name="Theme.Futoshiki" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your theme here if needed -->
+    </style>
+</resources>
