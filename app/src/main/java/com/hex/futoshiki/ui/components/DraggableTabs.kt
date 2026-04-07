@@ -60,8 +60,8 @@ fun DraggableSizeTabs(
             thumbX.animateTo(
                 targetValue = target,
                 animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
+                    dampingRatio = 0.6f,
+                    stiffness = Spring.StiffnessMedium
                 )
             )
         }
@@ -108,8 +108,8 @@ fun DraggableSizeTabs(
                                 thumbX.animateTo(
                                     targetValue = targetX,
                                     animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                        stiffness = Spring.StiffnessLow
+                                        dampingRatio = 0.6f,
+                                        stiffness = Spring.StiffnessMedium
                                     )
                                 )
                             }
@@ -122,8 +122,8 @@ fun DraggableSizeTabs(
                                 thumbX.animateTo(
                                     targetValue = targetX,
                                     animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                        stiffness = Spring.StiffnessLow
+                                        dampingRatio = 0.6f,
+                                        stiffness = Spring.StiffnessMedium
                                     )
                                 )
                             }
@@ -169,11 +169,11 @@ fun DraggableSizeTabs(
                     Text(
                         text = buildAnnotatedString {
                             append("$s")
-                            withStyle(SpanStyle(fontSize = (13 * 1.3f).sp)) { append("×") }
+                            withStyle(SpanStyle(fontSize = (16 * 1.3f).sp)) { append("×") }
                             append("$s")
                         },
                         color = FutoshikiColors.TabText,
-                        fontSize = 13.sp,
+                        fontSize = 16.sp,
                         fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
                         fontFamily = ReemKufi
                     )

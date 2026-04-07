@@ -128,14 +128,17 @@ class FutoshikiViewModel : ViewModel() {
     // ── Pause / Resume ───────────────────────────────────────────────────────
 
     fun pause() {
-        if (_state.value.screen != Screen.GAME || _state.value.won) return
+        if (_state.value.screen != Screen.GAME) return
         stopTimer()
         _state.update { it.copy(screen = Screen.PAUSE, timerRunning = false) }
     }
 
     fun resume() {
-        _state.update { it.copy(screen = Screen.GAME, timerRunning = true) }
-        startTimer()
+        val isWon = _state.value.won
+        _state.update { it.copy(screen = Screen.GAME, timerRunning = !isWon) }
+        if (!isWon) {
+            startTimer()
+        }
     }
 
     // ── Solve (cheat) ────────────────────────────────────────────────────────

@@ -39,6 +39,15 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.material3.ripple
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+fun formatTimer(seconds: Int): String {
+    val m = seconds / 60
+    val s = seconds % 60
+    return "%02d:%02d".format(m, s)
+}
 
 // ── Direction arrow indicator ─────────────────────────────────────────────────
 
@@ -213,6 +222,77 @@ fun FutoshikiTitle(fontSize: TextUnit = 36.sp) {
             width  = waveWidth,
             height = waveHeight,
             modifier = Modifier.padding(top = (fontSize.value * 0.1f).dp)
+        )
+    }
+}
+
+// ── Timer pill ────────────────────────────────────────────────────────────────
+
+@Composable
+fun TimerPill(
+    seconds: Int,
+    won: Boolean,
+    isPaused: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val bgColor by animateColorAsState(
+        targetValue = if (isPaused) FutoshikiColors.Coral else FutoshikiColors.TimerBg,
+        animationSpec = tween(300),
+        label = "timerBg"
+    )
+
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(bgColor)
+            .clickable(
+                enabled = true,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(),
+                onClick = onClick
+            )
+            .padding(horizontal = 16.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        if (isPaused) {
+            // Play icon (Triangle)
+            Canvas(Modifier.size(12.dp, 14.dp)) {
+                val path = Path().apply {
+                    moveTo(1.5f.dp.toPx(), 0f)
+                    lineTo(size.width, size.height / 2f)
+                    lineTo(1.5f.dp.toPx(), size.height)
+                    close()
+                }
+                drawPath(path, color = Color.Black.copy(alpha = 0.6f))
+            }
+        } else {
+            // Pause icon (two rectangles)
+            Box(Modifier.size(12.dp, 14.dp)) {
+                Box(
+                    Modifier
+                        .width(3.5.dp).fillMaxHeight()
+                        .align(Alignment.CenterStart)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(Color.White.copy(alpha = 0.55f))
+                )
+                Box(
+                    Modifier
+                        .width(3.5.dp).fillMaxHeight()
+                        .align(Alignment.CenterEnd)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(Color.White.copy(alpha = 0.55f))
+                )
+            }
+        }
+        Text(
+            text       = formatTimer(seconds),
+            color      = if (isPaused) FutoshikiColors.OnSurface else FutoshikiColors.TimerText,
+            fontSize   = 14.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = ReemKufi,
+            letterSpacing = 1.5.sp
         )
     }
 }

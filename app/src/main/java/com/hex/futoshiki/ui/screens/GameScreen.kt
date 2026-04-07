@@ -1,7 +1,14 @@
 package com.hex.futoshiki.ui.screens
 
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.rotate
 import kotlin.random.Random
 import androidx.compose.foundation.Canvas
@@ -40,14 +47,6 @@ import com.hex.futoshiki.ui.components.*
 import com.hex.futoshiki.ui.theme.FutoshikiColors
 import com.hex.futoshiki.ui.theme.ReemKufi
 import kotlinx.coroutines.delay
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-fun formatTimer(seconds: Int): String {
-    val m = seconds / 60
-    val s = seconds % 60
-    return "%02d:%02d".format(m, s)
-}
 
 // ── Puzzle Components ─────────────────────────────────────────────────────────
 
@@ -308,11 +307,12 @@ private fun NumberButton(label: String, sizeDp: Dp, onClick: () -> Unit) {
             .clip(CircleShape)
             .background(FutoshikiColors.Background)
             .border(1.5.dp, FutoshikiColors.OnSurface, CircleShape)
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onClick()
-                })
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null
+            ) {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onClick()
             },
         contentAlignment = Alignment.Center
     ) {
@@ -322,66 +322,6 @@ private fun NumberButton(label: String, sizeDp: Dp, onClick: () -> Unit) {
             fontWeight = FontWeight.Bold,
             fontFamily = ReemKufi,
             color      = FutoshikiColors.OnSurface
-        )
-    }
-}
-
-
-// ── Timer pill ────────────────────────────────────────────────────────────────
-
-@Composable
-fun TimerPill(
-    seconds: Int,
-    won: Boolean,
-    isPaused: Boolean,
-    onClick: () -> Unit
-) {
-    val bgColor by animateColorAsState(
-        targetValue = if (isPaused) FutoshikiColors.Coral else FutoshikiColors.TimerBg,
-        animationSpec = tween(300),
-        label = "timerBg"
-    )
-
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(bgColor)
-            .clickable(
-                enabled = !won,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = androidx.compose.material3.ripple(),
-                onClick = onClick
-            )
-            .padding(horizontal = 16.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp)
-    ) {
-        if (!won) {
-            // Pause icon (two rectangles)
-            Box(Modifier.size(12.dp, 14.dp)) {
-                Box(
-                    Modifier
-                        .width(3.5.dp).fillMaxHeight()
-                        .align(Alignment.CenterStart)
-                        .clip(RoundedCornerShape(1.dp))
-                        .background(if (isPaused) Color.Black.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.55f))
-                )
-                Box(
-                    Modifier
-                        .width(3.5.dp).fillMaxHeight()
-                        .align(Alignment.CenterEnd)
-                        .clip(RoundedCornerShape(1.dp))
-                        .background(if (isPaused) Color.Black.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.55f))
-                )
-            }
-        }
-        Text(
-            text       = formatTimer(seconds),
-            color      = if (isPaused) FutoshikiColors.OnSurface else FutoshikiColors.TimerText,
-            fontSize   = 14.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = ReemKufi,
-            letterSpacing = 1.5.sp
         )
     }
 }
@@ -611,10 +551,17 @@ fun GameScreen(
     val won       = state.won
     val gameKey   = state.gameKey
 
+    var pillCenter by remember { mutableStateOf(Offset.Zero) }
+    var pillOffset by remember { mutableStateOf(Offset.Zero) }
+    var containerCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+
+    val isPaused = state.screen == Screen.PAUSE
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(FutoshikiColors.Background)
+            .onGloballyPositioned { containerCoordinates = it }
     ) {
         val vw = maxWidth
         val vh = maxHeight
@@ -627,7 +574,7 @@ fun GameScreen(
         val tabH       = vh * 0.065f
         val numpadH    = vh * 0.095f
         val refreshH   = vh * 0.075f
-        val gapTotal   = vh * 0.155f
+        val gapTotal   = vh * 0.18f
         val boardBudgetH = vh - headerH - tabH - numpadH - refreshH - gapTotal
 
         val arrowRatio = 0.32f
@@ -635,7 +582,8 @@ fun GameScreen(
         val cellSizeDp = minOf(boardBudgetH / boardUnits, usableW / boardUnits)
         val arrowSlotDp = cellSizeDp * arrowRatio
 
-        val numpadBtnDp = minOf(usableW / (size + 0.6f), vh * 0.08f)
+        val numpadSpacing = 8.dp
+        val numpadBtnDp = minOf((usableW - numpadSpacing * (size - 1)) / size, vh * 0.08f)
 
         Column(
             modifier = Modifier
@@ -658,8 +606,19 @@ fun GameScreen(
                 TimerPill(
                     seconds = state.timerSeconds,
                     won     = won,
-                    isPaused = state.screen == Screen.PAUSE,
-                    onClick = { viewModel.pause() }
+                    isPaused = isPaused,
+                    onClick = { viewModel.pause() },
+                    modifier = Modifier
+                        .onGloballyPositioned { coords ->
+                            containerCoordinates?.let { container ->
+                                if (container.isAttached && coords.isAttached) {
+                                    val localPos = container.localPositionOf(coords, Offset.Zero)
+                                    pillOffset = localPos
+                                    pillCenter = Offset(localPos.x + coords.size.width / 2f, localPos.y + coords.size.height / 2f)
+                                }
+                            }
+                        }
+                        .graphicsLayer { alpha = if (isPaused) 0f else 1f }
                 )
             }
 
@@ -689,13 +648,13 @@ fun GameScreen(
                 onCellClear = { r, c -> viewModel.clearCell(r, c) }
             )
 
-            Spacer(Modifier.height(vh * 0.03f))
+            Spacer(Modifier.height(vh * 0.05f))
 
             // ── Number pad ────────────────────────────────────────────────
             NumberPad(
                 size         = size,
                 buttonSizeDp = numpadBtnDp,
-                spacingDp    = usableW * 0.025f,
+                spacingDp    = numpadSpacing,
                 onNumber     = { viewModel.inputNumber(it) }
             )
 
@@ -723,9 +682,11 @@ fun GameScreen(
         }
 
         // ── Pause overlay ─────────────────────────────────────────────────
-        if (state.screen == Screen.PAUSE) {
+        if (isPaused && pillCenter != Offset.Zero) {
             PauseOverlay(
-                timerFormatted = formatTimer(state.timerSeconds),
+                revealCenter = pillCenter,
+                pillOffset = pillOffset,
+                seconds = state.timerSeconds,
                 onResume   = { viewModel.resume() },
                 onSolve    = { viewModel.solve() },
                 onNewGame  = { viewModel.newGame(size) }

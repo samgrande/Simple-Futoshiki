@@ -13,14 +13,26 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hex.futoshiki.ui.components.*
 import com.hex.futoshiki.ui.theme.FutoshikiColors
 import com.hex.futoshiki.ui.theme.ReemKufi
+import kotlin.math.hypot
+
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 
 // ── Landing screen ────────────────────────────────────────────────────────────
 
@@ -50,11 +62,11 @@ fun LandingScreen(
                 targetState = showHelp,
                 transitionSpec = {
                     if (targetState) {
-                        (fadeIn(tween(300)) + slideInHorizontally { it / 2 })
-                            .togetherWith(fadeOut(tween(250)) + slideOutHorizontally { -it / 2 })
+                        (fadeIn(tween(300)) + slideInVertically { it / 2 })
+                            .togetherWith(fadeOut(tween(250)) + slideOutVertically { -it / 2 })
                     } else {
-                        (fadeIn(tween(300)) + slideInHorizontally { -it / 2 })
-                            .togetherWith(fadeOut(tween(250)) + slideOutHorizontally { it / 2 })
+                        (fadeIn(tween(300)) + slideInVertically { -it / 2 })
+                            .togetherWith(fadeOut(tween(250)) + slideOutVertically { it / 2 })
                     }.using(SizeTransform(clip = false))
                 },
                 label = "landingContentTransition"
@@ -106,7 +118,9 @@ fun LandingScreen(
 
 @Composable
 fun PauseOverlay(
-    timerFormatted: String,
+    revealCenter: Offset,
+    pillOffset: Offset,
+    seconds: Int,
     onResume: () -> Unit,
     onSolve:  () -> Unit,
     onNewGame: () -> Unit,
@@ -116,81 +130,108 @@ fun PauseOverlay(
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
 
-    val backdropAlpha by animateFloatAsState(
-        targetValue  = if (visible) 1f else 0f,
-        animationSpec = tween(250),
-        label        = "backdrop"
-    )
-    val cardScale by animateFloatAsState(
-        targetValue  = if (visible) 1f else 0.88f,
-        animationSpec = spring(dampingRatio = 0.75f, stiffness = 380f),
-        label        = "cardScale"
+    // Fast and snappy reveal animation
+    val revealProgress by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(450, easing = FastOutSlowInEasing),
+        label = "revealProgress"
     )
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(FutoshikiColors.Overlay.copy(alpha = FutoshikiColors.Overlay.alpha * backdropAlpha)),
-        contentAlignment = Alignment.Center
+        modifier = modifier.fillMaxSize()
     ) {
+        // ── The Revealable Content ────────────────────────────────────
         Box(
             modifier = Modifier
-                .widthIn(max = 420.dp)
-                .padding(horizontal = 24.dp)
+                .fillMaxSize()
                 .graphicsLayer {
-                    scaleX = cardScale
-                    scaleY = cardScale
-                    alpha = backdropAlpha
-                }
-                .clip(RoundedCornerShape(24.dp))
-                .border(1.5.dp, FutoshikiColors.OnSurface, RoundedCornerShape(24.dp))
-                .background(FutoshikiColors.Background)
-                .padding(horizontal = 24.dp, vertical = 24.dp)
-        ) {
-            AnimatedContent(
-                targetState = showHelp,
-                transitionSpec = {
-                    if (targetState) {
-                        (fadeIn(tween(220, delayMillis = 90)) + slideInHorizontally { it / 2 })
-                            .togetherWith(fadeOut(tween(180)) + slideOutHorizontally { -it / 2 })
-                    } else {
-                        (fadeIn(tween(220, delayMillis = 90)) + slideInHorizontally { -it / 2 })
-                            .togetherWith(fadeOut(tween(180)) + slideOutHorizontally { it / 2 })
-                    }.using(SizeTransform(clip = false))
-                },
-                label = "pauseContentTransition"
-            ) { isHelp ->
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    if (isHelp) {
-                        HelpPanel()
-                        Spacer(Modifier.height(20.dp))
-                        BigButton(label = "← BACK", onClick = { showHelp = false })
-                    } else {
-                        LogoMark(size = 64.dp)
-                        Spacer(Modifier.height(10.dp))
-                        FutoshikiTitle(fontSize = 26.sp)
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text          = "PAUSED",
-                            fontSize      = 12.sp,
-                            fontWeight    = FontWeight.SemiBold,
-                            fontFamily    = ReemKufi,
-                            color         = Color(0xFF888888),
-                            letterSpacing = 1.sp
-                        )
-                        Spacer(Modifier.height(24.dp))
-
-                        BigButton(label = "RESUME", onClick = onResume, primary = true)
-                        Spacer(Modifier.height(10.dp))
-                        BigButton(label = "SOLVE",  onClick = onSolve)
-                        Spacer(Modifier.height(10.dp))
-                        BigButton(label = "HELP",   onClick = { showHelp = true })
+                    val maxRadius = hypot(size.width, size.height)
+                    val radius = maxRadius * revealProgress
+                    
+                    clip = true
+                    shape = object : Shape {
+                        override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
+                            val path = Path().apply {
+                                addOval(Rect(center = revealCenter, radius = radius))
+                            }
+                            return Outline.Generic(path)
+                        }
                     }
                 }
+                .background(FutoshikiColors.Background)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 40.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(Modifier.weight(0.8f))
+
+                AnimatedContent(
+                    targetState = showHelp,
+                    transitionSpec = {
+                        if (targetState) {
+                            (fadeIn(tween(220, delayMillis = 90)) + scaleIn(initialScale = 0.92f))
+                                .togetherWith(fadeOut(tween(180)))
+                        } else {
+                            (fadeIn(tween(220, delayMillis = 90)) + scaleIn(initialScale = 0.92f))
+                                .togetherWith(fadeOut(tween(180)))
+                        }.using(SizeTransform(clip = false))
+                    },
+                    label = "pauseContentTransition"
+                ) { isHelp ->
+                    if (isHelp) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            HelpPanel()
+                            Spacer(Modifier.height(24.dp))
+                            BigButton(label = "← BACK", onClick = { showHelp = false })
+                        }
+                    } else {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            LogoMark(size = 80.dp)
+                            Spacer(Modifier.height(16.dp))
+                            FutoshikiTitle(fontSize = 32.sp)
+                            Spacer(Modifier.height(12.dp))
+                            Text(
+                                text          = "PAUSED",
+                                fontSize      = 14.sp,
+                                fontWeight    = FontWeight.SemiBold,
+                                fontFamily    = ReemKufi,
+                                color         = Color(0xFF999999),
+                                letterSpacing = 2.sp
+                            )
+                            
+                            Spacer(Modifier.height(48.dp))
+
+                            BigButton(label = "RESUME", onClick = onResume, primary = true)
+                            Spacer(Modifier.height(14.dp))
+                            BigButton(label = "SOLVE",  onClick = onSolve)
+                            Spacer(Modifier.height(14.dp))
+                            BigButton(label = "HELP",   onClick = { showHelp = true })
+                        }
+                    }
+                }
+
+                Spacer(Modifier.weight(1f))
             }
         }
+
+        // ── The stay-in-place TimerPill (Outside the clip) ────────────
+        TimerPill(
+            seconds = seconds,
+            won = false,
+            isPaused = true,
+            onClick = onResume,
+            modifier = Modifier.offset {
+                IntOffset(pillOffset.x.roundToInt(), pillOffset.y.roundToInt())
+            }
+        )
     }
 }
