@@ -1,5 +1,6 @@
 package com.hex.futoshiki.ui.screens
 
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -22,6 +23,7 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
@@ -43,6 +45,16 @@ fun LandingScreen(
     modifier: Modifier = Modifier
 ) {
     var showHelp by remember { mutableStateOf(false) }
+    var showConfirmQuit by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    BackHandler(enabled = true) {
+        when {
+            showHelp -> showHelp = false
+            showConfirmQuit -> showConfirmQuit = false
+            else -> showConfirmQuit = true
+        }
+    }
 
     Box(
         modifier = modifier
@@ -54,45 +66,114 @@ fun LandingScreen(
             modifier = Modifier
                 .widthIn(max = 420.dp)
                 .fillMaxHeight()
+                .systemBarsPadding()
                 .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.weight(1.2f))
 
-            AnimatedContent(
-                targetState = showHelp,
-                transitionSpec = {
-                    if (targetState) {
-                        (fadeIn(tween(300)) + slideInVertically { it / 2 })
-                            .togetherWith(fadeOut(tween(250)) + slideOutVertically { -it / 2 })
+            // 1. Static Section (Title always, Logo conditional)
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                AnimatedContent(
+                    targetState = !showHelp,
+                    contentAlignment = Alignment.Center,
+                    transitionSpec = {
+                        (fadeIn(tween(350)) + scaleIn(tween(350), initialScale = 0.5f))
+                            .togetherWith(fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f))
+                            .using(SizeTransform(clip = false))
+                    },
+                    label = "logoTransition"
+                ) { isVisible ->
+                    if (isVisible) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.wrapContentSize()
+                        ) {
+                            LogoMark(size = 96.dp)
+                            Spacer(Modifier.height(18.dp))
+                        }
                     } else {
-                        (fadeIn(tween(300)) + slideInVertically { -it / 2 })
-                            .togetherWith(fadeOut(tween(250)) + slideOutVertically { it / 2 })
+                        Spacer(Modifier.size(0.dp))
+                    }
+                }
+            }
+            
+            // FutoshikiTitle is always visible and stays in the same place
+            FutoshikiTitle(fontSize = 38.sp)
+
+            // 2. Animated Section (Buttons & Confirmation text)
+            AnimatedContent(
+                targetState = when {
+                    showConfirmQuit -> "confirm"
+                    showHelp -> "help"
+                    else -> "menu"
+                },
+                transitionSpec = {
+                    val duration = 300
+                    if (targetState != "menu") {
+                        (fadeIn(tween(duration)) + slideInVertically { it / 4 })
+                            .togetherWith(fadeOut(tween(250)) + slideOutVertically { -it / 4 })
+                    } else {
+                        (fadeIn(tween(duration)) + slideInVertically { -it / 4 })
+                            .togetherWith(fadeOut(tween(250)) + slideOutVertically { it / 4 })
                     }.using(SizeTransform(clip = false))
                 },
-                label = "landingContentTransition"
-            ) { isHelp ->
-                if (isHelp) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(bottom = 20.dp)
-                    ) {
-                        HelpPanel()
-                        Spacer(Modifier.height(20.dp))
-                        BigButton(label = "← BACK", onClick = { showHelp = false })
+                label = "landingContentTransition",
+                modifier = Modifier.fillMaxWidth()
+            ) { state ->
+                when (state) {
+                    "help" -> {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 20.dp)
+                        ) {
+                            Spacer(Modifier.height(24.dp))
+                            HelpPanel(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.9f)
+                                    .fillMaxHeight(0.7f),
+                                scrollable = true
+                            )
+                            Spacer(Modifier.height(20.dp))
+                            BigButton(label = "BACK", onClick = { showHelp = false })
+                        }
                     }
-                } else {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        LogoMark(size = 96.dp)
-                        Spacer(Modifier.height(18.dp))
-                        FutoshikiTitle(fontSize = 38.sp)
-                        Spacer(Modifier.height(48.dp))
+                    "confirm" -> {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Spacer(Modifier.height(32.dp))
+                            Text(
+                                text          = "Q U I T   T H E   G A M E  ?",
+                                fontSize      = 13.sp,
+                                fontWeight    = FontWeight.SemiBold,
+                                fontFamily    = ReemKufi,
+                                color         = Color(0xFF999999),
+                                letterSpacing = 2.sp
+                            )
+                            
+                            Spacer(Modifier.height(32.dp))
 
-                        BigButton(label = "START", onClick = onStart, primary = true)
-                        Spacer(Modifier.height(12.dp))
-                        BigButton(label = "HELP", onClick = { showHelp = true })
+                            BigButton(label = "Y E S", onClick = { (context as? ComponentActivity)?.finish() }, primary = true)
+                            Spacer(Modifier.height(14.dp))
+                            BigButton(label = "N O",  onClick = { showConfirmQuit = false })
+                        }
+                    }
+                    else -> {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Spacer(Modifier.height(48.dp))
+
+                            BigButton(label = "START", onClick = onStart, primary = true)
+                            Spacer(Modifier.height(12.dp))
+                            BigButton(label = "HELP", onClick = { showHelp = true })
+                        }
                     }
                 }
             }
@@ -178,14 +259,14 @@ fun PauseOverlay(
                     targetState = if (showConfirmQuit) "confirm" else if (showHelp) "help" else "menu",
                     transitionSpec = {
                         val duration = 280
-                        if (targetState == "confirm" || (initialState == "help" && targetState == "menu")) {
-                            // Slide in from right (forward)
-                            (slideInHorizontally(tween(duration)) { it } + fadeIn(tween(duration)))
-                                .togetherWith(slideOutHorizontally(tween(duration)) { -it } + fadeOut(tween(duration)))
+                        if (targetState != "menu") {
+                            // Slide in from bottom (entering help/confirm)
+                            (slideInVertically(tween(duration)) { it / 4 } + fadeIn(tween(duration)))
+                                .togetherWith(slideOutVertically(tween(duration)) { -it / 4 } + fadeOut(tween(duration)))
                         } else {
-                            // Slide in from left (backward)
-                            (slideInHorizontally(tween(duration)) { -it } + fadeIn(tween(duration)))
-                                .togetherWith(slideOutHorizontally(tween(duration)) { it } + fadeOut(tween(duration)))
+                            // Slide in from top (returning to menu)
+                            (slideInVertically(tween(duration)) { -it / 4 } + fadeIn(tween(duration)))
+                                .togetherWith(slideOutVertically(tween(duration)) { it / 4 } + fadeOut(tween(duration)))
                         }.using(SizeTransform(clip = false))
                     },
                     label = "pauseContentTransition"
@@ -241,9 +322,7 @@ fun PauseOverlay(
                                 
                                 Spacer(Modifier.height(48.dp))
 
-                                BigButton(label = "RESUME",    onClick = onResume, primary = true)
-                                Spacer(Modifier.height(14.dp))
-                                BigButton(label = "MAIN MENU", onClick = { showConfirmQuit = true })
+                                BigButton(label = "MAIN MENU", onClick = { showConfirmQuit = true }, primary = true)
                                 Spacer(Modifier.height(14.dp))
                                 BigButton(label = "SOLVE",     onClick = onSolve)
                                 Spacer(Modifier.height(14.dp))

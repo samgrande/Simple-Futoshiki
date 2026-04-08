@@ -567,6 +567,31 @@ fun WinModal(
 
     var buttonBounds by remember { mutableStateOf<Rect?>(null) }
 
+    // Shake logic for logo on tap-hold
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    var isShaking by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            delay(150)
+            isShaking = true
+        } else {
+            isShaking = false
+        }
+    }
+
+    val shakeTransition = rememberInfiniteTransition(label = "kanjiShake")
+    val shakeAnim by shakeTransition.animateFloat(
+        initialValue = -3f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(50, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "shake"
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -594,6 +619,14 @@ fun WinModal(
                     modifier = Modifier
                         .fillMaxWidth(0.65f)
                         .aspectRatio(180f / 312f)
+                        .graphicsLayer {
+                            translationX = if (isShaking) shakeAnim else 0f
+                            rotationZ = if (isShaking) shakeAnim * 0.5f else 0f
+                        }
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null
+                        ) { }
                 )
 
                 Spacer(modifier = Modifier.height(72.dp))
@@ -612,7 +645,7 @@ fun WinModal(
                 // PLAY AGAIN Button (Outline design)
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxWidth(0.9f)
                         .height(64.dp)
                         .onGloballyPositioned { buttonBounds = it.boundsInRoot() }
                         .border(2.dp, FutoshikiColors.Coral, RoundedCornerShape(32.dp))
@@ -684,6 +717,11 @@ fun GameScreen(
             .fillMaxSize()
             .background(FutoshikiColors.Background)
             .onGloballyPositioned { containerCoordinates = it }
+            .pointerInput(Unit) {
+                detectTapGestures {
+                    viewModel.deselectCell()
+                }
+            }
     ) {
         val vw = maxWidth
         val vh = maxHeight

@@ -302,7 +302,11 @@ fun BigButton(
     )
 
     // Outer box provides room for the 4dp hard shadow bleed
-    Box(modifier = modifier.height(56.dp)) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth(0.9f)
+            .height(56.dp)
+    ) {
         // Hard offset shadow (hidden when pressed)
         if (!isPressed) {
             Box(

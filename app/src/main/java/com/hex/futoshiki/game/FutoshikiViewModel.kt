@@ -117,6 +117,10 @@ class FutoshikiViewModel : ViewModel() {
         _state.update { it.copy(selected = r to c) }
     }
 
+    fun deselectCell() {
+        _state.update { it.copy(selected = null) }
+    }
+
     fun moveSelection(dr: Int, dc: Int) {
         val st = _state.value
         val (r, c) = st.selected ?: return

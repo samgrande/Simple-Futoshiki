@@ -17,7 +17,7 @@ object FutoshikiColors {
     val OnSurface       = Color(0xFF111111)
     val Coral           = Color(0xFFFF404E)   // arrow + accent
     val CoralLight      = Color(0xFFF08080)   // wavy underline
-    val CellDefault     = Color(0xFFF4F4F4)
+    val CellDefault     = Color(0xFFF7F7F7)
     val CellSelected    = Color(0xFFFFFFFF)
     val CellRelated     = Color(0xFFEAEAEA)
     val ErrorBg         = Color(0xFFFFE5E5)
