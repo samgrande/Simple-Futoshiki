@@ -13,24 +13,49 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hex.futoshiki.ui.theme.FutoshikiColors
 import com.hex.futoshiki.ui.theme.ReemKufi
+import com.hex.futoshiki.ui.theme.accentColor
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 private val SIZES = listOf(4, 5, 6)
+
+@Composable
+private fun SizeLabel(
+    size: Int,
+    color: Color,
+    fontWeight: FontWeight
+) {
+    Text(
+        text = buildAnnotatedString {
+            append("$size")
+            withStyle(SpanStyle(fontSize = (16 * 1.3f).sp)) { append("×") }
+            append("$size")
+        },
+        color = color,
+        fontSize = 16.sp,
+        fontWeight = fontWeight,
+        fontFamily = ReemKufi
+    )
+}
 
 @Composable
 fun DraggableSizeTabs(
@@ -132,26 +157,76 @@ fun DraggableSizeTabs(
                 }
             }
     ) {
-        // Thumb pill
-        if (trackWidthPx > 0) {
-            val thumbWidthPx = sw - thumbPadPx * 2
-            val thumbWidthDp = with(density) { thumbWidthPx.toDp() }
-            val thumbOffsetDp = with(density) { thumbX.value.toDp() }
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 2.dp)
-                    .offset(x = thumbOffsetDp)
-                    .width(thumbWidthDp)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(9.dp))
-                    .background(FutoshikiColors.TabThumb)
-            )
-        }
-
-        // Labels
+        // 1. Background Labels (Black)
         Row(modifier = Modifier.fillMaxSize()) {
             SIZES.forEach { s ->
-                val isActive = s == currentSize
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    SizeLabel(s, FutoshikiColors.TabText, FontWeight.Medium)
+                }
+            }
+        }
+
+        // 2. Thumb & 3. Inverted Labels (White)
+        if (trackWidthPx > 0) {
+            val thumbWidthPx = sw - thumbPadPx * 2
+            val vPadPx = with(density) { 2.dp.toPx() }
+            val cornerRadiusPx = with(density) { 9.dp.toPx() }
+
+            // Thumb Box
+            Box(
+                modifier = Modifier
+                    .offset { IntOffset(thumbX.value.roundToInt(), 0) }
+                    .padding(vertical = 2.dp)
+                    .width(with(density) { thumbWidthPx.toDp() })
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(accentColor())
+            )
+
+            // Inverted labels clipped to thumb position
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        clip = true
+                        shape = object : Shape {
+                            override fun createOutline(
+                                size: Size,
+                                layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+                                density: Density
+                            ): Outline {
+                                return Outline.Rounded(
+                                    RoundRect(
+                                        left = thumbX.value,
+                                        top = vPadPx,
+                                        right = thumbX.value + thumbWidthPx,
+                                        bottom = size.height - vPadPx,
+                                        cornerRadius = CornerRadius(cornerRadiusPx)
+                                    )
+                                )
+                            }
+                        }
+                    }
+            ) {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    SIZES.forEach { s ->
+                        Box(
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            SizeLabel(s, Color.White, FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Interaction layer (Clicks)
+        Row(modifier = Modifier.fillMaxSize()) {
+            SIZES.forEach { s ->
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -163,21 +238,8 @@ fun DraggableSizeTabs(
                             if (!isDragging && s != currentSize) {
                                 updatedOnSizeChange(s)
                             }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = buildAnnotatedString {
-                            append("$s")
-                            withStyle(SpanStyle(fontSize = (16 * 1.3f).sp)) { append("×") }
-                            append("$s")
-                        },
-                        color = FutoshikiColors.TabText,
-                        fontSize = 16.sp,
-                        fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
-                        fontFamily = ReemKufi
-                    )
-                }
+                        }
+                )
             }
         }
     }

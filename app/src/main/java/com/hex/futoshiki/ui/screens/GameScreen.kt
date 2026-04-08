@@ -53,6 +53,7 @@ import com.hex.futoshiki.game.Screen
 import com.hex.futoshiki.ui.components.*
 import com.hex.futoshiki.ui.theme.FutoshikiColors
 import com.hex.futoshiki.ui.theme.ReemKufi
+import com.hex.futoshiki.ui.theme.accentColor
 import kotlinx.coroutines.delay
 
 // ── Puzzle Components ─────────────────────────────────────────────────────────
@@ -135,16 +136,19 @@ fun PuzzleCell(
 
     val bg = when {
         hasError   -> FutoshikiColors.ErrorBg
-        isSelected -> FutoshikiColors.CellSelected
+        isSelected -> accentColor().copy(alpha = 0.12f)
         isRelated  -> FutoshikiColors.CellRelated
         else       -> FutoshikiColors.CellDefault
     }
-    val borderColor = if (hasError) FutoshikiColors.ErrorStroke else FutoshikiColors.OnSurface
+    val borderColor = if (hasError) FutoshikiColors.ErrorStroke 
+                      else if (isSelected) accentColor()
+                      else FutoshikiColors.OnSurface
     val borderWidth = if (isSelected) 2.5.dp else 1.5.dp
     val textColor   = if (hasError) FutoshikiColors.ErrorStroke else FutoshikiColors.OnSurface
     val cornerRadius = sizeDp * 0.27f
 
     val shadowColor = if (hasError) FutoshikiColors.ErrorStroke.copy(alpha = 0.22f)
+                      else if (isSelected) accentColor().copy(alpha = 0.4f)
                       else Color(0x42000000)
 
     Box(
@@ -385,10 +389,10 @@ private fun NumberButton(label: String, sizeDp: Dp, onClick: () -> Unit) {
     }
 }
 
-// ── Bottom coral buttons ──────────────────────────────────────────────────────
+// ── Bottom themed buttons ──────────────────────────────────────────────────────
 
 @Composable
-fun CoralPillButton(
+fun ThemedPillButton(
     label: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
@@ -397,6 +401,7 @@ fun CoralPillButton(
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val accent = accentColor()
 
     // Neo-brutalist: pressed shifts button onto shadow; released floats above it
     val btnOffset by animateDpAsState(if (isPressed) 4.dp else 0.dp, tween(80), label = "coralOffset")
@@ -421,7 +426,7 @@ fun CoralPillButton(
                 .fillMaxWidth()
                 .height(44.dp)
                 .clip(RoundedCornerShape(22.dp))
-                .background(if (enabled) FutoshikiColors.ButtonPrimary else FutoshikiColors.ButtonPrimary.copy(alpha = 0.45f))
+                .background(if (enabled) accent else accent.copy(alpha = 0.45f))
                 .border(2.dp, FutoshikiColors.OnSurface.copy(alpha = if (enabled) 1f else 0.3f), RoundedCornerShape(22.dp))
                 .clickable(
                     interactionSource = interactionSource,
@@ -557,7 +562,12 @@ fun WinModal(
     onPlayAgain: () -> Unit
 ) {
     var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { visible = true }
+    val haptic = LocalHapticFeedback.current
+
+    LaunchedEffect(Unit) {
+        visible = true
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+    }
 
     val alpha by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
@@ -631,24 +641,53 @@ fun WinModal(
 
                 Spacer(modifier = Modifier.height(72.dp))
 
-                // Solved time text
+                // Congratulations & Solved time
                 Text(
-                    text = "SOLVED IN ${formatTimer(timerSeconds)}",
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 16.sp,
-                    fontFamily = ReemKufi,
-                    letterSpacing = 0.5.sp
+                    text          = "C O N G R A T U L A T I O N",
+                    color         = accentColor(),
+                    fontSize      = 11.sp,
+                    fontWeight    = FontWeight.SemiBold,
+                    fontFamily    = ReemKufi,
+                    letterSpacing = 2.sp
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Text(
+                    text          = "S O L V E D   I N",
+                    color         = Color.White.copy(alpha = 0.65f),
+                    fontSize      = 8.5.sp,
+                    fontWeight    = FontWeight.Medium,
+                    fontFamily    = ReemKufi,
+                    letterSpacing = 3.sp
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                val timeStr = formatTimer(timerSeconds)
+                val mm = timeStr.substring(0, 2)
+                val ss = timeStr.substring(3, 5)
+                val displayTime = "${mm[0]} ${mm[1]} : ${ss[0]} ${ss[1]}"
+                
+                Text(
+                    text          = displayTime,
+                    color         = Color.White,
+                    fontSize      = 22.sp,
+                    fontWeight    = FontWeight.Bold,
+                    fontFamily    = ReemKufi,
+                    letterSpacing = 2.sp
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
 
                 // PLAY AGAIN Button (Outline design)
+                val accent = accentColor()
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(0.9f)
                         .height(64.dp)
                         .onGloballyPositioned { buttonBounds = it.boundsInRoot() }
-                        .border(2.dp, FutoshikiColors.Coral, RoundedCornerShape(32.dp))
+                        .border(2.dp, accent, RoundedCornerShape(32.dp))
                         .clip(RoundedCornerShape(32.dp))
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
@@ -828,12 +867,12 @@ fun GameScreen(
                     .padding(bottom = (vh * 0.01f)),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                CoralPillButton(
+                ThemedPillButton(
                     label    = "NEW GAME",
                     onClick  = { viewModel.newGame(size) },
                     modifier = Modifier.weight(1f)
                 )
-                CoralPillButton(
+                ThemedPillButton(
                     label    = "CLEAR ALL",
                     onClick  = { viewModel.clearAll() },
                     modifier = Modifier.weight(1f)

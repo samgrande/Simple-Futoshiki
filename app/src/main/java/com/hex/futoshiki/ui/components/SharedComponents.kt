@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hex.futoshiki.ui.theme.FutoshikiColors
 import com.hex.futoshiki.ui.theme.ReemKufi
+import com.hex.futoshiki.ui.theme.accentColor
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -69,6 +70,7 @@ fun ConstraintArrow(
         ArrowDirection.LEFT  -> 180f
     }
 
+    val accent = accentColor()
     Canvas(
         modifier = modifier
             .size(sizeDp)
@@ -123,7 +125,7 @@ fun ConstraintArrow(
             close()
         }
 
-        drawPath(path, color = FutoshikiColors.Coral)
+        drawPath(path, color = accent)
         drawPath(path, color = Color.Black, style = Stroke(width = 1.5f * scale))
     }
 }
@@ -143,6 +145,7 @@ fun WavyUnderline(width: Dp, height: Dp, modifier: Modifier = Modifier) {
         label = "phase"
     )
 
+    val accent = accentColor()
     Canvas(
         modifier = modifier
             .size(width, height)
@@ -170,7 +173,7 @@ fun WavyUnderline(width: Dp, height: Dp, modifier: Modifier = Modifier) {
 
         drawPath(
             path = path,
-            color = FutoshikiColors.CoralLight,
+            color = accent.copy(alpha = 0.5f),
             style = Stroke(width = 3f, cap = StrokeCap.Round)
         )
     }
@@ -222,7 +225,7 @@ fun TimerPill(
     modifier: Modifier = Modifier
 ) {
     val bgColor by animateColorAsState(
-        targetValue = if (isPaused) FutoshikiColors.Coral else FutoshikiColors.TimerBg,
+        targetValue = if (isPaused) accentColor() else FutoshikiColors.TimerBg,
         animationSpec = tween(300),
         label = "timerBg"
     )
@@ -282,7 +285,7 @@ fun TimerPill(
     }
 }
 
-// ── Big pill button (primary = coral, secondary = outlined) ──────────────────
+// ── Big pill button (primary = themed accent, secondary = outlined) ──────────────────
 
 @Composable
 fun BigButton(

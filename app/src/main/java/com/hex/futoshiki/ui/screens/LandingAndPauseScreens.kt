@@ -6,8 +6,10 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -42,11 +44,12 @@ import kotlin.math.roundToInt
 @Composable
 fun LandingScreen(
     onStart: () -> Unit,
+    onTheming: () -> Unit,
+    onQuit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showHelp by remember { mutableStateOf(false) }
     var showConfirmQuit by remember { mutableStateOf(false) }
-    val context = LocalContext.current
 
     BackHandler(enabled = true) {
         when {
@@ -62,6 +65,31 @@ fun LandingScreen(
             .background(FutoshikiColors.Background),
         contentAlignment = Alignment.Center
     ) {
+        // Brush Icon (Theming button) - Top Right
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(20.dp),
+            contentAlignment = Alignment.TopEnd
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(FutoshikiColors.OnSurface)
+                    .clickable { onTheming() },
+                contentAlignment = Alignment.Center
+            ) {
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(id = com.hex.futoshiki.R.drawable.brush),
+                    contentDescription = "Theming",
+                    modifier = Modifier.size(24.dp),
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.White)
+                )
+            }
+        }
+
         Column(
             modifier = Modifier
                 .widthIn(max = 420.dp)
@@ -159,7 +187,7 @@ fun LandingScreen(
                             
                             Spacer(Modifier.height(32.dp))
 
-                            BigButton(label = "Y E S", onClick = { (context as? ComponentActivity)?.finish() }, primary = true)
+                            BigButton(label = "Y E S", onClick = onQuit, primary = true)
                             Spacer(Modifier.height(14.dp))
                             BigButton(label = "N O",  onClick = { showConfirmQuit = false })
                         }

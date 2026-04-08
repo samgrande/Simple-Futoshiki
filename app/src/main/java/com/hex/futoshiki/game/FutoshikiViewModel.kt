@@ -1,7 +1,10 @@
 package com.hex.futoshiki.game
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.hex.futoshiki.ui.theme.AppTheme
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +15,7 @@ import kotlinx.coroutines.launch
 
 // ── Screen enum ───────────────────────────────────────────────────────────────
 
-enum class Screen { LANDING, GAME, PAUSE }
+enum class Screen { LANDING, GAME, PAUSE, THEMING }
 
 // ── UI State ──────────────────────────────────────────────────────────────────
 
@@ -27,17 +30,36 @@ data class GameState(
     val showCongrats: Boolean = false,
     val timerSeconds: Int = 0,
     val timerRunning: Boolean = false,
-    val gameKey: Int = 0          // incremented each new game → triggers cell pop-in animation
+    val gameKey: Int = 0,
+    val theme: AppTheme = AppTheme.FIRE
 )
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
 
-class FutoshikiViewModel : ViewModel() {
+class FutoshikiViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val _state = MutableStateFlow(GameState())
+    private val prefs = application.getSharedPreferences("futoshiki_prefs", Context.MODE_PRIVATE)
+
+    private val _state = MutableStateFlow(GameState(
+        theme = loadTheme(),
+        size = loadSize()
+    ))
     val state: StateFlow<GameState> = _state.asStateFlow()
 
     private var timerJob: Job? = null
+
+    private fun loadTheme(): AppTheme {
+        val themeName = prefs.getString("app_theme", AppTheme.FIRE.name)
+        return try {
+            AppTheme.valueOf(themeName ?: AppTheme.FIRE.name)
+        } catch (e: Exception) {
+            AppTheme.FIRE
+        }
+    }
+
+    private fun loadSize(): Int {
+        return prefs.getInt("game_size", 4)
+    }
 
     // ── New game ─────────────────────────────────────────────────────────────
 
@@ -150,6 +172,16 @@ class FutoshikiViewModel : ViewModel() {
         _state.update { it.copy(screen = Screen.LANDING) }
     }
 
+    fun goToTheming() {
+        stopTimer()
+        _state.update { it.copy(screen = Screen.THEMING) }
+    }
+
+    fun updateTheme(newTheme: AppTheme) {
+        prefs.edit().putString("app_theme", newTheme.name).apply()
+        _state.update { it.copy(theme = newTheme) }
+    }
+
     // ── Solve (cheat) ────────────────────────────────────────────────────────
 
     fun solve() {
@@ -169,6 +201,7 @@ class FutoshikiViewModel : ViewModel() {
     // ── Size change ──────────────────────────────────────────────────────────
 
     fun changeSize(newSize: Int) {
+        prefs.edit().putInt("game_size", newSize).apply()
         _state.update { it.copy(size = newSize) }
         newGame(newSize)
     }
