@@ -1,5 +1,6 @@
 package com.hex.futoshiki.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -122,41 +123,41 @@ fun PauseOverlay(
     pillOffset: Offset,
     seconds: Int,
     onResume: () -> Unit,
+    onMainMenu: () -> Unit,
     onSolve:  () -> Unit,
     onNewGame: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showHelp by remember { mutableStateOf(false) }
+    var showConfirmQuit by remember { mutableStateOf(false) }
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
 
-    // Fast and snappy reveal animation
-    val revealProgress by animateFloatAsState(
+    // Pause on back button/gesture
+    BackHandler(enabled = visible) {
+        when {
+            showHelp -> showHelp = false
+            showConfirmQuit -> showConfirmQuit = false
+            else -> onResume()
+        }
+    }
+
+    // Quick fade-in animation
+    val alpha by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(450, easing = FastOutSlowInEasing),
-        label = "revealProgress"
+        animationSpec = tween(180), // Even quicker
+        label = "alpha"
     )
 
     Box(
         modifier = modifier.fillMaxSize()
     ) {
-        // ── The Revealable Content ────────────────────────────────────
+        // ── The Fading Content ────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    val maxRadius = hypot(size.width, size.height)
-                    val radius = maxRadius * revealProgress
-                    
-                    clip = true
-                    shape = object : Shape {
-                        override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
-                            val path = Path().apply {
-                                addOval(Rect(center = revealCenter, radius = radius))
-                            }
-                            return Outline.Generic(path)
-                        }
-                    }
+                    this.alpha = alpha
                 }
                 .background(FutoshikiColors.Background)
         ) {
@@ -168,53 +169,86 @@ fun PauseOverlay(
             ) {
                 Spacer(Modifier.weight(0.8f))
 
+                // Static Logo & Title (Not in AnimatedContent)
+                LogoMark(size = 80.dp)
+                Spacer(Modifier.height(16.dp))
+                FutoshikiTitle(fontSize = 32.sp)
+
                 AnimatedContent(
-                    targetState = showHelp,
+                    targetState = if (showConfirmQuit) "confirm" else if (showHelp) "help" else "menu",
                     transitionSpec = {
-                        if (targetState) {
-                            (fadeIn(tween(220, delayMillis = 90)) + scaleIn(initialScale = 0.92f))
-                                .togetherWith(fadeOut(tween(180)))
+                        val duration = 280
+                        if (targetState == "confirm" || (initialState == "help" && targetState == "menu")) {
+                            // Slide in from right (forward)
+                            (slideInHorizontally(tween(duration)) { it } + fadeIn(tween(duration)))
+                                .togetherWith(slideOutHorizontally(tween(duration)) { -it } + fadeOut(tween(duration)))
                         } else {
-                            (fadeIn(tween(220, delayMillis = 90)) + scaleIn(initialScale = 0.92f))
-                                .togetherWith(fadeOut(tween(180)))
+                            // Slide in from left (backward)
+                            (slideInHorizontally(tween(duration)) { -it } + fadeIn(tween(duration)))
+                                .togetherWith(slideOutHorizontally(tween(duration)) { it } + fadeOut(tween(duration)))
                         }.using(SizeTransform(clip = false))
                     },
                     label = "pauseContentTransition"
-                ) { isHelp ->
-                    if (isHelp) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            HelpPanel()
-                            Spacer(Modifier.height(24.dp))
-                            BigButton(label = "← BACK", onClick = { showHelp = false })
+                ) { state ->
+                    when (state) {
+                        "help" -> {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Spacer(Modifier.height(24.dp))
+                                HelpPanel()
+                                Spacer(Modifier.height(24.dp))
+                                BigButton(label = "← BACK", onClick = { showHelp = false })
+                            }
                         }
-                    } else {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            LogoMark(size = 80.dp)
-                            Spacer(Modifier.height(16.dp))
-                            FutoshikiTitle(fontSize = 32.sp)
-                            Spacer(Modifier.height(12.dp))
-                            Text(
-                                text          = "PAUSED",
-                                fontSize      = 14.sp,
-                                fontWeight    = FontWeight.SemiBold,
-                                fontFamily    = ReemKufi,
-                                color         = Color(0xFF999999),
-                                letterSpacing = 2.sp
-                            )
-                            
-                            Spacer(Modifier.height(48.dp))
+                        "confirm" -> {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Spacer(Modifier.height(32.dp))
+                                Text(
+                                    text          = "QUIT TO MAIN MENU?",
+                                    fontSize      = 14.sp,
+                                    fontWeight    = FontWeight.SemiBold,
+                                    fontFamily    = ReemKufi,
+                                    color         = Color(0xFF999999),
+                                    letterSpacing = 2.sp
+                                )
+                                
+                                Spacer(Modifier.height(32.dp))
 
-                            BigButton(label = "RESUME", onClick = onResume, primary = true)
-                            Spacer(Modifier.height(14.dp))
-                            BigButton(label = "SOLVE",  onClick = onSolve)
-                            Spacer(Modifier.height(14.dp))
-                            BigButton(label = "HELP",   onClick = { showHelp = true })
+                                BigButton(label = "YES", onClick = onMainMenu, primary = true)
+                                Spacer(Modifier.height(14.dp))
+                                BigButton(label = "NO",  onClick = { showConfirmQuit = false })
+                            }
+                        }
+                        else -> {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Spacer(Modifier.height(12.dp))
+                                Text(
+                                    text          = "PAUSED",
+                                    fontSize      = 14.sp,
+                                    fontWeight    = FontWeight.SemiBold,
+                                    fontFamily    = ReemKufi,
+                                    color         = Color(0xFF999999),
+                                    letterSpacing = 2.sp
+                                )
+                                
+                                Spacer(Modifier.height(48.dp))
+
+                                BigButton(label = "RESUME",    onClick = onResume, primary = true)
+                                Spacer(Modifier.height(14.dp))
+                                BigButton(label = "MAIN MENU", onClick = { showConfirmQuit = true })
+                                Spacer(Modifier.height(14.dp))
+                                BigButton(label = "SOLVE",     onClick = onSolve)
+                                Spacer(Modifier.height(14.dp))
+                                BigButton(label = "HELP",      onClick = { showHelp = true })
+                            }
                         }
                     }
                 }

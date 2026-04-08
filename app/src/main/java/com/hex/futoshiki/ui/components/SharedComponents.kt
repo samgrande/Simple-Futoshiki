@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -60,10 +61,10 @@ fun ConstraintArrow(
     modifier: Modifier = Modifier
 ) {
     val degrees = when (direction) {
-        ArrowDirection.UP    -> 0f
-        ArrowDirection.RIGHT -> 90f
-        ArrowDirection.DOWN  -> 180f
-        ArrowDirection.LEFT  -> 270f
+        ArrowDirection.UP    -> 270f
+        ArrowDirection.RIGHT -> 0f
+        ArrowDirection.DOWN  -> 90f
+        ArrowDirection.LEFT  -> 180f
     }
 
     Canvas(
@@ -71,29 +72,57 @@ fun ConstraintArrow(
             .size(sizeDp)
             .graphicsLayer { rotationZ = degrees }
     ) {
-        val r = size.minDimension / 2f
-        val cx = size.width / 2f
-        val cy = size.height / 2f
+        // Original SVG: width="12" height="19"
+        // Scale to fit sizeDp
+        val scaleX = size.width / 12f
+        val scaleY = size.height / 19f
+        val scale = minOf(scaleX, scaleY)
 
-        // coral circle
-        drawCircle(color = FutoshikiColors.Coral, radius = r)
-        // black stroke ring
-        drawCircle(
-            color = Color.Black,
-            radius = r,
-            style = Stroke(width = 1.5f)
-        )
-        // white triangle pointing UP
-        val triTop    = cy - r * 0.42f
-        val triBottom = cy + r * 0.38f
-        val triHalf   = r * 0.42f
-        val triPath = Path().apply {
-            moveTo(cx,            triTop)
-            lineTo(cx + triHalf,  triBottom)
-            lineTo(cx - triHalf,  triBottom)
+        // Center the path
+        val offsetX = (size.width - (12f * scale)) / 2f
+        val offsetY = (size.height - (19f * scale)) / 2f
+
+        val path = Path().apply {
+            moveTo(10.4244f * scale + offsetX, 7.61734f * scale + offsetY)
+            cubicTo(
+                11.4005f * scale + offsetX, 8.59361f * scale + offsetY,
+                11.4005f * scale + offsetX, 10.1762f * scale + offsetY,
+                10.4244f * scale + offsetX, 11.1525f * scale + offsetY
+            )
+            lineTo(3.88824f * scale + offsetX, 17.6886f * scale + offsetY)
+            cubicTo(
+                3.11313f * scale + offsetX, 18.4635f * scale + offsetY,
+                1.85671f * scale + offsetX, 18.4635f * scale + offsetY,
+                1.0816f * scale + offsetX, 17.6886f * scale + offsetY
+            )
+            cubicTo(
+                0.306442f * scale + offsetX, 16.9135f * scale + offsetY,
+                0.306442f * scale + offsetX, 15.6562f * scale + offsetY,
+                1.0816f * scale + offsetX, 14.881f * scale + offsetY
+            )
+            lineTo(5.51715f * scale + offsetX, 10.4455f * scale + offsetY)
+            cubicTo(
+                6.10287f * scale + offsetX, 9.85969f * scale + offsetY,
+                6.10287f * scale + offsetX, 8.91015f * scale + offsetY,
+                5.51715f * scale + offsetX, 8.32437f * scale + offsetY
+            )
+            lineTo(1.0816f * scale + offsetX, 3.88882f * scale + offsetY)
+            cubicTo(
+                0.306442f * scale + offsetX, 3.11366f * scale + offsetY,
+                0.306443f * scale + offsetX, 1.85637f * scale + offsetY,
+                1.0816f * scale + offsetX, 1.08121f * scale + offsetY
+            )
+            cubicTo(
+                1.85672f * scale + offsetX, 0.306306f * scale + offsetY,
+                3.11313f * scale + offsetX, 0.306306f * scale + offsetY,
+                3.88824f * scale + offsetX, 1.08121f * scale + offsetY
+            )
+            lineTo(10.4244f * scale + offsetX, 7.61734f * scale + offsetY)
             close()
         }
-        drawPath(triPath, color = Color.White)
+
+        drawPath(path, color = FutoshikiColors.Coral)
+        drawPath(path, color = Color.Black, style = Stroke(width = 1.5f * scale))
     }
 }
 
@@ -101,24 +130,46 @@ fun ConstraintArrow(
 
 @Composable
 fun WavyUnderline(width: Dp, height: Dp, modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier.size(width, height)) {
+    val infiniteTransition = rememberInfiniteTransition(label = "wave")
+    val phase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1600, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "phase"
+    )
+
+    Canvas(
+        modifier = modifier
+            .size(width, height)
+            .clipToBounds()
+    ) {
         val w = size.width
         val h = size.height
         val midY = h / 2f
         val segW = w / 7f
+        val period = segW * 2f
+        val offsetX = -phase * period
 
         val path = Path()
-        path.moveTo(0f, midY)
-        for (i in 0 until 7) {
-            val ctrlX = segW * (i + 0.5f)
+        path.moveTo(offsetX, midY)
+
+        // Draw enough segments to cover width + period
+        val segmentsNeeded = (w / segW).toInt() + 4
+        for (i in 0 until segmentsNeeded) {
+            val currentSegX = offsetX + i * segW
+            val ctrlX = currentSegX + segW * 0.5f
             val ctrlY = if (i % 2 == 0) 0f else h
-            val endX  = segW * (i + 1)
+            val endX  = currentSegX + segW
             path.quadraticBezierTo(ctrlX, ctrlY, endX, midY)
         }
+
         drawPath(
             path = path,
             color = FutoshikiColors.CoralLight,
-            style = Stroke(width = 2.5f, cap = StrokeCap.Round)
+            style = Stroke(width = 3f, cap = StrokeCap.Round)
         )
     }
 }

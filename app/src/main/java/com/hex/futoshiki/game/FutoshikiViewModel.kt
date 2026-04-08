@@ -141,6 +141,11 @@ class FutoshikiViewModel : ViewModel() {
         }
     }
 
+    fun goToMainMenu() {
+        stopTimer()
+        _state.update { it.copy(screen = Screen.LANDING) }
+    }
+
     // ── Solve (cheat) ────────────────────────────────────────────────────────
 
     fun solve() {

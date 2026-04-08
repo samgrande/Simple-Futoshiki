@@ -1,5 +1,9 @@
 package com.hex.futoshiki.ui.screens
 
+import androidx.activity.compose.BackHandler
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.animation.*
@@ -67,6 +71,52 @@ fun PuzzleCell(
     onClear: (Int, Int) -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    var isShaking by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            delay(800)
+            isShaking = true
+        } else {
+            isShaking = false
+        }
+    }
+
+    // Shake animation when held
+    val shakeTransition = rememberInfiniteTransition(label = "shake")
+    val shakeRotation by shakeTransition.animateFloat(
+        initialValue = -2.5f,
+        targetValue = 2.5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(70, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "shakeRot"
+    )
+    val shakeOffsetX by shakeTransition.animateFloat(
+        initialValue = -1.2f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(50, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "shakeX"
+    )
+    val shakeOffsetY by shakeTransition.animateFloat(
+        initialValue = -1.2f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(60, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "shakeY"
+    )
+
+    val currentRotation = if (isShaking) shakeRotation else 0f
+    val currentOffsetX  = if (isShaking) shakeOffsetX  else 0f
+    val currentOffsetY  = if (isShaking) shakeOffsetY  else 0f
 
     // Pop-in animation
     var triggered by remember(gameKey) { mutableStateOf(false) }
@@ -97,7 +147,13 @@ fun PuzzleCell(
     Box(
         modifier = Modifier
             .size(sizeDp)
-            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                rotationZ = currentRotation
+                translationX = currentOffsetX
+                translationY = currentOffsetY
+            }
     ) {
         Box(
             modifier = Modifier
@@ -113,7 +169,7 @@ fun PuzzleCell(
                 .background(bg)
                 .border(borderWidth, borderColor, RoundedCornerShape(cornerRadius))
                 .combinedClickable(
-                    interactionSource = remember { MutableInteractionSource() },
+                    interactionSource = interactionSource,
                     indication = null,
                     onClick = { onTap(r, c) },
                     onLongClick = {
@@ -557,6 +613,25 @@ fun GameScreen(
 
     val isPaused = state.screen == Screen.PAUSE
 
+    // Pause on back button/gesture
+    BackHandler(enabled = !isPaused && !won) {
+        viewModel.pause()
+    }
+
+    // Pause on lifecycle events (suspend/minimise)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE) {
+                viewModel.pause()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -688,6 +763,7 @@ fun GameScreen(
                 pillOffset = pillOffset,
                 seconds = state.timerSeconds,
                 onResume   = { viewModel.resume() },
+                onMainMenu = { viewModel.goToMainMenu() },
                 onSolve    = { viewModel.solve() },
                 onNewGame  = { viewModel.newGame(size) }
             )
