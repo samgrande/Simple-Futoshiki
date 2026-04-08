@@ -39,7 +39,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.res.painterResource
+import com.hex.futoshiki.R
+import androidx.compose.foundation.Image
 import androidx.compose.material3.ripple
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -178,79 +180,11 @@ fun WavyUnderline(width: Dp, height: Dp, modifier: Modifier = Modifier) {
 
 @Composable
 fun LogoMark(size: Dp = 96.dp) {
-    val cellDp  = size * 0.38f
-    val gapDp   = size * 0.06f
-
-    Box(
-        modifier = Modifier.size(size),
-        contentAlignment = Alignment.Center
-    ) {
-        // Top-left cell
-        Box(
-            Modifier
-                .align(Alignment.TopStart)
-                .size(cellDp)
-                .border(2.dp, FutoshikiColors.OnSurface, RoundedCornerShape(6.dp))
-                .background(FutoshikiColors.LogoCellBg, RoundedCornerShape(6.dp))
-        )
-        // Top-right cell
-        Box(
-            Modifier
-                .align(Alignment.TopEnd)
-                .size(cellDp)
-                .border(2.dp, FutoshikiColors.OnSurface, RoundedCornerShape(6.dp))
-                .background(FutoshikiColors.LogoCellBg, RoundedCornerShape(6.dp))
-        )
-        // Bottom-left cell
-        Box(
-            Modifier
-                .align(Alignment.BottomStart)
-                .size(cellDp)
-                .border(2.dp, FutoshikiColors.OnSurface, RoundedCornerShape(6.dp))
-                .background(FutoshikiColors.LogoCellBg, RoundedCornerShape(6.dp))
-        )
-        // Bottom-right cell — dark with kanji
-        Box(
-            Modifier
-                .align(Alignment.BottomEnd)
-                .size(cellDp)
-                .border(2.dp, FutoshikiColors.OnSurface, RoundedCornerShape(6.dp))
-                .background(FutoshikiColors.LogoKanjiTile, RoundedCornerShape(6.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                Modifier
-                    .size(cellDp * 0.72f)
-                    .background(FutoshikiColors.LogoCellBg, RoundedCornerShape(2.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "数",
-                    color = Color(0xFFD4282C),
-                    fontSize = (cellDp.value * 0.44f).sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = ReemKufi,
-                    lineHeight = (cellDp.value * 0.44f).sp
-                )
-            }
-        }
-        // < symbol (top centre)
-        Text(
-            text = "<",
-            color = FutoshikiColors.OnSurface,
-            fontWeight = FontWeight.Bold,
-            fontSize = (size.value * 0.13f * 1.3f).sp,
-            modifier = Modifier.align(Alignment.TopCenter)
-        )
-        // > symbol (bottom centre)
-        Text(
-            text = ">",
-            color = FutoshikiColors.OnSurface,
-            fontWeight = FontWeight.Bold,
-            fontSize = (size.value * 0.13f * 1.3f).sp,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
-    }
+    Image(
+        painter = painterResource(id = R.drawable.futo_logo),
+        contentDescription = "Futoshiki Logo",
+        modifier = Modifier.size(size)
+    )
 }
 
 // ── Futoshiki title + wavy underline ─────────────────────────────────────────

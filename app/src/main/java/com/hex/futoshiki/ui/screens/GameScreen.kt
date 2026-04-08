@@ -13,8 +13,11 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.graphics.drawscope.rotate
 import kotlin.random.Random
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -453,7 +456,9 @@ private data class RainDrop(
 )
 
 @Composable
-fun RainBackground() {
+fun RainBackground(
+    buttonBounds: Rect?
+) {
     val infiniteTransition = rememberInfiniteTransition(label = "rain")
     val progress by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -466,13 +471,13 @@ fun RainBackground() {
     )
 
     val drops = remember {
-        List(80) {
+        List(100) {
             RainDrop(
                 x = Random.nextFloat(),
                 yOffset = Random.nextFloat(),
                 speed = Random.nextFloat() * 1.2f + 1.8f,
                 length = Random.nextFloat() * 40f + 40f,
-                alpha = Random.nextFloat() * 0.35f + 0.1f
+                alpha = Random.nextFloat() * 0.5f + 0.2f
             )
         }
     }
@@ -480,31 +485,64 @@ fun RainBackground() {
     Canvas(modifier = Modifier.fillMaxSize()) {
         val w = size.width
         val h = size.height
-        val slantX = -20f // Slant amount
+        val slantX = -20f
 
         drops.forEach { drop ->
-            val yPos = ((drop.yOffset + progress * drop.speed) % 1f) * (h + drop.length) - drop.length
-            // Calculate x based on y to make it fall diagonally
+            val totalTravel = h + drop.length
+            val yPos = ((drop.yOffset + progress * drop.speed) % 1f) * totalTravel - drop.length
             val xPos = (drop.x * (w + 40f)) - 20f + (yPos / h) * slantX
-            
-            if (yPos < h) {
-                drawLine(
-                    color = Color.White.copy(alpha = drop.alpha),
-                    start = androidx.compose.ui.geometry.Offset(xPos, yPos),
-                    // The line itself is also slanted
-                    end = androidx.compose.ui.geometry.Offset(xPos + (drop.length / 150f) * slantX, (yPos + drop.length).coerceAtMost(h)),
-                    strokeWidth = 2f
-                )
+
+            var collisionY: Float? = null
+            var showSplash = false
+            val checkX = xPos
+            val checkYEnd = yPos + drop.length
+
+            // 1. Check Button Occlusion/Collision
+            if (buttonBounds != null && checkX >= buttonBounds.left && checkX <= buttonBounds.right) {
+                // Any rain that reaches the button top is blocked
+                if (checkYEnd >= buttonBounds.top) {
+                    collisionY = buttonBounds.top
+                    
+                    // Only splash if in the middle and currently "hitting" the top edge
+                    val edgeWidth = buttonBounds.width * 0.15f
+                    if (checkX >= buttonBounds.left + edgeWidth && checkX <= buttonBounds.right - edgeWidth) {
+                        if (yPos < buttonBounds.top) showSplash = true
+                    }
+                }
             }
 
-            // Collision splash at bottom margin
-            if (yPos + drop.length >= h && yPos < h) {
-                val splashW = 12f
+            // 2. Check Floor Collision (if not already blocked by button)
+            if (collisionY == null && checkYEnd >= h) {
+                collisionY = h
+                if (yPos < h) showSplash = true
+            }
+
+            // 3. Draw
+            if (collisionY != null) {
+                if (yPos < collisionY) {
+                    val visibleLength = (collisionY - yPos).coerceAtMost(drop.length)
+                    drawLine(
+                        color = Color.White.copy(alpha = drop.alpha),
+                        start = Offset(xPos, yPos),
+                        end = Offset(xPos + (visibleLength / 150f) * slantX, yPos + visibleLength),
+                        strokeWidth = 2.5f
+                    )
+                }
+                if (showSplash) {
+                    val splashW = 10f
+                    drawLine(
+                        color = Color.White.copy(alpha = drop.alpha * 1.5f),
+                        start = Offset(xPos - splashW, collisionY - 1f),
+                        end = Offset(xPos + splashW, collisionY - 1f),
+                        strokeWidth = 2f
+                    )
+                }
+            } else if (yPos < h) {
                 drawLine(
-                    color = Color.White.copy(alpha = drop.alpha * 1.5f),
-                    start = androidx.compose.ui.geometry.Offset(xPos - splashW, h - 1f),
-                    end = androidx.compose.ui.geometry.Offset(xPos + splashW, h - 1f),
-                    strokeWidth = 2f
+                    color = Color.White.copy(alpha = drop.alpha),
+                    start = Offset(xPos, yPos),
+                    end = Offset(xPos + (drop.length / 150f) * slantX, yPos + drop.length),
+                    strokeWidth = 2.5f
                 )
             }
         }
@@ -523,71 +561,80 @@ fun WinModal(
 
     val alpha by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(400),
+        animationSpec = tween(1000, easing = LinearOutSlowInEasing),
         label = "winAlpha"
     )
-    
-    val scale by animateFloatAsState(
-        targetValue = if (visible) 1f else 0.7f,
-        animationSpec = spring(dampingRatio = 0.62f, stiffness = 300f),
-        label = "winScale"
-    )
+
+    var buttonBounds by remember { mutableStateOf<Rect?>(null) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(FutoshikiColors.Overlay.copy(alpha = FutoshikiColors.Overlay.alpha * alpha)),
-        contentAlignment = Alignment.Center
+            .background(Color.Black.copy(alpha = alpha))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { }
     ) {
-        if (visible) {
-            RainBackground()
-        }
+        Box(modifier = Modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }) {
+            RainBackground(buttonBounds)
 
-        Column(
-            modifier = Modifier
-                .widthIn(max = 380.dp)
-                .padding(horizontal = 24.dp)
-                .graphicsLayer { 
-                    scaleX = scale
-                    scaleY = scale
-                    this.alpha = alpha
-                }
-                .clip(RoundedCornerShape(24.dp))
-                .border(1.5.dp, FutoshikiColors.OnSurface, RoundedCornerShape(24.dp))
-                .background(FutoshikiColors.Background)
-                .padding(horizontal = 28.dp, vertical = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Kanji SVG illustration
-            Box(
+            Column(
                 modifier = Modifier
-                    .padding(bottom = 14.dp)
-                    .width(120.dp)
-                    .aspectRatio(755f / 1335f),
-                contentAlignment = Alignment.Center
+                    .fillMaxSize()
+                    .padding(horizontal = 48.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                androidx.compose.foundation.Image(
+                Spacer(modifier = Modifier.weight(1.3f))
+
+                // Large Kanji logo
+                Image(
                     painter = painterResource(id = R.drawable.kanji_congrats),
-                    contentDescription = "Congratulations kanji",
-                    modifier = Modifier.fillMaxSize()
+                    contentDescription = "Congratulations",
+                    modifier = Modifier
+                        .fillMaxWidth(0.65f)
+                        .aspectRatio(180f / 312f)
                 )
+
+                Spacer(modifier = Modifier.height(72.dp))
+
+                // Solved time text
+                Text(
+                    text = "SOLVED IN ${formatTimer(timerSeconds)}",
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 16.sp,
+                    fontFamily = ReemKufi,
+                    letterSpacing = 0.5.sp
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                // PLAY AGAIN Button (Outline design)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .onGloballyPositioned { buttonBounds = it.boundsInRoot() }
+                        .border(2.dp, FutoshikiColors.Coral, RoundedCornerShape(32.dp))
+                        .clip(RoundedCornerShape(32.dp))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onPlayAgain() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "PLAY AGAIN",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = ReemKufi,
+                        letterSpacing = 2.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(80.dp))
             }
-            Text(
-                text       = "Congratulations!",
-                fontSize   = 26.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = ReemKufi,
-                color      = FutoshikiColors.OnSurface
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text       = "Solved in ${formatTimer(timerSeconds)}",
-                fontSize   = 14.sp,
-                color      = Color(0xFF777777),
-                fontFamily = ReemKufi
-            )
-            Spacer(Modifier.height(24.dp))
-            BigButton(label = "Play Again", onClick = onPlayAgain, primary = true)
         }
     }
 }

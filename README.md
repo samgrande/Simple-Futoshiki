@@ -1,6 +1,6 @@
 # 🧩 Futoshiki Puzzle Game
 
-A clean and modern implementation of the classic **Futoshiki** logic puzzle, built using **Kotlin** and **React**. This app focuses on simplicity, smooth interactions, and an intuitive user experience.
+A clean and modern **Futoshiki** logic puzzle made on 100% using **Kotlin** . This app focuses on simplicity, smooth interactions, and an intuitive user experience.
 
 ---
 
@@ -15,7 +15,7 @@ GitHub: [https://github.com/samgrande/Simple-Futoshiki](https://github.com/samgr
 * ✨ Minimal and modern UI design
 * 🧠 Challenging logic-based puzzles
 * ⚡ Smooth and responsive interactions
-* 📱 Kotlin + React architecture
+* 📱 Pure Kotlin architecture
 
 ---
 
@@ -27,17 +27,6 @@ Futoshiki is a Japanese logic puzzle played on a square grid. The objective is t
 * Ensure no number repeats in any row or column
 * Follow inequality constraints (>, <) between certain cells
 
----
-
-## 🛠️ Tech Stack
-
-**Frontend:**
-
-* React
-
-**Backend / Logic Layer:**
-
-* Kotlin
 
 ---
 
