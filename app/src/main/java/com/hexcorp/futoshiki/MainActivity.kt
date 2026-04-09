@@ -1,4 +1,4 @@
-package com.hex.futoshiki
+package com.hexcorp.futoshiki
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,12 +12,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.hex.futoshiki.game.FutoshikiViewModel
-import com.hex.futoshiki.game.Screen
-import com.hex.futoshiki.ui.screens.GameScreen
-import com.hex.futoshiki.ui.screens.LandingScreen
-import com.hex.futoshiki.ui.screens.ThemingScreen
-import com.hex.futoshiki.ui.theme.FutoshikiTheme
+import com.hexcorp.futoshiki.game.FutoshikiViewModel
+import com.hexcorp.futoshiki.game.Screen
+import com.hexcorp.futoshiki.ui.screens.GameScreen
+import com.hexcorp.futoshiki.ui.screens.LandingScreen
+import com.hexcorp.futoshiki.ui.screens.ThemingScreen
+import com.hexcorp.futoshiki.ui.theme.FutoshikiTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

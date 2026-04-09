@@ -1,4 +1,4 @@
-package com.hex.futoshiki.ui.screens
+package com.hexcorp.futoshiki.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.lifecycle.Lifecycle
@@ -46,14 +46,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hex.futoshiki.R
-import com.hex.futoshiki.game.FutoshikiViewModel
-import com.hex.futoshiki.game.Puzzle
-import com.hex.futoshiki.game.Screen
-import com.hex.futoshiki.ui.components.*
-import com.hex.futoshiki.ui.theme.FutoshikiColors
-import com.hex.futoshiki.ui.theme.ReemKufi
-import com.hex.futoshiki.ui.theme.accentColor
+import com.hexcorp.futoshiki.R
+import com.hexcorp.futoshiki.game.FutoshikiViewModel
+import com.hexcorp.futoshiki.game.Puzzle
+import com.hexcorp.futoshiki.game.Screen
+import com.hexcorp.futoshiki.ui.components.*
+import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
+import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.accentColor
 import kotlinx.coroutines.delay
 
 // ── Puzzle Components ─────────────────────────────────────────────────────────
@@ -215,7 +215,7 @@ fun PuzzleBoard(
     val totalItems = (size * 2 - 1)
     
     val constraintsMap = remember(puzzle) {
-        val map = mutableMapOf<String, com.hex.futoshiki.game.Constraint>()
+        val map = mutableMapOf<String, com.hexcorp.futoshiki.game.Constraint>()
         puzzle.constraints.forEach {
             map["${it.r1},${it.c1},${it.r2},${it.c2}"] = it
             map["${it.r2},${it.c2},${it.r1},${it.c1}"] = it
@@ -716,7 +716,7 @@ fun WinModal(
 @Composable
 fun GameScreen(
     viewModel: FutoshikiViewModel,
-    state: com.hex.futoshiki.game.GameState
+    state: com.hexcorp.futoshiki.game.GameState
 ) {
     val puzzle    = state.puzzle ?: return
     val size      = state.size

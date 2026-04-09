@@ -1,4 +1,4 @@
-package com.hex.futoshiki.ui.screens
+package com.hexcorp.futoshiki.ui.screens
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -31,9 +31,9 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hex.futoshiki.ui.components.*
-import com.hex.futoshiki.ui.theme.FutoshikiColors
-import com.hex.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.components.*
+import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
+import com.hexcorp.futoshiki.ui.theme.ReemKufi
 import kotlin.math.hypot
 
 import androidx.compose.ui.unit.IntOffset
@@ -82,7 +82,7 @@ fun LandingScreen(
                 contentAlignment = Alignment.Center
             ) {
                 androidx.compose.foundation.Image(
-                    painter = androidx.compose.ui.res.painterResource(id = com.hex.futoshiki.R.drawable.brush),
+                    painter = androidx.compose.ui.res.painterResource(id = com.hexcorp.futoshiki.R.drawable.brush),
                     contentDescription = "Theming",
                     modifier = Modifier.size(24.dp),
                     colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.White)

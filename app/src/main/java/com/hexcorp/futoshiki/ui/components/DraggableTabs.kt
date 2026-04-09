@@ -1,4 +1,4 @@
-package com.hex.futoshiki.ui.components
+package com.hexcorp.futoshiki.ui.components
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -29,9 +29,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hex.futoshiki.ui.theme.FutoshikiColors
-import com.hex.futoshiki.ui.theme.ReemKufi
-import com.hex.futoshiki.ui.theme.accentColor
+import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
+import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.accentColor
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt

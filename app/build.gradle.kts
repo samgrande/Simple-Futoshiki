@@ -2,14 +2,15 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "com.hex.futoshiki"
+    namespace = "com.hexcorp.futoshiki"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.hex.futoshiki"
+        applicationId = "com.hexcorp.futoshiki"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -49,7 +50,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.google.material)
     implementation(libs.coil.compose)
-
+    implementation(platform("com.google.firebase:firebase-bom:34.11.0"))
+    implementation("com.google.firebase:firebase-analytics")
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }

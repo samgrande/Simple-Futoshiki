@@ -1,4 +1,4 @@
-package com.hex.futoshiki.game
+package com.hexcorp.futoshiki.game
 
 import kotlin.random.Random
 

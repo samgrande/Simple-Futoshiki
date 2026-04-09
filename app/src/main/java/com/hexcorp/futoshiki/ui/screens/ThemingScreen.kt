@@ -1,4 +1,4 @@
-package com.hex.futoshiki.ui.screens
+package com.hexcorp.futoshiki.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -13,17 +13,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hex.futoshiki.R
-import com.hex.futoshiki.ui.components.BigButton
-import com.hex.futoshiki.ui.theme.AppTheme
-import com.hex.futoshiki.ui.theme.FutoshikiColors
-import com.hex.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.R
+import com.hexcorp.futoshiki.ui.components.BigButton
+import com.hexcorp.futoshiki.ui.theme.AppTheme
+import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
+import com.hexcorp.futoshiki.ui.theme.ReemKufi
 
 data class ThemeItem(
     val name: String,
@@ -131,11 +132,22 @@ fun ThemingScreen(
                     },
                     label = "themeLogoTransition"
                 ) { index ->
-                    Image(
-                        painter = painterResource(id = themes[index].iconResId),
-                        contentDescription = themes[index].name,
-                        modifier = Modifier.size(200.dp)
-                    )
+                    Box(modifier = Modifier.size(200.dp)) {
+                        // Hard drop shadow: 4x4 offset, 40% opacity black, no blur
+                        Image(
+                            painter = painterResource(id = themes[index].iconResId),
+                            contentDescription = null,
+                            colorFilter = ColorFilter.tint(Color.Black.copy(alpha = 0.4f)),
+                            modifier = Modifier
+                                .size(200.dp)
+                                .offset(x = 4.dp, y = 4.dp)
+                        )
+                        Image(
+                            painter = painterResource(id = themes[index].iconResId),
+                            contentDescription = themes[index].name,
+                            modifier = Modifier.size(200.dp)
+                        )
+                    }
                 }
             }
 

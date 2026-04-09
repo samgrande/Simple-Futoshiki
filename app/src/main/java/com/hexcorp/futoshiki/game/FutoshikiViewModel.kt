@@ -1,10 +1,10 @@
-package com.hex.futoshiki.game
+package com.hexcorp.futoshiki.game
 
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.hex.futoshiki.ui.theme.AppTheme
+import com.hexcorp.futoshiki.ui.theme.AppTheme
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

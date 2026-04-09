@@ -1,4 +1,4 @@
-package com.hex.futoshiki.ui.components
+package com.hexcorp.futoshiki.ui.components
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -29,9 +29,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hex.futoshiki.ui.theme.FutoshikiColors
-import com.hex.futoshiki.ui.theme.ReemKufi
-import com.hex.futoshiki.ui.theme.accentColor
+import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
+import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.accentColor
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -41,7 +41,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
-import com.hex.futoshiki.R
+import com.hexcorp.futoshiki.R
 import androidx.compose.foundation.Image
 import androidx.compose.material3.ripple
 

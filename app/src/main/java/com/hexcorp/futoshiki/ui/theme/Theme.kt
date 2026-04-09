@@ -1,4 +1,4 @@
-package com.hex.futoshiki.ui.theme
+package com.hexcorp.futoshiki.ui.theme
 
 import android.view.ContextThemeWrapper
 import androidx.compose.material3.MaterialTheme
@@ -9,7 +9,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import com.hex.futoshiki.R
+import com.hexcorp.futoshiki.R
 
 // ── Theme Enum ──────────────────────────────────────────────────────────────
 
