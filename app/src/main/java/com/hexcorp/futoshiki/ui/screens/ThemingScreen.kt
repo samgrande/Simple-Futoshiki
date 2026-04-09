@@ -1,6 +1,8 @@
 package com.hexcorp.futoshiki.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -8,10 +10,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerInput
@@ -42,9 +50,14 @@ val themes = listOf(
 @Composable
 fun ThemingScreen(
     currentTheme: AppTheme,
+    isDark: Boolean,
+    onToggleDark: () -> Unit,
     onApply: (AppTheme) -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    BackHandler(onBack = onBack)
+
     var currentIndex by remember { 
         mutableIntStateOf(themes.indexOfFirst { it.theme == currentTheme }.coerceAtLeast(0)) 
     }
@@ -62,7 +75,7 @@ fun ThemingScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(FutoshikiColors.Background)
+            .background(FutoshikiColors.background())
             .pointerInput(Unit) {
                 var accumulatedDrag = 0f
                 var hasTriggered = false
@@ -103,7 +116,7 @@ fun ThemingScreen(
                 fontSize = 13.sp,
                 fontFamily = ReemKufi,
                 fontWeight = FontWeight.SemiBold,
-                color = FutoshikiColors.OnSurface.copy(alpha = 0.6f),
+                color = FutoshikiColors.onSurface().copy(alpha = 0.6f),
                 letterSpacing = 4.sp,
                 modifier = Modifier.padding(top = 32.dp)
             )
@@ -137,7 +150,10 @@ fun ThemingScreen(
                         Image(
                             painter = painterResource(id = themes[index].iconResId),
                             contentDescription = null,
-                            colorFilter = ColorFilter.tint(Color.Black.copy(alpha = 0.4f)),
+                            colorFilter = ColorFilter.tint(
+                                if (isDark) Color.White.copy(alpha = 0.15f)
+                                else Color.Black.copy(alpha = 0.4f)
+                            ),
                             modifier = Modifier
                                 .size(200.dp)
                                 .offset(x = 4.dp, y = 4.dp)
@@ -172,7 +188,7 @@ fun ThemingScreen(
                     Text(
                         text = "◀",
                         fontSize = 12.sp,
-                        color = FutoshikiColors.OnSurface
+                        color = FutoshikiColors.onSurface()
                     )
                 }
 
@@ -192,7 +208,7 @@ fun ThemingScreen(
                             fontSize = 13.sp,
                             fontFamily = ReemKufi,
                             fontWeight = FontWeight.Medium,
-                            color = FutoshikiColors.OnSurface,
+                            color = FutoshikiColors.onSurface(),
                             letterSpacing = 4.sp,
                             textAlign = TextAlign.Center
                         )
@@ -214,18 +230,60 @@ fun ThemingScreen(
                     Text(
                         text = "▶",
                         fontSize = 12.sp,
-                        color = FutoshikiColors.OnSurface
+                        color = FutoshikiColors.onSurface()
                     )
                 }
             }
 
-            Spacer(Modifier.weight(1.2f))
+            Spacer(Modifier.weight(1.3f))
+
+            // Dark/Light Mode Pill Button
+            val pillBgColor by animateColorAsState(
+                targetValue = if (isDark) Color(0xFFDCDCDC) else Color(0xFF111111),
+                animationSpec = tween(400),
+                label = "pillBgColor"
+            )
+            val pillTextColor by animateColorAsState(
+                targetValue = if (isDark) Color(0xFF111111) else Color(0xFFF5F2F2),
+                animationSpec = tween(400),
+                label = "pillTextColor"
+            )
+
+            Row(
+                modifier = Modifier
+                    .width(90.dp)
+                    .height(28.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(pillBgColor)
+                    .clickable { onToggleDark() },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = if (isDark) Icons.Default.DarkMode else Icons.Default.LightMode,
+                    contentDescription = null,
+                    tint = pillTextColor,
+                    modifier = Modifier.size(12.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = if (isDark) "D A R K" else "L I G H T",
+                    color = pillTextColor,
+                    fontSize = 9.sp,
+                    fontFamily = ReemKufi,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+            }
+
+            Spacer(Modifier.height(56.dp))
 
             // Apply Button
             BigButton(
                 label = "APPLY",
                 onClick = { onApply(themes[currentIndex].theme) },
-                primary = true
+                primary = true,
+                isDark = isDark
             )
             
             Spacer(Modifier.height(48.dp))

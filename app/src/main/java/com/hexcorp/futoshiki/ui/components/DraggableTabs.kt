@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
+import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import com.hexcorp.futoshiki.ui.theme.ReemKufi
 import com.hexcorp.futoshiki.ui.theme.accentColor
 import kotlinx.coroutines.coroutineScope
@@ -99,9 +100,9 @@ fun DraggableSizeTabs(
             .onSizeChanged { size ->
                 if (size.width > 0) trackWidthPx = size.width
             }
-            .border(1.dp, Color.Black, RoundedCornerShape(11.dp))
+            .border(1.dp, FutoshikiColors.onSurface(), RoundedCornerShape(11.dp))
             .clip(RoundedCornerShape(11.dp))
-            .background(Color(0xFFF4F4F4))
+            .background(if (LocalIsDark.current) Color(0xFF1A1A1A) else Color(0xFFF4F4F4))
             .pointerInput(sw, trackWidthPx) {
                 if (sw <= 0f) return@pointerInput
                 
@@ -164,7 +165,7 @@ fun DraggableSizeTabs(
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                     contentAlignment = Alignment.Center
                 ) {
-                    SizeLabel(s, FutoshikiColors.TabText, FontWeight.Medium)
+                    SizeLabel(s, FutoshikiColors.tabText(), FontWeight.Medium)
                 }
             }
         }
@@ -212,12 +213,14 @@ fun DraggableSizeTabs(
                     }
             ) {
                 Row(modifier = Modifier.fillMaxSize()) {
+                    val isDark = LocalIsDark.current
+                    val selectedTextColor = if (isDark) Color(0xFF111111) else Color.White
                     SIZES.forEach { s ->
                         Box(
                             modifier = Modifier.weight(1f).fillMaxHeight(),
                             contentAlignment = Alignment.Center
                         ) {
-                            SizeLabel(s, Color.White, FontWeight.Bold)
+                            SizeLabel(s, selectedTextColor, FontWeight.Bold)
                         }
                     }
                 }

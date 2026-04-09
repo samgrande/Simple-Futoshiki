@@ -37,6 +37,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -183,8 +184,9 @@ fun WavyUnderline(width: Dp, height: Dp, modifier: Modifier = Modifier) {
 
 @Composable
 fun LogoMark(size: Dp = 96.dp) {
+    val isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
     Image(
-        painter = painterResource(id = R.drawable.futo_logo),
+        painter = painterResource(id = if (isDark) R.drawable.futo_logo_dark else R.drawable.futo_logo),
         contentDescription = "Futoshiki Logo",
         modifier = Modifier.size(size)
     )
@@ -200,7 +202,7 @@ fun FutoshikiTitle(fontSize: TextUnit = 36.sp) {
             fontSize = fontSize,
             fontWeight = FontWeight.Bold,
             fontFamily = ReemKufi,
-            color = FutoshikiColors.OnSurface,
+            color = FutoshikiColors.onSurface(),
             letterSpacing = (-0.5).sp,
             lineHeight = fontSize
         )
@@ -224,8 +226,9 @@ fun TimerPill(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
     val bgColor by animateColorAsState(
-        targetValue = if (isPaused) accentColor() else FutoshikiColors.TimerBg,
+        targetValue = if (isPaused) accentColor() else FutoshikiColors.timerBg(),
         animationSpec = tween(300),
         label = "timerBg"
     )
@@ -253,30 +256,31 @@ fun TimerPill(
                     lineTo(1.5f.dp.toPx(), size.height)
                     close()
                 }
-                drawPath(path, color = Color.Black.copy(alpha = 0.6f))
+                drawPath(path, color = if (isDark) Color(0xFF111111) else Color.Black.copy(alpha = 0.6f))
             }
         } else {
             // Pause icon (two rectangles)
+            val iconColor = if (isDark) Color(0xFF111111) else Color.White.copy(alpha = 0.55f)
             Box(Modifier.size(12.dp, 14.dp)) {
                 Box(
                     Modifier
                         .width(3.5.dp).fillMaxHeight()
                         .align(Alignment.CenterStart)
                         .clip(RoundedCornerShape(1.dp))
-                        .background(Color.White.copy(alpha = 0.55f))
+                        .background(iconColor)
                 )
                 Box(
                     Modifier
                         .width(3.5.dp).fillMaxHeight()
                         .align(Alignment.CenterEnd)
                         .clip(RoundedCornerShape(1.dp))
-                        .background(Color.White.copy(alpha = 0.55f))
+                        .background(iconColor)
                 )
             }
         }
         Text(
             text       = formatTimer(seconds),
-            color      = if (isPaused) FutoshikiColors.OnSurface else FutoshikiColors.TimerText,
+            color      = if (isPaused) FutoshikiColors.onSurface() else FutoshikiColors.timerText(),
             fontSize   = 14.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = ReemKufi,
@@ -292,6 +296,7 @@ fun BigButton(
     label: String,
     onClick: () -> Unit,
     primary: Boolean = false,
+    isDark: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -299,26 +304,32 @@ fun BigButton(
     val haptic = LocalHapticFeedback.current
 
     val btnOffset by animateDpAsState(
-        targetValue = if (isPressed) 4.dp else 0.dp,
+        targetValue = if (isPressed) 2.dp else 0.dp,
         animationSpec = tween(80),
         label = "btnOffset"
     )
 
-    // Outer box provides room for the 4dp hard shadow bleed
+    val bgColor = FutoshikiColors.bigButtonBg(primary)
+    val textColor = FutoshikiColors.bigButtonText(primary)
+    val borderColor = FutoshikiColors.bigButtonBorder()
+
+    // Outer box provides room for the 2dp hard shadow bleed
     Box(
         modifier = modifier
             .fillMaxWidth(0.9f)
-            .height(56.dp)
+            .height(54.dp)
+            .offset(y = btnOffset)
     ) {
         // Hard offset shadow (hidden when pressed)
         if (!isPressed) {
+            val shadowColor = if (isDark) Color(0xFF929292).copy(alpha = 0.60f) else Color(0xB23B3B3B)
             Box(
                 modifier = Modifier
-                    .offset(x = 4.dp, y = 4.dp)
+                    .offset(x = 2.dp, y = 2.dp)
                     .fillMaxWidth()
                     .height(52.dp)
                     .clip(RoundedCornerShape(26.dp))
-                    .background(Color(0x85000000))
+                    .background(shadowColor)
             )
         }
         // Button face
@@ -328,13 +339,10 @@ fun BigButton(
                 .fillMaxWidth()
                 .height(52.dp)
                 .clip(RoundedCornerShape(26.dp))
-                .background(
-                    if (primary) FutoshikiColors.OnSurface   // #111 black
-                    else Color(0xFFF4F4F4)
-                )
+                .background(bgColor)
                 .border(
                     width = 1.5.dp,
-                    color = FutoshikiColors.OnSurface,
+                    color = if (primary && !isDark) Color.Transparent else borderColor,
                     shape = RoundedCornerShape(26.dp)
                 )
                 .clickable(
@@ -348,7 +356,7 @@ fun BigButton(
         ) {
             Text(
                 text = label,
-                color = if (primary) Color.White else FutoshikiColors.OnSurface,
+                color = textColor,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = ReemKufi,
@@ -368,7 +376,7 @@ fun HelpContent(modifier: Modifier = Modifier) {
             fontSize = 15.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = ReemKufi,
-            color = FutoshikiColors.OnSurface,
+            color = FutoshikiColors.onSurface(),
             modifier = Modifier.padding(bottom = 8.dp)
         )
         Text(
@@ -376,7 +384,7 @@ fun HelpContent(modifier: Modifier = Modifier) {
             fontSize = 13.sp,
             fontWeight = FontWeight.Normal,
             fontFamily = ReemKufi,
-            color = Color(0xFF444444),
+            color = if (com.hexcorp.futoshiki.ui.theme.LocalIsDark.current) Color(0xFFBBBBBB) else Color(0xFF444444),
             lineHeight = 20.sp,
             modifier = Modifier.padding(bottom = 12.dp)
         )
@@ -385,7 +393,7 @@ fun HelpContent(modifier: Modifier = Modifier) {
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = ReemKufi,
-            color = FutoshikiColors.OnSurface,
+            color = FutoshikiColors.onSurface(),
             modifier = Modifier.padding(bottom = 8.dp)
         )
         HelpListItem(
@@ -417,8 +425,8 @@ fun HelpPanel(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .border(1.5.dp, FutoshikiColors.OnSurface, RoundedCornerShape(14.dp))
-            .background(Color.White)
+            .border(1.5.dp, FutoshikiColors.onSurface(), RoundedCornerShape(14.dp))
+            .background(FutoshikiColors.surface())
             .padding(horizontal = 18.dp, vertical = 20.dp)
     ) {
         val contentModifier = if (scrollable) {
@@ -432,21 +440,22 @@ fun HelpPanel(
 
 @Composable
 private fun HelpListItem(number: String, boldPart: String, body: String) {
+    val isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             text = number,
             fontSize = 13.sp,
             fontFamily = ReemKufi,
-            color = Color(0xFF444444),
+            color = if (isDark) Color(0xFFBBBBBB) else Color(0xFF444444),
             lineHeight = 21.sp,
             modifier = Modifier.width(20.dp)
         )
         Text(
             text = buildAnnotatedString {
-                withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = FutoshikiColors.OnSurface)) {
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = FutoshikiColors.onSurface())) {
                     append(boldPart)
                 }
-                withStyle(SpanStyle(color = Color(0xFF444444))) {
+                withStyle(SpanStyle(color = if (isDark) Color(0xFFBBBBBB) else Color(0xFF444444))) {
                     append(body)
                 }
             },

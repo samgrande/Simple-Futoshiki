@@ -31,7 +31,8 @@ data class GameState(
     val timerSeconds: Int = 0,
     val timerRunning: Boolean = false,
     val gameKey: Int = 0,
-    val theme: AppTheme = AppTheme.FIRE
+    val theme: AppTheme = AppTheme.FIRE,
+    val isDark: Boolean = false
 )
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
@@ -42,6 +43,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val _state = MutableStateFlow(GameState(
         theme = loadTheme(),
+        isDark = loadIsDark(),
         size = loadSize()
     ))
     val state: StateFlow<GameState> = _state.asStateFlow()
@@ -55,6 +57,10 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         } catch (e: Exception) {
             AppTheme.FIRE
         }
+    }
+
+    private fun loadIsDark(): Boolean {
+        return prefs.getBoolean("is_dark", false)
     }
 
     private fun loadSize(): Int {
@@ -180,6 +186,12 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     fun updateTheme(newTheme: AppTheme) {
         prefs.edit().putString("app_theme", newTheme.name).apply()
         _state.update { it.copy(theme = newTheme) }
+    }
+
+    fun toggleDarkMode() {
+        val newIsDark = !_state.value.isDark
+        prefs.edit().putBoolean("is_dark", newIsDark).apply()
+        _state.update { it.copy(isDark = newIsDark) }
     }
 
     // ── Solve (cheat) ────────────────────────────────────────────────────────

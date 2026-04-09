@@ -39,7 +39,10 @@ fun FutoshikiApp(
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
 
-    FutoshikiTheme(theme = state.theme) {
+    FutoshikiTheme(
+        theme = state.theme,
+        isDark = state.isDark
+    ) {
         // Animate between landing, game, and theming
         AnimatedContent(
             targetState = state.screen,
@@ -47,7 +50,11 @@ fun FutoshikiApp(
                 fadeIn(tween(220)) togetherWith fadeOut(tween(180))
             },
             modifier = Modifier.fillMaxSize(),
-            label = "screenTransition"
+            label = "screenTransition",
+            contentKey = { screen ->
+                // Group GAME and PAUSE states together to prevent recreation of GameScreen
+                if (screen == Screen.GAME || screen == Screen.PAUSE) "GAME_GROUP" else screen
+            }
         ) { screen ->
             when (screen) {
                 Screen.LANDING -> {
@@ -67,10 +74,13 @@ fun FutoshikiApp(
                 Screen.THEMING -> {
                     ThemingScreen(
                         currentTheme = state.theme,
+                        isDark = state.isDark,
+                        onToggleDark = { vm.toggleDarkMode() },
                         onApply = { theme -> 
                             vm.updateTheme(theme)
                             vm.goToMainMenu()
                         },
+                        onBack = { vm.goToMainMenu() },
                         modifier = Modifier.fillMaxSize()
                     )
                 }

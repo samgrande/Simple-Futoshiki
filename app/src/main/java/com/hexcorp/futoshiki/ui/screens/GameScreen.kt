@@ -135,16 +135,16 @@ fun PuzzleCell(
     }
 
     val bg = when {
-        hasError   -> FutoshikiColors.ErrorBg
+        hasError   -> FutoshikiColors.errorBg()
         isSelected -> accentColor().copy(alpha = 0.12f)
-        isRelated  -> FutoshikiColors.CellRelated
-        else       -> FutoshikiColors.CellDefault
+        isRelated  -> FutoshikiColors.cellRelated()
+        else       -> FutoshikiColors.cellDefault()
     }
     val borderColor = if (hasError) FutoshikiColors.ErrorStroke 
                       else if (isSelected) accentColor()
-                      else FutoshikiColors.OnSurface
+                      else FutoshikiColors.onSurface()
     val borderWidth = if (isSelected) 2.5.dp else 1.5.dp
-    val textColor   = if (hasError) FutoshikiColors.ErrorStroke else FutoshikiColors.OnSurface
+    val textColor   = if (hasError) FutoshikiColors.ErrorStroke else FutoshikiColors.onSurface()
     val cornerRadius = sizeDp * 0.27f
 
     val shadowColor = if (hasError) FutoshikiColors.ErrorStroke.copy(alpha = 0.22f)
@@ -368,8 +368,8 @@ private fun NumberButton(label: String, sizeDp: Dp, onClick: () -> Unit) {
             .shadow(if (isPressed) 1.dp else 3.dp, CircleShape,
                 ambientColor = Color(0x6B000000), spotColor = Color(0x6B000000))
             .clip(CircleShape)
-            .background(FutoshikiColors.Background)
-            .border(1.5.dp, FutoshikiColors.OnSurface, CircleShape)
+            .background(FutoshikiColors.background())
+            .border(1.5.dp, FutoshikiColors.onSurface(), CircleShape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null
@@ -384,7 +384,7 @@ private fun NumberButton(label: String, sizeDp: Dp, onClick: () -> Unit) {
             fontSize   = (sizeDp.value * 0.38f).sp,
             fontWeight = FontWeight.Bold,
             fontFamily = ReemKufi,
-            color      = FutoshikiColors.OnSurface
+            color      = FutoshikiColors.onSurface()
         )
     }
 }
@@ -402,32 +402,45 @@ fun ThemedPillButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val accent = accentColor()
+    val isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
 
     // Neo-brutalist: pressed shifts button onto shadow; released floats above it
-    val btnOffset by animateDpAsState(if (isPressed) 4.dp else 0.dp, tween(80), label = "coralOffset")
+    val btnOffset by animateDpAsState(if (isPressed) 2.dp else 0.dp, tween(80), label = "coralOffset")
 
-    // Outer box provides space for the 4dp shadow bleed at bottom-right
-    Box(modifier = modifier.height(48.dp)) {
+    // Outer box provides space for the 2dp shadow bleed at bottom-right
+    // Total height = Button Shell (48dp) + Shadow Offset (2dp) = 50dp
+    Box(modifier = modifier.height(50.dp)) {
         // Hard offset shadow layer
         if (!isPressed) {
+            val shadowColor = if (isDark) {
+                accent.copy(alpha = 0.25f)
+            } else {
+                Color(0xBF000000).copy(alpha = if (enabled) 0.75f else 0.3f)
+            }
             Box(
                 modifier = Modifier
-                    .offset(x = 4.dp, y = 4.dp)
+                    .offset(x = 2.dp, y = 2.dp)
                     .fillMaxWidth()
-                    .height(44.dp)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(Color(0xBF000000).copy(alpha = if (enabled) 0.75f else 0.3f))
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(shadowColor)
             )
         }
+        
+        // Font and stroke color should be dark (0xFF111111) in dark mode as requested
+        val contentColor = if (isDark) FutoshikiColors.OnSurface else FutoshikiColors.onSurface()
+
         // Actual button face
         Box(
             modifier = Modifier
                 .offset(x = if (enabled) btnOffset else 0.dp, y = if (enabled) btnOffset else 0.dp)
                 .fillMaxWidth()
-                .height(44.dp)
+                .height(48.dp)
+                // Stroke "outside" by applying border to the 48dp shell, then padding the 44dp background inside
+                .border(2.dp, contentColor.copy(alpha = if (enabled) 1f else 0.3f), RoundedCornerShape(24.dp))
+                .padding(2.dp)
                 .clip(RoundedCornerShape(22.dp))
                 .background(if (enabled) accent else accent.copy(alpha = 0.45f))
-                .border(2.dp, FutoshikiColors.OnSurface.copy(alpha = if (enabled) 1f else 0.3f), RoundedCornerShape(22.dp))
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
@@ -440,7 +453,7 @@ fun ThemedPillButton(
         ) {
             Text(
                 text       = label,
-                color      = FutoshikiColors.OnSurface,
+                color      = contentColor,
                 fontSize   = 14.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = ReemKufi,
@@ -754,7 +767,7 @@ fun GameScreen(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(FutoshikiColors.Background)
+            .background(FutoshikiColors.background())
             .onGloballyPositioned { containerCoordinates = it }
             .pointerInput(Unit) {
                 detectTapGestures {

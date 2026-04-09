@@ -1,0 +1,5 @@
+<resources>
+    <color name="logo_fill">#00000000</color>
+    <color name="logo_stroke">#000000</color>
+    <color name="logo_content">#2F353E</color>
+</resources>

@@ -62,7 +62,7 @@ fun LandingScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(FutoshikiColors.Background),
+            .background(FutoshikiColors.background()),
         contentAlignment = Alignment.Center
     ) {
         // Brush Icon (Theming button) - Top Right
@@ -77,7 +77,7 @@ fun LandingScreen(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(FutoshikiColors.OnSurface)
+                    .background(FutoshikiColors.onSurface())
                     .clickable { onTheming() },
                 contentAlignment = Alignment.Center
             ) {
@@ -85,7 +85,7 @@ fun LandingScreen(
                     painter = androidx.compose.ui.res.painterResource(id = com.hexcorp.futoshiki.R.drawable.brush),
                     contentDescription = "Theming",
                     modifier = Modifier.size(24.dp),
-                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.White)
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(FutoshikiColors.surface())
                 )
             }
         }
@@ -168,7 +168,11 @@ fun LandingScreen(
                                 scrollable = true
                             )
                             Spacer(Modifier.height(20.dp))
-                            BigButton(label = "BACK", onClick = { showHelp = false })
+                            BigButton(
+                                label = "BACK", 
+                                onClick = { showHelp = false },
+                                isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                            )
                         }
                     }
                     "confirm" -> {
@@ -181,15 +185,24 @@ fun LandingScreen(
                                 fontSize      = 13.sp,
                                 fontWeight    = FontWeight.SemiBold,
                                 fontFamily    = ReemKufi,
-                                color         = Color(0xFF999999),
+                                color         = if (com.hexcorp.futoshiki.ui.theme.LocalIsDark.current) Color(0xFF888888) else Color(0xFF999999),
                                 letterSpacing = 2.sp
                             )
                             
                             Spacer(Modifier.height(32.dp))
 
-                            BigButton(label = "Y E S", onClick = onQuit, primary = true)
+                            BigButton(
+                                label = "Y E S", 
+                                onClick = onQuit, 
+                                primary = true,
+                                isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                            )
                             Spacer(Modifier.height(14.dp))
-                            BigButton(label = "N O",  onClick = { showConfirmQuit = false })
+                            BigButton(
+                                label = "N O",  
+                                onClick = { showConfirmQuit = false },
+                                isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                            )
                         }
                     }
                     else -> {
@@ -198,9 +211,18 @@ fun LandingScreen(
                         ) {
                             Spacer(Modifier.height(48.dp))
 
-                            BigButton(label = "START", onClick = onStart, primary = true)
+                            BigButton(
+                                label = "START", 
+                                onClick = onStart, 
+                                primary = true,
+                                isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                            )
                             Spacer(Modifier.height(12.dp))
-                            BigButton(label = "HELP", onClick = { showHelp = true })
+                            BigButton(
+                                label = "HELP", 
+                                onClick = { showHelp = true },
+                                isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                            )
                         }
                     }
                 }
@@ -268,7 +290,7 @@ fun PauseOverlay(
                 .graphicsLayer {
                     this.alpha = alpha
                 }
-                .background(FutoshikiColors.Background)
+                .background(FutoshikiColors.background())
         ) {
             Column(
                 modifier = Modifier
@@ -308,7 +330,11 @@ fun PauseOverlay(
                                 Spacer(Modifier.height(24.dp))
                                 HelpPanel()
                                 Spacer(Modifier.height(24.dp))
-                                BigButton(label = "← BACK", onClick = { showHelp = false })
+                                BigButton(
+                                    label = "← BACK", 
+                                    onClick = { showHelp = false },
+                                    isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                                )
                             }
                         }
                         "confirm" -> {
@@ -322,15 +348,24 @@ fun PauseOverlay(
                                     fontSize      = 14.sp,
                                     fontWeight    = FontWeight.SemiBold,
                                     fontFamily    = ReemKufi,
-                                    color         = Color(0xFF999999),
+                                    color         = if (com.hexcorp.futoshiki.ui.theme.LocalIsDark.current) Color(0xFF888888) else Color(0xFF999999),
                                     letterSpacing = 2.sp
                                 )
                                 
                                 Spacer(Modifier.height(32.dp))
 
-                                BigButton(label = "YES", onClick = onMainMenu, primary = true)
+                                BigButton(
+                                    label = "YES", 
+                                    onClick = onMainMenu, 
+                                    primary = true,
+                                    isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                                )
                                 Spacer(Modifier.height(14.dp))
-                                BigButton(label = "NO",  onClick = { showConfirmQuit = false })
+                                BigButton(
+                                    label = "NO",  
+                                    onClick = { showConfirmQuit = false },
+                                    isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                                )
                             }
                         }
                         else -> {
@@ -344,17 +379,30 @@ fun PauseOverlay(
                                     fontSize      = 14.sp,
                                     fontWeight    = FontWeight.SemiBold,
                                     fontFamily    = ReemKufi,
-                                    color         = Color(0xFF999999),
+                                    color         = if (com.hexcorp.futoshiki.ui.theme.LocalIsDark.current) Color(0xFF888888) else Color(0xFF999999),
                                     letterSpacing = 2.sp
                                 )
                                 
                                 Spacer(Modifier.height(48.dp))
 
-                                BigButton(label = "MAIN MENU", onClick = { showConfirmQuit = true }, primary = true)
+                                BigButton(
+                                    label = "MAIN MENU", 
+                                    onClick = { showConfirmQuit = true }, 
+                                    primary = true,
+                                    isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                                )
                                 Spacer(Modifier.height(14.dp))
-                                BigButton(label = "SOLVE",     onClick = onSolve)
+                                BigButton(
+                                    label = "SOLVE",     
+                                    onClick = onSolve,
+                                    isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                                )
                                 Spacer(Modifier.height(14.dp))
-                                BigButton(label = "HELP",      onClick = { showHelp = true })
+                                BigButton(
+                                    label = "HELP",      
+                                    onClick = { showHelp = true },
+                                    isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                                )
                             }
                         }
                     }
