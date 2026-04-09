@@ -1,52 +1,37 @@
 package com.hexcorp.futoshiki.ui.screens
 
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.components.*
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.ReemKufi
-import kotlin.math.hypot
 
 import androidx.compose.ui.unit.IntOffset
 import kotlin.math.roundToInt
 
 // ── Landing screen ────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun LandingScreen(
     onStart: () -> Unit,
     onTheming: () -> Unit,
     onQuit: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    scope: AnimatedVisibilityScope? = null
 ) {
     var showHelp by remember { mutableStateOf(false) }
     var showConfirmQuit by remember { mutableStateOf(false) }
@@ -65,31 +50,6 @@ fun LandingScreen(
             .background(FutoshikiColors.background()),
         contentAlignment = Alignment.Center
     ) {
-        // Brush Icon (Theming button) - Top Right
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .padding(20.dp),
-            contentAlignment = Alignment.TopEnd
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(FutoshikiColors.onSurface())
-                    .clickable { onTheming() },
-                contentAlignment = Alignment.Center
-            ) {
-                androidx.compose.foundation.Image(
-                    painter = androidx.compose.ui.res.painterResource(id = com.hexcorp.futoshiki.R.drawable.brush),
-                    contentDescription = "Theming",
-                    modifier = Modifier.size(24.dp),
-                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(FutoshikiColors.surface())
-                )
-            }
-        }
-
         Column(
             modifier = Modifier
                 .widthIn(max = 420.dp)
@@ -100,9 +60,17 @@ fun LandingScreen(
         ) {
             Spacer(Modifier.weight(1.2f))
 
-            // 1. Static Section (Title always, Logo conditional)
+            // 1. Static Section (Title always, Logo conditional) - Slides UP
             Box(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (scope != null) {
+                        with(scope) {
+                            Modifier.animateEnterExit(
+                                exit = slideOutVertically(tween(600)) { -it * 2 } + fadeOut(tween(400))
+                            )
+                        }
+                    } else Modifier),
                 contentAlignment = Alignment.Center
             ) {
                 AnimatedContent(
@@ -129,100 +97,128 @@ fun LandingScreen(
                 }
             }
             
-            // FutoshikiTitle is always visible and stays in the same place
-            FutoshikiTitle(fontSize = 38.sp)
+            // FutoshikiTitle is always visible and stays in the same place - Slides UP
+            Box(
+                modifier = if (scope != null) {
+                    with(scope) {
+                        Modifier.animateEnterExit(
+                            exit = slideOutVertically(tween(600)) { -it * 2 } + fadeOut(tween(400))
+                        )
+                    }
+                } else Modifier
+            ) {
+                FutoshikiTitle(fontSize = 38.sp)
+            }
 
-            // 2. Animated Section (Buttons & Confirmation text)
-            AnimatedContent(
-                targetState = when {
-                    showConfirmQuit -> "confirm"
-                    showHelp -> "help"
-                    else -> "menu"
-                },
-                transitionSpec = {
-                    val duration = 300
-                    if (targetState != "menu") {
-                        (fadeIn(tween(duration)) + slideInVertically { it / 4 })
-                            .togetherWith(fadeOut(tween(250)) + slideOutVertically { -it / 4 })
-                    } else {
-                        (fadeIn(tween(duration)) + slideInVertically { -it / 4 })
-                            .togetherWith(fadeOut(tween(250)) + slideOutVertically { it / 4 })
-                    }.using(SizeTransform(clip = false))
-                },
-                label = "landingContentTransition",
-                modifier = Modifier.fillMaxWidth()
-            ) { state ->
-                when (state) {
-                    "help" -> {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 20.dp)
-                        ) {
-                            Spacer(Modifier.height(24.dp))
-                            HelpPanel(
+            // 2. Animated Section (Buttons & Confirmation text) - Slides DOWN
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (scope != null) {
+                        with(scope) {
+                            Modifier.animateEnterExit(
+                                exit = slideOutVertically(tween(600)) { it * 2 } + fadeOut(tween(400))
+                            )
+                        }
+                    } else Modifier)
+            ) {
+                AnimatedContent(
+                    targetState = when {
+                        showConfirmQuit -> "confirm"
+                        showHelp -> "help"
+                        else -> "menu"
+                    },
+                    transitionSpec = {
+                        val duration = 300
+                        if (targetState != "menu") {
+                            (fadeIn(tween(duration)) + slideInVertically { it / 4 })
+                                .togetherWith(fadeOut(tween(250)) + slideOutVertically { -it / 4 })
+                        } else {
+                            (fadeIn(tween(duration)) + slideInVertically { -it / 4 })
+                                .togetherWith(fadeOut(tween(250)) + slideOutVertically { it / 4 })
+                        }.using(SizeTransform(clip = false))
+                    },
+                    label = "landingContentTransition",
+                    modifier = Modifier.fillMaxWidth()
+                ) { state ->
+                    when (state) {
+                        "help" -> {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier
-                                    .fillMaxWidth(0.9f)
-                                    .fillMaxHeight(0.7f),
-                                scrollable = true
-                            )
-                            Spacer(Modifier.height(20.dp))
-                            BigButton(
-                                label = "BACK", 
-                                onClick = { showHelp = false },
-                                isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
-                            )
+                                    .fillMaxWidth()
+                                    .padding(bottom = 20.dp)
+                            ) {
+                                Spacer(Modifier.height(24.dp))
+                                HelpPanel(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.9f)
+                                        .fillMaxHeight(0.7f),
+                                    scrollable = true
+                                )
+                                Spacer(Modifier.height(20.dp))
+                                BigButton(
+                                    label = "BACK", 
+                                    onClick = { showHelp = false },
+                                    isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                                )
+                            }
                         }
-                    }
-                    "confirm" -> {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Spacer(Modifier.height(32.dp))
-                            Text(
-                                text          = "Q U I T   T H E   G A M E  ?",
-                                fontSize      = 13.sp,
-                                fontWeight    = FontWeight.SemiBold,
-                                fontFamily    = ReemKufi,
-                                color         = if (com.hexcorp.futoshiki.ui.theme.LocalIsDark.current) Color(0xFF888888) else Color(0xFF999999),
-                                letterSpacing = 2.sp
-                            )
-                            
-                            Spacer(Modifier.height(32.dp))
+                        "confirm" -> {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Spacer(Modifier.height(32.dp))
+                                Text(
+                                    text          = "Q U I T   T H E   G A M E  ?",
+                                    fontSize      = 13.sp,
+                                    fontWeight    = FontWeight.SemiBold,
+                                    fontFamily    = ReemKufi,
+                                    color         = if (com.hexcorp.futoshiki.ui.theme.LocalIsDark.current) Color(0xFF888888) else Color(0xFF999999),
+                                    letterSpacing = 2.sp
+                                )
+                                
+                                Spacer(Modifier.height(32.dp))
 
-                            BigButton(
-                                label = "Y E S", 
-                                onClick = onQuit, 
-                                primary = true,
-                                isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
-                            )
-                            Spacer(Modifier.height(14.dp))
-                            BigButton(
-                                label = "N O",  
-                                onClick = { showConfirmQuit = false },
-                                isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
-                            )
+                                BigButton(
+                                    label = "Y E S", 
+                                    onClick = onQuit, 
+                                    primary = true,
+                                    isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                                )
+                                Spacer(Modifier.height(14.dp))
+                                BigButton(
+                                    label = "N O",  
+                                    onClick = { showConfirmQuit = false },
+                                    isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                                )
+                            }
                         }
-                    }
-                    else -> {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Spacer(Modifier.height(48.dp))
+                        else -> {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Spacer(Modifier.height(48.dp))
 
-                            BigButton(
-                                label = "START", 
-                                onClick = onStart, 
-                                primary = true,
-                                isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
-                            )
-                            Spacer(Modifier.height(12.dp))
-                            BigButton(
-                                label = "HELP", 
-                                onClick = { showHelp = true },
-                                isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
-                            )
+                                BigButton(
+                                    label = "START", 
+                                    onClick = onStart, 
+                                    primary = true,
+                                    isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                                )
+                                Spacer(Modifier.height(12.dp))
+                                BigButton(
+                                    label = "HELP", 
+                                    onClick = { showHelp = true },
+                                    isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                                )
+                                Spacer(Modifier.height(12.dp))
+                                BigButton(
+                                    label = "THEMES", 
+                                    onClick = onTheming,
+                                    isDark = com.hexcorp.futoshiki.ui.theme.LocalIsDark.current
+                                )
+                            }
                         }
                     }
                 }
@@ -233,7 +229,15 @@ fun LandingScreen(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(bottom = 20.dp)
+                modifier = Modifier
+                    .padding(bottom = 20.dp)
+                    .then(if (scope != null) {
+                        with(scope) {
+                            Modifier.animateEnterExit(
+                                exit = slideOutVertically(tween(600)) { it * 4 } + fadeOut(tween(400))
+                            )
+                        }
+                    } else Modifier)
             ) {
                 Text(
                     text = "Made with ♡ by @HeX",
@@ -312,11 +316,11 @@ fun PauseOverlay(
                         if (targetState != "menu") {
                             // Slide in from bottom (entering help/confirm)
                             (slideInVertically(tween(duration)) { it / 4 } + fadeIn(tween(duration)))
-                                .togetherWith(slideOutVertically(tween(duration)) { -it / 4 } + fadeOut(tween(duration)))
+                                .togetherWith(slideOutVertically(tween(duration)) { -it / 4 } + fadeOut(tween(400)))
                         } else {
                             // Slide in from top (returning to menu)
                             (slideInVertically(tween(duration)) { -it / 4 } + fadeIn(tween(duration)))
-                                .togetherWith(slideOutVertically(tween(duration)) { it / 4 } + fadeOut(tween(duration)))
+                                .togetherWith(slideOutVertically(tween(duration)) { it / 4 } + fadeOut(tween(400)))
                         }.using(SizeTransform(clip = false))
                     },
                     label = "pauseContentTransition"

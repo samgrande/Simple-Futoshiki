@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hexcorp.futoshiki.ui.theme.AppTheme
+import com.hexcorp.futoshiki.ui.theme.ThemeMode
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,7 +33,8 @@ data class GameState(
     val timerRunning: Boolean = false,
     val gameKey: Int = 0,
     val theme: AppTheme = AppTheme.FIRE,
-    val isDark: Boolean = false
+    val isDark: Boolean = false,
+    val themeMode: ThemeMode = ThemeMode.AUTO
 )
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
@@ -43,6 +45,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val _state = MutableStateFlow(GameState(
         theme = loadTheme(),
+        themeMode = loadThemeMode(),
         isDark = loadIsDark(),
         size = loadSize()
     ))
@@ -61,6 +64,15 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun loadIsDark(): Boolean {
         return prefs.getBoolean("is_dark", false)
+    }
+
+    private fun loadThemeMode(): ThemeMode {
+        val modeName = prefs.getString("theme_mode", ThemeMode.AUTO.name)
+        return try {
+            ThemeMode.valueOf(modeName ?: ThemeMode.AUTO.name)
+        } catch (e: Exception) {
+            ThemeMode.AUTO
+        }
     }
 
     private fun loadSize(): Int {
@@ -186,6 +198,11 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     fun updateTheme(newTheme: AppTheme) {
         prefs.edit().putString("app_theme", newTheme.name).apply()
         _state.update { it.copy(theme = newTheme) }
+    }
+
+    fun updateThemeMode(newMode: ThemeMode) {
+        prefs.edit().putString("theme_mode", newMode.name).apply()
+        _state.update { it.copy(themeMode = newMode) }
     }
 
     fun toggleDarkMode() {

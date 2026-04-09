@@ -17,6 +17,10 @@ enum class AppTheme {
     FIRE, WATER, EARTH, WOOD
 }
 
+enum class ThemeMode {
+    AUTO, DAY, NIGHT, BLISS
+}
+
 // ── Brand colours ─────────────────────────────────────────────────────────────
 
 object FutoshikiColors {
