@@ -8,3 +8,5 @@ app/build/
 .idea/
 local.properties
 app/release
+~/*
+.kotlin

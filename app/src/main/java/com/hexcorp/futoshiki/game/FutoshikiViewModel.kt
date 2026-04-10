@@ -22,6 +22,7 @@ enum class Screen { LANDING, GAME, PAUSE, THEMING }
 
 data class GameState(
     val screen: Screen = Screen.LANDING,
+    val previousScreen: Screen = Screen.LANDING,
     val size: Int = 4,
     val puzzle: Puzzle? = null,
     val grid: List<List<Int>> = emptyList(),
@@ -154,6 +155,8 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     // ── Selection ────────────────────────────────────────────────────────────
 
     fun selectCell(r: Int, c: Int) {
+        val st = _state.value
+        if (st.puzzle?.initial?.get(r)?.get(c) != 0) return
         _state.update { it.copy(selected = r to c) }
     }
 
@@ -192,7 +195,20 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun goToTheming() {
         stopTimer()
-        _state.update { it.copy(screen = Screen.THEMING) }
+        _state.update { it.copy(screen = Screen.THEMING, previousScreen = Screen.LANDING) }
+    }
+
+    fun goToThemingFromGame() {
+        _state.update { it.copy(screen = Screen.THEMING, previousScreen = Screen.PAUSE) }
+    }
+
+    fun backFromTheming() {
+        val prev = _state.value.previousScreen
+        if (prev == Screen.PAUSE) {
+            _state.update { it.copy(screen = Screen.PAUSE) }
+        } else {
+            goToMainMenu()
+        }
     }
 
     fun updateTheme(newTheme: AppTheme) {

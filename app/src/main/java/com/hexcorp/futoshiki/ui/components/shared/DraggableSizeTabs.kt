@@ -1,4 +1,4 @@
-package com.hexcorp.futoshiki.ui.components
+package com.hexcorp.futoshiki.ui.components.shared
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -68,27 +67,22 @@ fun DraggableSizeTabs(
     val density = LocalDensity.current
     var trackWidthPx by remember { mutableIntStateOf(0) }
     val thumbPadPx = with(density) { 2.dp.toPx() }
-    
+
     val sw = if (trackWidthPx > 0) trackWidthPx / 3f else 0f
 
     val thumbX = remember { Animatable(0f) }
     var isDragging by remember { mutableStateOf(false) }
 
-    // Use updated state to prevent stale captures in pointerInput
     val updatedOnSizeChange by rememberUpdatedState(onSizeChange)
     val updatedCurrentSize by rememberUpdatedState(currentSize)
 
-    // Sync when external state changes or initial measure
     LaunchedEffect(currentSize, sw) {
         if (sw > 0 && !isDragging) {
             val idx = SIZES.indexOf(currentSize).coerceAtLeast(0)
             val target = idx * sw + thumbPadPx
             thumbX.animateTo(
                 targetValue = target,
-                animationSpec = spring(
-                    dampingRatio = 0.6f,
-                    stiffness = Spring.StiffnessMedium
-                )
+                animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium)
             )
         }
     }
@@ -105,7 +99,6 @@ fun DraggableSizeTabs(
             .background(if (LocalIsDark.current) Color(0xFF1A1A1A) else Color(0xFFF4F4F4))
             .pointerInput(sw, trackWidthPx) {
                 if (sw <= 0f) return@pointerInput
-                
                 coroutineScope {
                     detectHorizontalDragGestures(
                         onDragStart = { isDragging = true },
@@ -113,7 +106,7 @@ fun DraggableSizeTabs(
                             change.consume()
                             launch {
                                 val nextX = (thumbX.value + dragAmount).coerceIn(
-                                    thumbPadPx, 
+                                    thumbPadPx,
                                     trackWidthPx - sw + thumbPadPx
                                 )
                                 thumbX.snapTo(nextX)
@@ -124,19 +117,12 @@ fun DraggableSizeTabs(
                             val relativeX = thumbX.value - thumbPadPx
                             val snappedIdx = (relativeX / sw).roundToInt().coerceIn(0, 2)
                             val targetX = snappedIdx * sw + thumbPadPx
-                            
                             val newSize = SIZES[snappedIdx]
-                            if (newSize != updatedCurrentSize) {
-                                updatedOnSizeChange(newSize)
-                            }
-                            
+                            if (newSize != updatedCurrentSize) updatedOnSizeChange(newSize)
                             launch {
                                 thumbX.animateTo(
                                     targetValue = targetX,
-                                    animationSpec = spring(
-                                        dampingRatio = 0.6f,
-                                        stiffness = Spring.StiffnessMedium
-                                    )
+                                    animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium)
                                 )
                             }
                         },
@@ -147,10 +133,7 @@ fun DraggableSizeTabs(
                             launch {
                                 thumbX.animateTo(
                                     targetValue = targetX,
-                                    animationSpec = spring(
-                                        dampingRatio = 0.6f,
-                                        stiffness = Spring.StiffnessMedium
-                                    )
+                                    animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium)
                                 )
                             }
                         }
@@ -158,7 +141,7 @@ fun DraggableSizeTabs(
                 }
             }
     ) {
-        // 1. Background Labels (Black)
+        // 1. Background Labels
         Row(modifier = Modifier.fillMaxSize()) {
             SIZES.forEach { s ->
                 Box(
@@ -170,13 +153,12 @@ fun DraggableSizeTabs(
             }
         }
 
-        // 2. Thumb & 3. Inverted Labels (White)
+        // 2. Thumb & 3. Inverted Labels
         if (trackWidthPx > 0) {
             val thumbWidthPx = sw - thumbPadPx * 2
             val vPadPx = with(density) { 2.dp.toPx() }
             val cornerRadiusPx = with(density) { 9.dp.toPx() }
 
-            // Thumb Box
             Box(
                 modifier = Modifier
                     .offset { IntOffset(thumbX.value.roundToInt(), 0) }
@@ -187,7 +169,6 @@ fun DraggableSizeTabs(
                     .background(accentColor())
             )
 
-            // Inverted labels clipped to thumb position
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -196,7 +177,7 @@ fun DraggableSizeTabs(
                         shape = object : Shape {
                             override fun createOutline(
                                 size: Size,
-                                layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+                                layoutDirection: LayoutDirection,
                                 density: Density
                             ): Outline {
                                 return Outline.Rounded(
@@ -213,8 +194,7 @@ fun DraggableSizeTabs(
                     }
             ) {
                 Row(modifier = Modifier.fillMaxSize()) {
-                    val isDark = LocalIsDark.current
-                    val selectedTextColor = if (isDark) Color(0xFF111111) else Color.White
+                    val selectedTextColor = Color.White
                     SIZES.forEach { s ->
                         Box(
                             modifier = Modifier.weight(1f).fillMaxHeight(),
@@ -238,9 +218,7 @@ fun DraggableSizeTabs(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
                         ) {
-                            if (!isDragging && s != currentSize) {
-                                updatedOnSizeChange(s)
-                            }
+                            if (!isDragging && s != currentSize) updatedOnSizeChange(s)
                         }
                 )
             }
