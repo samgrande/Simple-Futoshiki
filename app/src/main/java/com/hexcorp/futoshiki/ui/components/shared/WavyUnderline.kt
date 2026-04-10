@@ -12,54 +12,233 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
+import com.hexcorp.futoshiki.ui.theme.AppTheme
+import com.hexcorp.futoshiki.ui.theme.LocalAppTheme
 import com.hexcorp.futoshiki.ui.theme.accentColor
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.sin
 
 @Composable
 fun WavyUnderline(width: Dp, height: Dp, modifier: Modifier = Modifier) {
-    val infiniteTransition = rememberInfiniteTransition(label = "wave")
-    val phase by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1600, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "phase"
+    val theme = LocalAppTheme.current
+    val accent = accentColor()
+    when (theme) {
+        AppTheme.FIRE  -> FireUnderline(width, height, modifier, accent)
+        AppTheme.WATER -> WaterUnderline(width, height, modifier, accent)
+        AppTheme.WOOD  -> WoodUnderline(width, height, modifier, accent)
+        AppTheme.EARTH -> EarthUnderline(width, height, modifier, accent)
+    }
+}
+
+// ── Fire: slow rage — deep rolling flames with smooth arching bodies ──────────
+
+@Composable
+private fun FireUnderline(width: Dp, height: Dp, modifier: Modifier, accent: Color) {
+    val transition = rememberInfiniteTransition(label = "fire")
+
+    // Slow rolling base — heavy, rage-like
+    val slowPhase by transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(2200, easing = LinearEasing), RepeatMode.Restart),
+        label = "slow"
+    )
+    // Mid flame bodies
+    val midPhase by transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1100, easing = LinearEasing), RepeatMode.Restart),
+        label = "mid"
+    )
+    // Slow rage pulse — fire breathes, not flickers
+    val pulse by transition.animateFloat(
+        initialValue = 0.55f, targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing), RepeatMode.Reverse),
+        label = "pulse"
     )
 
-    val accent = accentColor()
-    Canvas(
-        modifier = modifier
-            .size(width, height)
-            .clipToBounds()
-    ) {
+    Canvas(modifier = modifier.size(width, height).clipToBounds()) {
         val w = size.width
         val h = size.height
-        val midY = h / 2f
-        val segW = w / 7f
-        val period = segW * 2f
-        val offsetX = -phase * period
+        val baseY = h * 0.72f
+        val steps = 80
 
-        val path = Path()
-        path.moveTo(offsetX, midY)
-
-        val segmentsNeeded = (w / segW).toInt() + 4
-        for (i in 0 until segmentsNeeded) {
-            val currentSegX = offsetX + i * segW
-            val ctrlX = currentSegX + segW * 0.5f
-            val ctrlY = if (i % 2 == 0) 0f else h
-            val endX  = currentSegX + segW
-            path.quadraticTo(ctrlX, ctrlY, endX, midY)
+        // Layer 1: Wide glow base — slow, smoldering roll
+        run {
+            val path = Path()
+            for (i in 0..steps) {
+                val t = i.toFloat() / steps
+                val x = t * w
+                val v = abs(sin(t * 4f * PI.toFloat() - slowPhase * 2f * PI.toFloat()))
+                val y = baseY - h * 0.28f * v
+                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            }
+            drawPath(path, accent.copy(alpha = pulse * 0.30f), style = Stroke(width = 7f, cap = StrokeCap.Round))
         }
 
-        drawPath(
-            path = path,
-            color = accent.copy(alpha = 0.5f),
-            style = Stroke(width = 3f, cap = StrokeCap.Round)
+        // Layer 2: Main flame bodies — medium height, smooth arches
+        run {
+            val path = Path()
+            for (i in 0..steps) {
+                val t = i.toFloat() / steps
+                val x = t * w
+                val v = abs(sin(t * 6f * PI.toFloat() - midPhase * 2f * PI.toFloat()))
+                val y = baseY - h * 0.58f * v
+                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            }
+            drawPath(path, accent.copy(alpha = pulse * 0.65f), style = Stroke(width = 3f, cap = StrokeCap.Round))
+        }
+
+        // Layer 3: Flame tips — tall, sharp points (squared to narrow the peaks)
+        run {
+            val path = Path()
+            for (i in 0..steps) {
+                val t = i.toFloat() / steps
+                val x = t * w
+                val raw = abs(sin(t * 7f * PI.toFloat() - midPhase * 1.6f * 2f * PI.toFloat()))
+                val v = raw * raw  // squaring sharpens the tip
+                val y = baseY - h * 0.90f * v
+                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            }
+            drawPath(path, accent.copy(alpha = pulse * 0.88f), style = Stroke(width = 2f, cap = StrokeCap.Round))
+        }
+    }
+}
+
+// ── Water: slow, smooth, layered flow rippling forward ───────────────────────
+
+@Composable
+private fun WaterUnderline(width: Dp, height: Dp, modifier: Modifier, accent: Color) {
+    val transition = rememberInfiniteTransition(label = "water")
+    val phase by transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(2400, easing = LinearEasing), RepeatMode.Restart),
+        label = "water_phase"
+    )
+
+    Canvas(modifier = modifier.size(width, height).clipToBounds()) {
+        val w = size.width
+        val h = size.height
+        val segW = w / 5f
+        val period = segW * 2f
+
+        // Two offset wave layers for a sense of water depth
+        val layers = listOf(
+            Triple(0f,          0.42f, Pair(0.7f, 3f)),
+            Triple(period * 0.5f, 0.56f, Pair(0.3f, 4.5f)),
         )
+        for ((phaseShift, midYRatio, style) in layers) {
+            val (alpha, strokeW) = style
+            val offsetX = -(phase * period) + phaseShift
+            val midY = h * midYRatio
+
+            val path = Path()
+            path.moveTo(offsetX, midY)
+            val count = (w / segW).toInt() + 4
+            for (i in 0 until count) {
+                val x = offsetX + i * segW
+                val ctrlX = x + segW * 0.5f
+                val ctrlY = if (i % 2 == 0) h * 0.04f else h * 0.96f
+                path.quadraticTo(ctrlX, ctrlY, x + segW, midY)
+            }
+            drawPath(path, accent.copy(alpha = alpha), style = Stroke(width = strokeW, cap = StrokeCap.Round))
+        }
+    }
+}
+
+// ── Wood: organic canopy sway with drifting leaf particles ───────────────────
+
+@Composable
+private fun WoodUnderline(width: Dp, height: Dp, modifier: Modifier, accent: Color) {
+    val transition = rememberInfiniteTransition(label = "wood")
+    val phase by transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing), RepeatMode.Restart),
+        label = "wood_phase"
+    )
+
+    Canvas(modifier = modifier.size(width, height).clipToBounds()) {
+        val w = size.width
+        val h = size.height
+        val segW = w / 8f
+        val period = segW * 2f
+        val offsetX = -(phase * period)
+
+        // Whole line gently bobs up and down like branches in a breeze
+        val sway = sin(phase * 2f * PI.toFloat()) * h * 0.1f
+        val baseY = h * 0.6f + sway
+
+        val path = Path()
+        path.moveTo(offsetX, baseY)
+        val count = (w / segW).toInt() + 5
+        for (i in 0 until count) {
+            val x = offsetX + i * segW
+            val ctrlX = x + segW * 0.5f
+            // Vary each peak height organically — irregular tree canopy silhouette
+            val peakScale = 0.4f + 0.55f * abs(sin(i * 1.3f))
+            val ctrlY = if (i % 2 == 0) h * (0.05f + (1f - peakScale) * 0.25f) else h * 0.95f
+            path.quadraticTo(ctrlX, ctrlY, x + segW, baseY)
+        }
+        drawPath(path, accent.copy(alpha = 0.65f), style = Stroke(width = 3f, cap = StrokeCap.Round))
+
+        // Leaf particles drifting leftward above the wave
+        val leafCount = 7
+        for (i in 0 until leafCount) {
+            val t = ((i.toFloat() / leafCount) + phase * 0.35f) % 1f
+            val leafX = t * (w + segW) - segW * 0.5f
+            val leafY = h * 0.1f + sin(i * 2.3f + phase * 2f * PI.toFloat()) * h * 0.18f
+            drawCircle(
+                color = accent.copy(alpha = 0.38f),
+                radius = 3f,
+                center = Offset(leafX, leafY)
+            )
+        }
+    }
+}
+
+// ── Earth: slow strata layers shifting like soil sediment ────────────────────
+
+@Composable
+private fun EarthUnderline(width: Dp, height: Dp, modifier: Modifier, accent: Color) {
+    val transition = rememberInfiniteTransition(label = "earth")
+    val phase by transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(3200, easing = LinearEasing), RepeatMode.Restart),
+        label = "earth_phase"
+    )
+
+    Canvas(modifier = modifier.size(width, height).clipToBounds()) {
+        val w = size.width
+        val h = size.height
+        val segW = w / 4f   // Wide, slow segments for a heavy, earthy feel
+        val period = segW * 2f
+        val amp = h * 0.18f // Low amplitude — soil doesn't rush
+
+        // Three strata lines at different depths, each sliding at a different speed
+        val strata = listOf(
+            Triple(0.22f, 0.60f, 0.50f),  // top layer   — slowest
+            Triple(0.50f, 0.42f, 0.75f),  // middle layer
+            Triple(0.78f, 0.28f, 1.00f),  // bottom layer — fastest (deepest flow)
+        )
+        for ((yRatio, alpha, speedMult) in strata) {
+            val offsetX = -(phase * period * speedMult)
+            val midY = h * yRatio
+
+            val path = Path()
+            path.moveTo(offsetX, midY)
+            val count = (w / segW).toInt() + 4
+            for (i in 0 until count) {
+                val x = offsetX + i * segW
+                val ctrlX = x + segW * 0.5f
+                val ctrlY = if (i % 2 == 0) midY - amp else midY + amp
+                path.quadraticTo(ctrlX, ctrlY, x + segW, midY)
+            }
+            drawPath(path, accent.copy(alpha = alpha), style = Stroke(width = 2.5f, cap = StrokeCap.Round))
+        }
     }
 }

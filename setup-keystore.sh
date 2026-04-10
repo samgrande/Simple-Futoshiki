@@ -52,7 +52,11 @@ echo "✓ Credentials verified successfully"
 
 # ─── Step 4: Append env vars to shell profile ─────────────────────────────────
 PROFILE=""
-if [[ -f "$HOME/.zshrc" ]]; then
+if [[ "$SHELL" == */zsh ]]; then
+    PROFILE="$HOME/.zshrc"
+elif [[ "$SHELL" == */bash ]]; then
+    PROFILE="$HOME/.bashrc"
+elif [[ -f "$HOME/.zshrc" ]]; then
     PROFILE="$HOME/.zshrc"
 elif [[ -f "$HOME/.bashrc" ]]; then
     PROFILE="$HOME/.bashrc"

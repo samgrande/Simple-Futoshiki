@@ -6,8 +6,7 @@ export ANDROID_HOME="$HOME/android-sdk"
 
 GRADLE="./gradlew"
 APK_DEBUG="app/build/outputs/apk/debug/app-debug.apk"
-APK_RELEASE="app/build/outputs/apk/release/app-release-unsigned.apk"
-APK_RELEASE_SIGNED="app/build/outputs/apk/release/app-release-signed.apk"
+APK_RELEASE="app/build/outputs/apk/release/app-release.apk"
 
 usage() {
     echo "Usage: $0 [debug|release]"
@@ -37,28 +36,23 @@ build_release() {
     if [[ -z "$KEYSTORE_PATH" ]]; then
         echo ""
         echo "==> Done (unsigned): $APK_RELEASE"
-        echo "    To sign for Play Store, set KEYSTORE_PATH, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD and re-run."
+        echo "    To sign, set KEYSTORE_PATH, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD and re-run."
         return
     fi
 
-    echo "==> Signing APK..."
-    "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
-        --ks "$KEYSTORE_PATH" \
-        --ks-pass "pass:$KEYSTORE_PASSWORD" \
-        --ks-key-alias "$KEY_ALIAS" \
-        --key-pass "pass:$KEY_PASSWORD" \
-        --out "$APK_RELEASE_SIGNED" \
-        "$APK_RELEASE"
-
-    echo "==> Verifying signature..."
-    "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK_RELEASE_SIGNED"
+    # Gradle already signed the APK via signingConfig — just verify it
+    APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name "apksigner" | sort -V | tail -1)
+    if [[ -n "$APKSIGNER" ]]; then
+        echo "==> Verifying signature..."
+        "$APKSIGNER" verify --verbose "$APK_RELEASE"
+    fi
 
     echo ""
-    echo "==> Done (signed): $APK_RELEASE_SIGNED"
+    echo "==> Done (signed): $APK_RELEASE"
 }
 
 case "${1:-debug}" in
-    debug)   build_debug ;;
-    release) build_release ;;
-    *)       usage ;;
+    debug|--debug)     build_debug ;;
+    release|--release) build_release ;;
+    *)                 usage ;;
 esac

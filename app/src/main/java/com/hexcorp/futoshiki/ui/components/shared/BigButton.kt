@@ -18,7 +18,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -28,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.ReemKufi
+
+private val ShadowDepth = 4.dp
 
 // ── Big pill button (primary = themed accent, secondary = outlined) ──────────────────
 
@@ -43,41 +44,39 @@ fun BigButton(
     val isPressed by interactionSource.collectIsPressedAsState()
     val haptic = LocalHapticFeedback.current
 
+    // On press the button face slides down into the shadow, consuming the depth
     val btnOffset by animateDpAsState(
-        targetValue = if (isPressed) 2.dp else 0.dp,
+        targetValue = if (isPressed) ShadowDepth else 0.dp,
         animationSpec = tween(80),
         label = "btnOffset"
     )
 
-    val bgColor = FutoshikiColors.bigButtonBg(primary)
-    val textColor = FutoshikiColors.bigButtonText(primary)
+    val bgColor    = FutoshikiColors.bigButtonBg(primary)
+    val textColor  = FutoshikiColors.bigButtonText(primary)
     val borderColor = FutoshikiColors.bigButtonBorder()
 
-    // Outer box provides room for the shadow bleed
+    // Outer box height = button face + shadow depth so shadow never clips
     Box(
         modifier = modifier
             .fillMaxWidth(0.9f)
-            .height(56.dp)
-            .offset(y = btnOffset)
+            .height(52.dp + ShadowDepth)
     ) {
-        // Blurred shadow (zero offset, dark mode gets darker shadow)
-        if (!isPressed) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .fillMaxWidth()
-                    .height(52.dp)
-                    .blur(8.dp)
-                    .background(FutoshikiColors.shadowColor(), RoundedCornerShape(26.dp))
-            )
-        }
-
-        // Button face
+        // Hard shadow — same shape as button, pinned to bottom, never moves
         Box(
             modifier = Modifier
-                .align(Alignment.Center)
+                .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .height(52.dp)
+                .background(FutoshikiColors.shadowColor(), RoundedCornerShape(26.dp))
+        )
+
+        // Button face — slides down on press to close the gap with the shadow
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(52.dp)
+                .offset(y = btnOffset)
                 .clip(RoundedCornerShape(26.dp))
                 .background(bgColor)
                 .border(
