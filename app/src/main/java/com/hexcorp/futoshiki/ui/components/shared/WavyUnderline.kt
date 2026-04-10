@@ -100,7 +100,7 @@ private fun FireUnderline(width: Dp, height: Dp, modifier: Modifier, accent: Col
             for (i in 0..steps) {
                 val t = i.toFloat() / steps
                 val x = t * w
-                val raw = abs(sin(t * 7f * PI.toFloat() - midPhase * 1.6f * 2f * PI.toFloat()))
+                val raw = abs(sin(t * 7f * PI.toFloat() - midPhase * 2f * 2f * PI.toFloat()))
                 val v = raw * raw  // squaring sharpens the tip
                 val y = baseY - h * 0.90f * v
                 if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
@@ -134,14 +134,17 @@ private fun WaterUnderline(width: Dp, height: Dp, modifier: Modifier, accent: Co
         )
         for ((phaseShift, midYRatio, style) in layers) {
             val (alpha, strokeW) = style
-            val offsetX = -(phase * period) + phaseShift
+            // Start one full period earlier so the left edge is always covered,
+            // regardless of phaseShift. The wave tiles seamlessly since offsetX
+            // shifts by exactly one period per animation loop.
+            val startX = -(phase * period) + phaseShift - period
             val midY = h * midYRatio
 
             val path = Path()
-            path.moveTo(offsetX, midY)
-            val count = (w / segW).toInt() + 4
+            path.moveTo(startX, midY)
+            val count = (w / segW).toInt() + 6
             for (i in 0 until count) {
-                val x = offsetX + i * segW
+                val x = startX + i * segW
                 val ctrlX = x + segW * 0.5f
                 val ctrlY = if (i % 2 == 0) h * 0.04f else h * 0.96f
                 path.quadraticTo(ctrlX, ctrlY, x + segW, midY)
@@ -179,8 +182,9 @@ private fun WoodUnderline(width: Dp, height: Dp, modifier: Modifier, accent: Col
         for (i in 0 until count) {
             val x = offsetX + i * segW
             val ctrlX = x + segW * 0.5f
-            // Vary each peak height organically — irregular tree canopy silhouette
-            val peakScale = 0.4f + 0.55f * abs(sin(i * 1.3f))
+            // Use absolute x position (not segment index i) so peakScale is the same
+            // for a given canvas position regardless of phase — this makes the loop seamless.
+            val peakScale = 0.4f + 0.55f * abs(sin(x * 1.3f / segW))
             val ctrlY = if (i % 2 == 0) h * (0.05f + (1f - peakScale) * 0.25f) else h * 0.95f
             path.quadraticTo(ctrlX, ctrlY, x + segW, baseY)
         }
@@ -189,7 +193,7 @@ private fun WoodUnderline(width: Dp, height: Dp, modifier: Modifier, accent: Col
         // Leaf particles drifting leftward above the wave
         val leafCount = 7
         for (i in 0 until leafCount) {
-            val t = ((i.toFloat() / leafCount) + phase * 0.35f) % 1f
+            val t = ((i.toFloat() / leafCount) + phase) % 1f
             val leafX = t * (w + segW) - segW * 0.5f
             val leafY = h * 0.1f + sin(i * 2.3f + phase * 2f * PI.toFloat()) * h * 0.18f
             drawCircle(
@@ -206,10 +210,23 @@ private fun WoodUnderline(width: Dp, height: Dp, modifier: Modifier, accent: Col
 @Composable
 private fun EarthUnderline(width: Dp, height: Dp, modifier: Modifier, accent: Color) {
     val transition = rememberInfiniteTransition(label = "earth")
-    val phase by transition.animateFloat(
+    // Each layer has its own independent animation so it completes exactly one
+    // period per loop — fractional speed multipliers on a shared phase caused each
+    // layer to shift by a non-integer number of periods, making the restart visible.
+    val phaseTop by transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(6400, easing = LinearEasing), RepeatMode.Restart),
+        label = "earth_top"
+    )
+    val phaseMid by transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(4267, easing = LinearEasing), RepeatMode.Restart),
+        label = "earth_mid"
+    )
+    val phaseBot by transition.animateFloat(
         initialValue = 0f, targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(3200, easing = LinearEasing), RepeatMode.Restart),
-        label = "earth_phase"
+        label = "earth_bot"
     )
 
     Canvas(modifier = modifier.size(width, height).clipToBounds()) {
@@ -221,12 +238,12 @@ private fun EarthUnderline(width: Dp, height: Dp, modifier: Modifier, accent: Co
 
         // Three strata lines at different depths, each sliding at a different speed
         val strata = listOf(
-            Triple(0.22f, 0.60f, 0.50f),  // top layer   — slowest
-            Triple(0.50f, 0.42f, 0.75f),  // middle layer
-            Triple(0.78f, 0.28f, 1.00f),  // bottom layer — fastest (deepest flow)
+            Triple(0.22f, 0.60f, phaseTop),  // top layer   — slowest
+            Triple(0.50f, 0.42f, phaseMid),  // middle layer
+            Triple(0.78f, 0.28f, phaseBot),  // bottom layer — fastest (deepest flow)
         )
-        for ((yRatio, alpha, speedMult) in strata) {
-            val offsetX = -(phase * period * speedMult)
+        for ((yRatio, alpha, layerPhase) in strata) {
+            val offsetX = -(layerPhase * period)
             val midY = h * yRatio
 
             val path = Path()

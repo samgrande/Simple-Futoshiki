@@ -1,14 +1,17 @@
 package com.hexcorp.futoshiki.ui.theme
 
+import android.app.Activity
 import android.view.ContextThemeWrapper
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.core.view.WindowCompat
 import com.hexcorp.futoshiki.R
 
 // ── Theme Enum ──────────────────────────────────────────────────────────────
@@ -195,6 +198,16 @@ fun FutoshikiTheme(
             onPrimary  = Color.White,
             onSurface  = FutoshikiColors.OnSurface,
         )
+    }
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            val controller = WindowCompat.getInsetsController(window, view)
+            controller.isAppearanceLightStatusBars = !isDark
+            controller.isAppearanceLightNavigationBars = !isDark
+        }
     }
 
     CompositionLocalProvider(
