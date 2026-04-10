@@ -51,7 +51,7 @@ fun PuzzleCell(
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     @Suppress("DEPRECATION")
-    val vibrator = remember { context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator }
+    val vibrator = remember { context.applicationContext.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator }
     val interactionSource = remember { MutableInteractionSource() }
     var isShaking by remember { mutableStateOf(false) }
 
@@ -153,11 +153,15 @@ fun PuzzleCell(
                     onClick = {
                         if (isGiven) {
                             val amplitude = (givenCount * 20).coerceIn(1, 255)
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                vibrator.vibrate(VibrationEffect.createOneShot(200L, amplitude))
+                            if (vibrator != null) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    vibrator.vibrate(VibrationEffect.createOneShot(200L, amplitude))
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    vibrator.vibrate(200L)
+                                }
                             } else {
-                                @Suppress("DEPRECATION")
-                                vibrator.vibrate(200L)
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             }
                             isShaking = true
                         }
@@ -169,11 +173,15 @@ fun PuzzleCell(
                             onClear(r, c)
                         } else {
                             val amplitude = (givenCount * 20).coerceIn(1, 255)
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                vibrator.vibrate(VibrationEffect.createOneShot(200L, amplitude))
+                            if (vibrator != null) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    vibrator.vibrate(VibrationEffect.createOneShot(200L, amplitude))
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    vibrator.vibrate(200L)
+                                }
                             } else {
-                                @Suppress("DEPRECATION")
-                                vibrator.vibrate(200L)
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             }
                             isShaking = true
                         }
