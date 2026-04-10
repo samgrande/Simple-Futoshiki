@@ -14,9 +14,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hexcorp.futoshiki.game.FutoshikiViewModel
 import com.hexcorp.futoshiki.game.Screen
-import com.hexcorp.futoshiki.ui.screens.GameScreen
-import com.hexcorp.futoshiki.ui.screens.LandingScreen
-import com.hexcorp.futoshiki.ui.screens.ThemingScreen
+import com.hexcorp.futoshiki.ui.screens.game.GameScreen
+import com.hexcorp.futoshiki.ui.screens.landing.LandingScreen
+import com.hexcorp.futoshiki.ui.screens.theming.ThemingScreen
 import androidx.compose.foundation.isSystemInDarkTheme
 import com.hexcorp.futoshiki.ui.theme.FutoshikiTheme
 import com.hexcorp.futoshiki.ui.theme.ThemeMode
@@ -98,7 +98,7 @@ fun FutoshikiApp(
                         onThemeChange = { theme -> 
                             vm.updateTheme(theme)
                         },
-                        onBack = { vm.goToMainMenu() },
+                        onBack = { vm.backFromTheming() },
                         modifier = Modifier.fillMaxSize(),
                         scope = this
                     )
