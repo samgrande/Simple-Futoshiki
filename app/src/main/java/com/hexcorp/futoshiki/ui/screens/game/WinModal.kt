@@ -1,5 +1,10 @@
 package com.hexcorp.futoshiki.ui.screens.game
 
+import android.content.Context
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -20,6 +25,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -36,8 +42,13 @@ fun WinModal(
     timerSeconds: Int,
     onPlayAgain: () -> Unit
 ) {
+    BackHandler { onPlayAgain() }
+
     var visible by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
+    @Suppress("DEPRECATION")
+    val vibrator = remember { context.applicationContext.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator }
 
     LaunchedEffect(Unit) {
         visible = true
@@ -60,6 +71,16 @@ fun WinModal(
         if (isPressed) {
             delay(150)
             isShaking = true
+            if (vibrator != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(200L, VibrationEffect.DEFAULT_AMPLITUDE))
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator.vibrate(200L)
+                }
+            } else {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
         } else {
             isShaking = false
         }
