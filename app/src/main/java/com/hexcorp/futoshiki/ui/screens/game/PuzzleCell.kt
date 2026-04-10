@@ -6,7 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -45,14 +44,11 @@ fun PuzzleCell(
 ) {
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
     var isShaking by remember { mutableStateOf(false) }
 
-    LaunchedEffect(isPressed) {
-        if (isPressed) {
-            delay(800)
-            isShaking = true
-        } else {
+    LaunchedEffect(isShaking) {
+        if (isShaking) {
+            delay(300)
             isShaking = false
         }
     }
@@ -145,10 +141,21 @@ fun PuzzleCell(
                 .combinedClickable(
                     interactionSource = interactionSource,
                     indication = null,
-                    onClick = { onTap(r, c) },
+                    onClick = {
+                        if (isGiven) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            isShaking = true
+                        }
+                        onTap(r, c)
+                    },
                     onLongClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onClear(r, c)
+                        if (!isGiven) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onClear(r, c)
+                        } else {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            isShaking = true
+                        }
                     }
                 ),
             contentAlignment = Alignment.Center

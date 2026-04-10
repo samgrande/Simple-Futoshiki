@@ -40,7 +40,7 @@ fun ThemedPillButton(
 
     val btnOffset by animateDpAsState(if (isPressed) 2.dp else 0.dp, tween(80), label = "coralOffset")
 
-    Box(modifier = modifier.height(50.dp)) {
+    Box(modifier = modifier.height(75.dp)) {
         if (!isPressed) {
             val shadowColor = if (isDark) {
                 accent.copy(alpha = 0.25f)
@@ -51,22 +51,22 @@ fun ThemedPillButton(
                 modifier = Modifier
                     .offset(x = 2.dp, y = 2.dp)
                     .fillMaxWidth()
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(24.dp))
+                    .height(54.dp)
+                    .clip(RoundedCornerShape(8.dp))
                     .background(shadowColor)
             )
         }
 
-        val contentColor = if (isDark) FutoshikiColors.OnSurface else FutoshikiColors.onSurface()
+        val contentColor = if (isDark) Color.Black else Color.Black
 
         Box(
             modifier = Modifier
                 .offset(x = if (enabled) btnOffset else 0.dp, y = if (enabled) btnOffset else 0.dp)
                 .fillMaxWidth()
-                .height(48.dp)
-                .border(2.dp, contentColor.copy(alpha = if (enabled) 1f else 0.3f), RoundedCornerShape(24.dp))
+                .height(53.dp)
+                .border(2.dp, Color.Black.copy(alpha = if (enabled) 1f else 0.3f), RoundedCornerShape(8.dp))
                 .padding(2.dp)
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(6.dp))
                 .background(if (enabled) accent else accent.copy(alpha = 0.45f))
                 .clickable(
                     interactionSource = interactionSource,

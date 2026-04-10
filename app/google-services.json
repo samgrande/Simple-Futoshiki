@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "9146951512",
+    "project_id": "simple-futoshiki",
+    "storage_bucket": "simple-futoshiki.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:9146951512:android:47088f86de45b33119a72d",
+        "android_client_info": {
+          "package_name": "com.hexcorp.futoshiki"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCx05i2kLfouRz5YnLMv0amXONfe6K6G_k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

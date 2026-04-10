@@ -166,7 +166,7 @@ fun GameScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = (vh * 0.01f)),
+                    .padding(bottom = (vh * 0.06f)),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 ThemedPillButton(
@@ -175,7 +175,7 @@ fun GameScreen(
                     modifier = Modifier.weight(1f)
                 )
                 ThemedPillButton(
-                    label    = "CLEAR ALL",
+                    label    = "CLEAR",
                     onClick  = { viewModel.clearAll() },
                     modifier = Modifier.weight(1f)
                 )
