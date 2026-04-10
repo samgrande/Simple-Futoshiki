@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
@@ -177,18 +178,15 @@ fun ThemingScreen(
                     },
                     label = "themeLogoTransition"
                 ) { index ->
-                    Box(modifier = Modifier.size(200.dp)) {
-                        // Hard drop shadow: 4x4 offset, 40% opacity black, no blur
+                    Box(modifier = Modifier.size(200.dp), contentAlignment = Alignment.Center) {
+                        // Blurred shadow: 0 offset, dark mode gets darker shadow
                         Image(
                             painter = painterResource(id = themes[index].iconResId),
                             contentDescription = null,
-                            colorFilter = ColorFilter.tint(
-                                if (isDark) Color.White.copy(alpha = 0.15f)
-                                else Color.Black.copy(alpha = 0.4f)
-                            ),
+                            colorFilter = ColorFilter.tint(FutoshikiColors.shadowColor()),
                             modifier = Modifier
                                 .size(200.dp)
-                                .offset(x = 4.dp, y = 4.dp)
+                                .blur(12.dp)
                         )
                         Image(
                             painter = painterResource(id = themes[index].iconResId),
@@ -482,6 +480,15 @@ fun ThemeModeSlider(
                     .rotate(rotation),
                 contentAlignment = Alignment.Center
             ) {
+                // Blurred shadow: 0 offset, dark mode gets darker shadow
+                Image(
+                    painter = painterResource(id = if (isDark) R.drawable.shuriken_dark else R.drawable.shuriken),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(FutoshikiColors.shadowColor()),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .blur(6.dp)
+                )
                 Image(
                     painter = painterResource(id = if (isDark) R.drawable.shuriken_dark else R.drawable.shuriken),
                     contentDescription = null,

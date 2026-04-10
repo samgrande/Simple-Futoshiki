@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
@@ -313,29 +314,29 @@ fun BigButton(
     val textColor = FutoshikiColors.bigButtonText(primary)
     val borderColor = FutoshikiColors.bigButtonBorder()
 
-    // Outer box provides room for the 2dp hard shadow bleed
+    // Outer box provides room for the shadow bleed
     Box(
         modifier = modifier
             .fillMaxWidth(0.9f)
-            .height(54.dp)
+            .height(56.dp)
             .offset(y = btnOffset)
     ) {
-        // Hard offset shadow (hidden when pressed)
+        // Blurred shadow (zero offset, dark mode gets darker shadow)
         if (!isPressed) {
-            val shadowColor = if (isDark) Color(0xFF929292).copy(alpha = 0.60f) else Color(0xB23B3B3B)
             Box(
                 modifier = Modifier
-                    .offset(x = 2.dp, y = 2.dp)
+                    .align(Alignment.Center)
                     .fillMaxWidth()
                     .height(52.dp)
-                    .clip(RoundedCornerShape(26.dp))
-                    .background(shadowColor)
+                    .blur(8.dp)
+                    .background(FutoshikiColors.shadowColor(), RoundedCornerShape(26.dp))
             )
         }
+
         // Button face
         Box(
             modifier = Modifier
-                .offset(x = btnOffset, y = btnOffset)
+                .align(Alignment.Center)
                 .fillMaxWidth()
                 .height(52.dp)
                 .clip(RoundedCornerShape(26.dp))
