@@ -60,32 +60,7 @@ fun ThemingScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(FutoshikiColors.background())
-            .pointerInput(Unit) {
-                var accumulatedDrag = 0f
-                var hasTriggered = false
-                detectHorizontalDragGestures(
-                    onDragStart = {
-                        accumulatedDrag = 0f
-                        hasTriggered = false
-                    },
-                    onDragEnd = { hasTriggered = false },
-                    onDragCancel = { hasTriggered = false }
-                ) { change, dragAmount ->
-                    change.consume()
-                    accumulatedDrag += dragAmount
-                    if (!hasTriggered) {
-                        val threshold = 60f
-                        if (accumulatedDrag > threshold) {
-                            navigate(false)
-                            hasTriggered = true
-                        } else if (accumulatedDrag < -threshold) {
-                            navigate(true)
-                            hasTriggered = true
-                        }
-                    }
-                }
-            },
+            .background(FutoshikiColors.background()),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -121,6 +96,31 @@ fun ThemingScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
+                    .pointerInput(Unit) {
+                        var accumulatedDrag = 0f
+                        var hasTriggered = false
+                        detectHorizontalDragGestures(
+                            onDragStart = {
+                                accumulatedDrag = 0f
+                                hasTriggered = false
+                            },
+                            onDragEnd = { hasTriggered = false },
+                            onDragCancel = { hasTriggered = false }
+                        ) { change, dragAmount ->
+                            change.consume()
+                            accumulatedDrag += dragAmount
+                            if (!hasTriggered) {
+                                val threshold = 60f
+                                if (accumulatedDrag > threshold) {
+                                    navigate(false)
+                                    hasTriggered = true
+                                } else if (accumulatedDrag < -threshold) {
+                                    navigate(true)
+                                    hasTriggered = true
+                                }
+                            }
+                        }
+                    }
                     .then(if (scope != null) {
                         with(scope) {
                             Modifier.animateEnterExit(

@@ -25,6 +25,10 @@ fun PuzzleBoard(
 ) {
     val totalItems = (size * 2 - 1)
 
+    val givenCount = remember(puzzle) {
+        puzzle.initial.sumOf { row -> row.count { it != 0 } }
+    }
+
     val constraintsMap = remember(puzzle) {
         val map = mutableMapOf<String, Constraint>()
         puzzle.constraints.forEach {
@@ -70,6 +74,7 @@ fun PuzzleBoard(
                                         sizeDp     = cellSizeDp,
                                         animDelay  = delay,
                                         gameKey    = gameKey,
+                                        givenCount = givenCount,
                                         r          = r,
                                         c          = c,
                                         onTap      = onCellTap,

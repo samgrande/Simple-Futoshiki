@@ -77,7 +77,13 @@ fun ThemeModeSlider(
     }
 
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .pointerInput(Unit) {
+                // Consume all horizontal drags within the slider so they don't
+                // propagate to any parent gesture handler.
+                detectHorizontalDragGestures { change, _ -> change.consume() }
+            },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Labels

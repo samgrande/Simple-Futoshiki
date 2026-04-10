@@ -1,5 +1,9 @@
 package com.hexcorp.futoshiki.ui.screens.game
 
+import android.content.Context
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -16,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -37,12 +42,16 @@ fun PuzzleCell(
     sizeDp: Dp,
     animDelay: Int,
     gameKey: Int,
+    givenCount: Int,
     r: Int,
     c: Int,
     onTap: (Int, Int) -> Unit,
     onClear: (Int, Int) -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
+    @Suppress("DEPRECATION")
+    val vibrator = remember { context.applicationContext.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator }
     val interactionSource = remember { MutableInteractionSource() }
     var isShaking by remember { mutableStateOf(false) }
 
@@ -143,7 +152,17 @@ fun PuzzleCell(
                     indication = null,
                     onClick = {
                         if (isGiven) {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            val amplitude = (givenCount * 20).coerceIn(1, 255)
+                            if (vibrator != null) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    vibrator.vibrate(VibrationEffect.createOneShot(200L, amplitude))
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    vibrator.vibrate(200L)
+                                }
+                            } else {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            }
                             isShaking = true
                         }
                         onTap(r, c)
@@ -153,7 +172,17 @@ fun PuzzleCell(
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onClear(r, c)
                         } else {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            val amplitude = (givenCount * 20).coerceIn(1, 255)
+                            if (vibrator != null) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    vibrator.vibrate(VibrationEffect.createOneShot(200L, amplitude))
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    vibrator.vibrate(200L)
+                                }
+                            } else {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            }
                             isShaking = true
                         }
                     }

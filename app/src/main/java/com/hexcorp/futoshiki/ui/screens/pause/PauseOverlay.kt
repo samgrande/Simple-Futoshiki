@@ -66,12 +66,15 @@ fun PauseOverlay(
                 .graphicsLayer {
                     this.alpha = alpha
                 }
-                .background(FutoshikiColors.background())
+                .background(FutoshikiColors.background()),
+            contentAlignment = Alignment.Center
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 24.dp, vertical = 40.dp),
+                    .widthIn(max = 420.dp)
+                    .fillMaxHeight()
+                    .systemBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(Modifier.weight(0.8f))

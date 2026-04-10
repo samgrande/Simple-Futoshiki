@@ -44,6 +44,17 @@ fun GameScreen(
 
     val isPaused = state.screen == Screen.PAUSE
 
+    // Keep the pause overlay visible while transitioning away to another screen (e.g. THEMING).
+    // Only dismiss it when the screen explicitly returns to GAME (i.e. the user resumed).
+    var showPauseOverlay by remember { mutableStateOf(isPaused) }
+    LaunchedEffect(state.screen) {
+        when (state.screen) {
+            Screen.PAUSE -> showPauseOverlay = true
+            Screen.GAME  -> showPauseOverlay = false
+            else         -> { /* navigating away — keep overlay until fade completes */ }
+        }
+    }
+
     BackHandler(enabled = !isPaused && !won) {
         viewModel.pause()
     }
@@ -182,7 +193,7 @@ fun GameScreen(
             }
         }
 
-        if (isPaused && pillCenter != Offset.Zero) {
+        if (showPauseOverlay && pillCenter != Offset.Zero) {
             PauseOverlay(
                 revealCenter = pillCenter,
                 pillOffset = pillOffset,
