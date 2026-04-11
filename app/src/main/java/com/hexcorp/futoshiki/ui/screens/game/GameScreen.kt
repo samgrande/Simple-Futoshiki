@@ -119,7 +119,10 @@ fun GameScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                FutoshikiTitle(fontSize = 28.sp)
+                FutoshikiTitle(
+                    size = size,
+                    fontSize = 28.sp
+                )
                 TimerPill(
                     seconds = state.timerSeconds,
                     won     = won,
@@ -142,10 +145,12 @@ fun GameScreen(
             Spacer(Modifier.height(vh * 0.02f))
 
             DraggableSizeTabs(
-                currentSize  = size,
-                onSizeChange = { viewModel.changeSize(it) },
-                height       = tabH,
-                modifier     = Modifier.fillMaxWidth()
+                currentSize = size,
+                onSizeChange = {
+                    viewModel.changeSize(it)
+                },
+                height = tabH,
+                modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(Modifier.height(vh * 0.03f))

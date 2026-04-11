@@ -21,10 +21,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,11 +42,7 @@ private fun SizeLabel(
     fontWeight: FontWeight
 ) {
     Text(
-        text = buildAnnotatedString {
-            append("$size")
-            withStyle(SpanStyle(fontSize = (16 * 1.3f).sp)) { append("×") }
-            append("$size")
-        },
+        text = "$size x $size",
         color = color,
         fontSize = 16.sp,
         fontWeight = fontWeight,
@@ -66,7 +59,7 @@ fun DraggableSizeTabs(
 ) {
     val density = LocalDensity.current
     var trackWidthPx by remember { mutableIntStateOf(0) }
-    val thumbPadPx = with(density) { 2.dp.toPx() }
+    val thumbPadPx = with(density) { 4.dp.toPx() }
 
     val sw = if (trackWidthPx > 0) trackWidthPx / 3f else 0f
 
@@ -75,6 +68,9 @@ fun DraggableSizeTabs(
 
     val updatedOnSizeChange by rememberUpdatedState(onSizeChange)
     val updatedCurrentSize by rememberUpdatedState(currentSize)
+
+    val isDark = LocalIsDark.current
+    val strokeColor = if (isDark) Color(0xFF101010).copy(alpha = 0.3f) else Color.Black
 
     LaunchedEffect(currentSize, sw) {
         if (sw > 0 && !isDragging) {
@@ -94,9 +90,9 @@ fun DraggableSizeTabs(
             .onSizeChanged { size ->
                 if (size.width > 0) trackWidthPx = size.width
             }
-            .border(1.dp, FutoshikiColors.onSurface(), RoundedCornerShape(11.dp))
+            .border(2.dp, strokeColor, RoundedCornerShape(11.dp))
             .clip(RoundedCornerShape(11.dp))
-            .background(if (LocalIsDark.current) Color(0xFF1A1A1A) else Color(0xFFF4F4F4))
+            .background(accentColor())
             .pointerInput(sw, trackWidthPx) {
                 if (sw <= 0f) return@pointerInput
                 coroutineScope {
@@ -156,17 +152,18 @@ fun DraggableSizeTabs(
         // 2. Thumb & 3. Inverted Labels
         if (trackWidthPx > 0) {
             val thumbWidthPx = sw - thumbPadPx * 2
-            val vPadPx = with(density) { 2.dp.toPx() }
-            val cornerRadiusPx = with(density) { 9.dp.toPx() }
+            val vPadPx = with(density) { 4.dp.toPx() }
+            val cornerRadiusPx = with(density) { 8.dp.toPx() }
 
             Box(
                 modifier = Modifier
                     .offset { IntOffset(thumbX.value.roundToInt(), 0) }
-                    .padding(vertical = 2.dp)
+                    .padding(vertical = 4.dp)
                     .width(with(density) { thumbWidthPx.toDp() })
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(9.dp))
-                    .background(accentColor())
+                    .border(2.dp, strokeColor, RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isDark) Color(0xFF101010) else FutoshikiColors.surface())
             )
 
             Box(
@@ -194,7 +191,7 @@ fun DraggableSizeTabs(
                     }
             ) {
                 Row(modifier = Modifier.fillMaxSize()) {
-                    val selectedTextColor = Color.White
+                    val selectedTextColor = FutoshikiColors.onSurface()
                     SIZES.forEach { s ->
                         Box(
                             modifier = Modifier.weight(1f).fillMaxHeight(),

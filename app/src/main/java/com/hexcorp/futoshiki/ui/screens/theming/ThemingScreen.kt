@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
@@ -57,6 +56,32 @@ fun ThemingScreen(
         onThemeChange(themes[currentIndex].theme)
     }
 
+    val swipeModifier = Modifier.pointerInput(Unit) {
+        var accumulatedDrag = 0f
+        var hasTriggered = false
+        detectHorizontalDragGestures(
+            onDragStart = {
+                accumulatedDrag = 0f
+                hasTriggered = false
+            },
+            onDragEnd = { hasTriggered = false },
+            onDragCancel = { hasTriggered = false }
+        ) { change, dragAmount ->
+            change.consume()
+            accumulatedDrag += dragAmount
+            if (!hasTriggered) {
+                val threshold = 60f
+                if (accumulatedDrag > threshold) {
+                    navigate(false)
+                    hasTriggered = true
+                } else if (accumulatedDrag < -threshold) {
+                    navigate(true)
+                    hasTriggered = true
+                }
+            }
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -96,31 +121,7 @@ fun ThemingScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-                    .pointerInput(Unit) {
-                        var accumulatedDrag = 0f
-                        var hasTriggered = false
-                        detectHorizontalDragGestures(
-                            onDragStart = {
-                                accumulatedDrag = 0f
-                                hasTriggered = false
-                            },
-                            onDragEnd = { hasTriggered = false },
-                            onDragCancel = { hasTriggered = false }
-                        ) { change, dragAmount ->
-                            change.consume()
-                            accumulatedDrag += dragAmount
-                            if (!hasTriggered) {
-                                val threshold = 60f
-                                if (accumulatedDrag > threshold) {
-                                    navigate(false)
-                                    hasTriggered = true
-                                } else if (accumulatedDrag < -threshold) {
-                                    navigate(true)
-                                    hasTriggered = true
-                                }
-                            }
-                        }
-                    }
+                    .then(swipeModifier)
                     .then(if (scope != null) {
                         with(scope) {
                             Modifier.animateEnterExit(
@@ -172,6 +173,7 @@ fun ThemingScreen(
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .then(swipeModifier)
                     .then(if (scope != null) {
                         with(scope) {
                             Modifier.animateEnterExit(
