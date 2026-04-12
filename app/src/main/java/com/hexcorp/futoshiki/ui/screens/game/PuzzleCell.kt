@@ -30,6 +30,7 @@ import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.ReemKufi
 import com.hexcorp.futoshiki.ui.theme.accentColor
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -45,6 +46,7 @@ fun PuzzleCell(
     givenCount: Int,
     r: Int,
     c: Int,
+    isSolved: Boolean,
     onTap: (Int, Int) -> Unit,
     onClear: (Int, Int) -> Unit
 ) {
@@ -53,7 +55,14 @@ fun PuzzleCell(
     @Suppress("DEPRECATION")
     val vibrator = remember { context.applicationContext.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator }
     val interactionSource = remember { MutableInteractionSource() }
+    val scope = rememberCoroutineScope()
     var isShaking by remember { mutableStateOf(false) }
+    var flashAlpha by remember { mutableStateOf(0f) }
+    val animatedFlashAlpha by animateFloatAsState(
+        targetValue = flashAlpha,
+        animationSpec = tween(if (flashAlpha > 0f) 60 else 300),
+        label = "flashAlpha"
+    )
 
     LaunchedEffect(isShaking) {
         if (isShaking) {
@@ -107,22 +116,30 @@ fun PuzzleCell(
         triggered = true
     }
 
+    val accent = accentColor()
     val bg = when {
         hasError   -> FutoshikiColors.errorBg()
-        isSelected -> accentColor().copy(alpha = 0.12f)
+        isSelected -> accent.copy(alpha = 0.12f)
+        isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = 0.12f * animatedFlashAlpha)
         isRelated  -> FutoshikiColors.cellRelated()
         else       -> FutoshikiColors.cellDefault()
     }
-    val borderColor = if (hasError) FutoshikiColors.ErrorStroke
-                      else if (isSelected) accentColor()
-                      else FutoshikiColors.onSurface()
-    val borderWidth = if (isSelected) 2.5.dp else 1.5.dp
+    val borderColor = when {
+        hasError   -> FutoshikiColors.ErrorStroke
+        isSelected -> accent
+        isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = animatedFlashAlpha)
+        else       -> FutoshikiColors.onSurface()
+    }
+    val borderWidth = if (isSelected || (isGiven && animatedFlashAlpha > 0f)) 2.5.dp else 1.5.dp
     val textColor   = if (hasError) FutoshikiColors.ErrorStroke else FutoshikiColors.onSurface()
     val cornerRadius = sizeDp * 0.27f
 
-    val shadowColor = if (hasError) FutoshikiColors.ErrorStroke.copy(alpha = 0.22f)
-                      else if (isSelected) accentColor().copy(alpha = 0.4f)
-                      else Color(0x42000000)
+    val shadowColor = when {
+        hasError   -> FutoshikiColors.ErrorStroke.copy(alpha = 0.22f)
+        isSelected -> accent.copy(alpha = 0.4f)
+        isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = 0.4f * animatedFlashAlpha)
+        else       -> Color(0x42000000)
+    }
 
     Box(
         modifier = Modifier
@@ -153,20 +170,28 @@ fun PuzzleCell(
                     indication = null,
                     onClick = {
                         if (isGiven) {
-                            val amplitude = (givenCount * 20).coerceIn(1, 255)
-                            if (vibrator != null) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                    vibrator.vibrate(VibrationEffect.createOneShot(200L, amplitude))
+                            if (!isSolved) {
+                                val amplitude = (givenCount * 20).coerceIn(1, 255)
+                                if (vibrator != null) {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                        vibrator.vibrate(VibrationEffect.createOneShot(200L, amplitude))
+                                    } else {
+                                        @Suppress("DEPRECATION")
+                                        vibrator.vibrate(200L)
+                                    }
                                 } else {
-                                    @Suppress("DEPRECATION")
-                                    vibrator.vibrate(200L)
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 }
-                            } else {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                isShaking = true
+                                scope.launch {
+                                    flashAlpha = 1f
+                                    delay(200)
+                                    flashAlpha = 0f
+                                }
                             }
-                            isShaking = true
+                        } else {
+                            onTap(r, c)
                         }
-                        onTap(r, c)
                     },
                     onLongClick = {
                         if (!isGiven) {

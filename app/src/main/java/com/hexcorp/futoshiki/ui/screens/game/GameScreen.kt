@@ -55,7 +55,7 @@ fun GameScreen(
         }
     }
 
-    val canGoBack = !won
+    val canGoBack = !won || state.isSolved
     BackHandler(enabled = canGoBack) {
         if (isPaused) {
             viewModel.resume()
@@ -187,8 +187,9 @@ fun GameScreen(
                 cellSizeDp  = cellSizeDp,
                 arrowSlotDp = arrowSlotDp,
                 gameKey     = boardKey,
-                onCellTap   = { r, c -> viewModel.selectCell(r, c) },
-                onCellClear = { r, c -> viewModel.clearCell(r, c) }
+                isSolved    = state.isSolved,
+                onCellTap   = { r, c -> if (!state.isSolved) viewModel.selectCell(r, c) },
+                onCellClear = { r, c -> if (!state.isSolved) viewModel.clearCell(r, c) }
             )
 
             if (!state.isSolved) {

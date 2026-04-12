@@ -238,6 +238,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
             st.copy(
                 grid = puzzle.solution.map { it.toList() },
                 errors = emptySet(),
+                selected = null,
                 won = true,
                 isSolved = true,
                 timerRunning = false,
