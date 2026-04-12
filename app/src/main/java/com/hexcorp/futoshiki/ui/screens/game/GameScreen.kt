@@ -55,8 +55,15 @@ fun GameScreen(
         }
     }
 
-    BackHandler(enabled = !isPaused && !won) {
-        viewModel.pause()
+    val canGoBack = !won
+    BackHandler(enabled = canGoBack) {
+        if (isPaused) {
+            viewModel.resume()
+        } else if (state.isSolved) {
+            viewModel.newGame(size)
+        } else {
+            viewModel.pause()
+        }
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -121,40 +128,56 @@ fun GameScreen(
             ) {
                 FutoshikiTitle(
                     size = size,
-                    fontSize = 28.sp
+                    fontSize = 28.sp,
+                    isSolved = state.isSolved
                 )
-                TimerPill(
-                    seconds = state.timerSeconds,
-                    won     = won,
-                    isPaused = isPaused,
-                    onClick = { viewModel.pause() },
-                    modifier = Modifier
-                        .onGloballyPositioned { coords ->
-                            containerCoordinates?.let { container ->
-                                if (container.isAttached && coords.isAttached) {
-                                    val localPos = container.localPositionOf(coords, Offset.Zero)
-                                    pillOffset = localPos
-                                    pillCenter = Offset(localPos.x + coords.size.width / 2f, localPos.y + coords.size.height / 2f)
+                if (!state.isSolved) {
+                    TimerPill(
+                        seconds = state.timerSeconds,
+                        won     = won,
+                        isPaused = isPaused,
+                        onClick = { viewModel.pause() },
+                        modifier = Modifier
+                            .onGloballyPositioned { coords ->
+                                containerCoordinates?.let { container ->
+                                    if (container.isAttached && coords.isAttached) {
+                                        val localPos = container.localPositionOf(coords, Offset.Zero)
+                                        pillOffset = localPos
+                                        pillCenter = Offset(localPos.x + coords.size.width / 2f, localPos.y + coords.size.height / 2f)
+                                    }
                                 }
                             }
-                        }
-                        .graphicsLayer { alpha = if (isPaused) 0f else 1f }
-                )
+                            .graphicsLayer { alpha = if (isPaused) 0f else 1f }
+                    )
+                }
             }
 
-            Spacer(Modifier.height(vh * 0.02f))
+            if (!state.isSolved) {
+                Spacer(Modifier.height(vh * 0.02f))
 
-            DraggableSizeTabs(
-                currentSize = size,
-                onSizeChange = {
-                    viewModel.changeSize(it)
-                },
-                height = tabH,
-                modifier = Modifier.fillMaxWidth()
-            )
+                DraggableSizeTabs(
+                    currentSize = size,
+                    onSizeChange = {
+                        viewModel.changeSize(it)
+                    },
+                    height = tabH,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-            Spacer(Modifier.height(vh * 0.03f))
+                Spacer(Modifier.height(vh * 0.03f))
+            } else {
+                Spacer(Modifier.height(vh * 0.02f))
+                ThemedPillButton(
+                    label = "S O L U T I O N",
+                    onClick = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(tabH)
+                )
+                Spacer(Modifier.height(vh * 0.03f))
+            }
 
+            val boardKey = remember(state.isSolved, gameKey) { if (state.isSolved) 9999 + gameKey else gameKey }
             PuzzleBoard(
                 puzzle      = puzzle,
                 grid        = grid,
@@ -163,19 +186,30 @@ fun GameScreen(
                 errors      = errors,
                 cellSizeDp  = cellSizeDp,
                 arrowSlotDp = arrowSlotDp,
-                gameKey     = gameKey,
+                gameKey     = boardKey,
                 onCellTap   = { r, c -> viewModel.selectCell(r, c) },
                 onCellClear = { r, c -> viewModel.clearCell(r, c) }
             )
 
-            Spacer(Modifier.height(vh * 0.05f))
+            if (!state.isSolved) {
+                Spacer(Modifier.height(vh * 0.05f))
 
-            NumberPad(
-                size         = size,
-                buttonSizeDp = numpadBtnDp,
-                spacingDp    = numpadSpacing,
-                onNumber     = { viewModel.inputNumber(it) }
-            )
+                NumberPad(
+                    size         = size,
+                    buttonSizeDp = numpadBtnDp,
+                    spacingDp    = numpadSpacing,
+                    onNumber     = { viewModel.inputNumber(it) }
+                )
+            } else {
+                Spacer(Modifier.height(vh * 0.05f))
+                NumberPad(
+                    size         = size,
+                    buttonSizeDp = numpadBtnDp,
+                    spacingDp    = numpadSpacing,
+                    onNumber     = { /* Disabled in solution mode */ },
+                    enabled      = false
+                )
+            }
 
             Spacer(Modifier.weight(1f))
 
@@ -183,18 +217,20 @@ fun GameScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = (vh * 0.06f)),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = if (state.isSolved) Arrangement.Center else Arrangement.spacedBy(12.dp)
             ) {
                 ThemedPillButton(
                     label    = "NEW GAME",
                     onClick  = { viewModel.newGame(size) },
-                    modifier = Modifier.weight(1f)
+                    modifier = if (state.isSolved) Modifier.fillMaxWidth(0.6f) else Modifier.weight(1f)
                 )
-                ThemedPillButton(
-                    label    = "CLEAR",
-                    onClick  = { viewModel.clearAll() },
-                    modifier = Modifier.weight(1f)
-                )
+                if (!state.isSolved) {
+                    ThemedPillButton(
+                        label    = "CLEAR",
+                        onClick  = { viewModel.clearAll() },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
 

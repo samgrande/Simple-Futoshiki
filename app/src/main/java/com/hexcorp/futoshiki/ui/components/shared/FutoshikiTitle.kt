@@ -25,7 +25,8 @@ fun FutoshikiTitle(
     size: Int? = null,
     showTabs: Boolean = false,
     onClick: (() -> Unit)? = null,
-    fontSize: TextUnit = 36.sp
+    fontSize: TextUnit = 36.sp,
+    isSolved: Boolean = false
 ) {
     val accent = accentColor()
     Box(
@@ -39,7 +40,7 @@ fun FutoshikiTitle(
     ) {
         Column {
             Text(
-                text = "Futoshiki",
+                 text = "Futoshiki",
                 fontSize = fontSize,
                 fontWeight = FontWeight.Bold,
                 fontFamily = ReemKufi,
@@ -47,7 +48,7 @@ fun FutoshikiTitle(
                 letterSpacing = (-0.5).sp,
                 lineHeight = fontSize
             )
-            val waveWidth = (fontSize.value * 4.2f).dp
+            val waveWidth = if (isSolved) (fontSize.value * 4.0f).dp else (fontSize.value * 4.2f).dp
             val waveHeight = (fontSize.value * 0.32f).dp
             WavyUnderline(
                 width = waveWidth,

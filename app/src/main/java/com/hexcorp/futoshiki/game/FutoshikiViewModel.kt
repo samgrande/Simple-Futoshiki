@@ -35,7 +35,8 @@ data class GameState(
     val gameKey: Int = 0,
     val theme: AppTheme = AppTheme.FIRE,
     val isDark: Boolean = false,
-    val themeMode: ThemeMode = ThemeMode.AUTO
+    val themeMode: ThemeMode = ThemeMode.AUTO,
+    val isSolved: Boolean = false
 )
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
@@ -95,6 +96,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
                 selected = null,
                 errors = emptySet(),
                 won = false,
+                isSolved = false,
                 showCongrats = false,
                 timerSeconds = 0,
                 timerRunning = true,
@@ -237,6 +239,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
                 grid = puzzle.solution.map { it.toList() },
                 errors = emptySet(),
                 won = true,
+                isSolved = true,
                 timerRunning = false,
                 screen = Screen.GAME
             )

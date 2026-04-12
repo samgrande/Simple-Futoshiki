@@ -102,6 +102,7 @@ fun PuzzleCell(
         label = "cellPop"
     )
     LaunchedEffect(gameKey) {
+        triggered = false
         delay(animDelay.toLong())
         triggered = true
     }

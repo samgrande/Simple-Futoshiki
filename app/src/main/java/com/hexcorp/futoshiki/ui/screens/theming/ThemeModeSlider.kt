@@ -167,8 +167,9 @@ fun ThemeModeSlider(
         ) {
             // Horizontal Line
             Canvas(modifier = Modifier.fillMaxWidth().height(2.dp)) {
+                val lineColor = if (isDark) Color.White else Color.Gray
                 drawLine(
-                    color = if (isDark) Color.White else Color.Gray,
+                    color = lineColor,
                     start = Offset(0f, size.height / 2),
                     end = Offset(size.width, size.height / 2),
                     strokeWidth = 2.dp.toPx(),
@@ -177,15 +178,9 @@ fun ThemeModeSlider(
 
                 // Dots for each section
                 val sectionWidth = size.width / (modes.size - 1)
-                val accent = when (currentTheme) {
-                    AppTheme.FIRE  -> FutoshikiColors.FireAccent
-                    AppTheme.WATER -> FutoshikiColors.WaterAccent
-                    AppTheme.EARTH -> FutoshikiColors.EarthAccent
-                    AppTheme.WOOD  -> FutoshikiColors.WoodAccent
-                }
                 for (i in 0 until modes.size) {
                     drawCircle(
-                        color = accent,
+                        color = lineColor,
                         radius = 4.dp.toPx(),
                         center = Offset(i * sectionWidth, size.height / 2)
                     )
@@ -198,8 +193,8 @@ fun ThemeModeSlider(
 
             Box(
                 modifier = Modifier
-                    .offset { IntOffset(thumbOffset - with(density) { 20.dp.roundToPx() }, 0) }
-                    .size(40.dp)
+                    .offset { IntOffset(thumbOffset - with(density) { 25.dp.roundToPx() }, 0) }
+                    .size(50.dp)
                     .rotate(rotation),
                 contentAlignment = Alignment.Center
             ) {
@@ -209,13 +204,13 @@ fun ThemeModeSlider(
                     contentDescription = null,
                     colorFilter = ColorFilter.tint(FutoshikiColors.shadowColor()),
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(50.dp)
                         .blur(6.dp)
                 )
                 Image(
                     painter = painterResource(id = if (isDark) R.drawable.shuriken_dark else R.drawable.shuriken),
                     contentDescription = null,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(50.dp)
                 )
             }
         }

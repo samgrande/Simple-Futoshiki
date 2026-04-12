@@ -31,7 +31,7 @@ import com.hexcorp.futoshiki.ui.theme.accentColor
 @Composable
 fun ThemedPillButton(
     label: String,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
     enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
@@ -51,6 +51,9 @@ fun ThemedPillButton(
         Color.Black.copy(alpha = if (enabled) 1f else 0.3f)
     }
 
+    val bgAlpha = if (enabled || onClick == null) 1f else 0.45f
+    val isClickable = enabled && onClick != null
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -58,15 +61,19 @@ fun ThemedPillButton(
             .border(2.dp, borderColor, RoundedCornerShape(8.dp))
             .padding(2.dp)
             .clip(RoundedCornerShape(6.dp))
-            .background(if (enabled) accent else accent.copy(alpha = 0.45f))
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                enabled = enabled
-            ) {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onClick()
-            }
+            .background(accent.copy(alpha = bgAlpha))
+            .then(
+                if (isClickable) {
+                    Modifier.clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        enabled = true
+                    ) {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onClick?.invoke()
+                    }
+                } else Modifier
+            )
     ) {
         // Single path for internal shadow to avoid overlap and handle rounding correctly
         if (isPressed && enabled) {

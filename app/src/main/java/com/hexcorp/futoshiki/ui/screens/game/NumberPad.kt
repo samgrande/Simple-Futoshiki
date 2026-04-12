@@ -30,6 +30,7 @@ fun NumberPad(
     size: Int,
     buttonSizeDp: Dp,
     spacingDp: Dp,
+    enabled: Boolean = true,
     onNumber: (Int) -> Unit
 ) {
     Row(
@@ -42,6 +43,7 @@ fun NumberPad(
                 NumberButton(
                     label   = num.toString(),
                     sizeDp  = buttonSizeDp,
+                    enabled = enabled,
                     onClick = remember(num, onNumber) { { onNumber(num) } }
                 )
             }
@@ -50,13 +52,13 @@ fun NumberPad(
 }
 
 @Composable
-private fun NumberButton(label: String, sizeDp: Dp, onClick: () -> Unit) {
+private fun NumberButton(label: String, sizeDp: Dp, enabled: Boolean, onClick: () -> Unit) {
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val offset by animateDpAsState(
-        targetValue = if (isPressed) 2.dp else 0.dp,
+        targetValue = if (isPressed && enabled) 2.dp else 0.dp,
         animationSpec = tween(80), label = "numBtnOffset"
     )
 
@@ -64,14 +66,15 @@ private fun NumberButton(label: String, sizeDp: Dp, onClick: () -> Unit) {
         modifier = Modifier
             .size(sizeDp)
             .offset(x = offset, y = offset)
-            .shadow(if (isPressed) 1.dp else 3.dp, CircleShape,
+            .shadow(if (isPressed && enabled) 1.dp else 3.dp, CircleShape,
                 ambientColor = Color(0x6B000000), spotColor = Color(0x6B000000))
             .clip(CircleShape)
             .background(FutoshikiColors.background())
-            .border(1.5.dp, FutoshikiColors.onSurface(), CircleShape)
+            .border(1.5.dp, if (enabled) FutoshikiColors.onSurface() else FutoshikiColors.onSurface().copy(alpha = 0.3f), CircleShape)
             .clickable(
                 interactionSource = interactionSource,
-                indication = null
+                indication = null,
+                enabled = enabled
             ) {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onClick()
@@ -83,7 +86,7 @@ private fun NumberButton(label: String, sizeDp: Dp, onClick: () -> Unit) {
             fontSize   = (sizeDp.value * 0.38f).sp,
             fontWeight = FontWeight.Bold,
             fontFamily = ReemKufi,
-            color      = FutoshikiColors.onSurface()
+            color      = if (enabled) FutoshikiColors.onSurface() else FutoshikiColors.onSurface().copy(alpha = 0.3f)
         )
     }
 }
