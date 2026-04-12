@@ -20,6 +20,7 @@ fun PuzzleBoard(
     cellSizeDp: Dp,
     arrowSlotDp: Dp,
     gameKey: Int,
+    isSolved: Boolean,
     onCellTap: (Int, Int) -> Unit,
     onCellClear: (Int, Int) -> Unit
 ) {
@@ -77,6 +78,7 @@ fun PuzzleBoard(
                                         givenCount = givenCount,
                                         r          = r,
                                         c          = c,
+                                        isSolved   = isSolved,
                                         onTap      = onCellTap,
                                         onClear    = onCellClear
                                     )
