@@ -50,6 +50,7 @@ android {
     }
 }
 
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
@@ -67,4 +68,5 @@ dependencies {
     implementation(libs.coil.compose)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation("com.github.LottieFiles:dotlottie-android:0.13.5")
 }

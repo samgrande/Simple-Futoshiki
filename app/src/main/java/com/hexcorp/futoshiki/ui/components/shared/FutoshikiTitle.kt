@@ -26,7 +26,8 @@ fun FutoshikiTitle(
     showTabs: Boolean = false,
     onClick: (() -> Unit)? = null,
     fontSize: TextUnit = 36.sp,
-    isSolved: Boolean = false
+    isSolved: Boolean = false,
+    showUnderline: Boolean = true
 ) {
     val accent = accentColor()
     Box(
@@ -48,13 +49,15 @@ fun FutoshikiTitle(
                 letterSpacing = (-0.5).sp,
                 lineHeight = fontSize
             )
-            val waveWidth = if (isSolved) (fontSize.value * 4.0f).dp else (fontSize.value * 4.2f).dp
-            val waveHeight = (fontSize.value * 0.32f).dp
-            WavyUnderline(
-                width = waveWidth,
-                height = waveHeight,
-                modifier = Modifier.padding(top = (fontSize.value * 0.1f).dp)
-            )
+            if (showUnderline) {
+                val waveWidth = if (isSolved) (fontSize.value * 4.0f).dp else (fontSize.value * 4.2f).dp
+                val waveHeight = (fontSize.value * 0.32f).dp
+                WavyUnderline(
+                    width = waveWidth,
+                    height = waveHeight,
+                    modifier = Modifier.padding(top = (fontSize.value * 0.1f).dp)
+                )
+            }
         }
 
         // Grid Size Pill (only shown if size is provided)

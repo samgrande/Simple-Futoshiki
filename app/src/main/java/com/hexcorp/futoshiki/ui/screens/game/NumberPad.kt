@@ -30,10 +30,12 @@ fun NumberPad(
     size: Int,
     buttonSizeDp: Dp,
     spacingDp: Dp,
+    modifier: Modifier = Modifier,
     enabled: Boolean = true,
     onNumber: (Int) -> Unit
 ) {
     Row(
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(spacingDp),
         verticalAlignment = Alignment.CenterVertically
     ) {

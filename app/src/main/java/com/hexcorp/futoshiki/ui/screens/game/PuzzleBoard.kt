@@ -22,7 +22,8 @@ fun PuzzleBoard(
     gameKey: Int,
     isSolved: Boolean,
     onCellTap: (Int, Int) -> Unit,
-    onCellClear: (Int, Int) -> Unit
+    onCellClear: (Int, Int) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val totalItems = (size * 2 - 1)
 
@@ -40,6 +41,7 @@ fun PuzzleBoard(
     }
 
     Column(
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         for (ri in 0 until totalItems) {
