@@ -27,7 +27,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.hexcorp.futoshiki.game.FutoshikiViewModel
 import com.hexcorp.futoshiki.game.Screen
-import com.hexcorp.futoshiki.ui.components.shared.DragonNinjaAnimation
+import org.godotengine.godot.GodotFragment
 import com.hexcorp.futoshiki.ui.components.shared.DraggableSizeTabs
 import com.hexcorp.futoshiki.ui.screens.pause.PauseOverlay
 import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
@@ -38,7 +38,8 @@ import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 @Composable
 fun GameScreen(
     viewModel: FutoshikiViewModel,
-    state: com.hexcorp.futoshiki.game.GameState
+    state: com.hexcorp.futoshiki.game.GameState,
+    godotFragment: GodotFragment? = null
 ) {
     val puzzle    = state.puzzle ?: return
     val size      = state.size
@@ -47,6 +48,15 @@ fun GameScreen(
     val errors    = state.errors
     val won       = state.won
     val gameKey   = state.gameKey
+
+    // Trigger Dragon aggression on error
+    LaunchedEffect(errors) {
+        if (errors.isNotEmpty() && godotFragment != null) {
+            godotFragment.getGodot()?.runOnRenderThread {
+                // godotFragment.getGodot()?.nativeCall("update_aggression", 1.0)
+            }
+        }
+    }
 
     var pillCenter by remember { mutableStateOf(Offset.Zero) }
     var pillOffset by remember { mutableStateOf(Offset.Zero) }
@@ -164,12 +174,7 @@ fun GameScreen(
                             .fillMaxWidth()
                             .height(totalTopSpace - headerH - 16.dp)
                     ) {
-                        DragonNinjaAnimation(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .fillMaxHeight()
-                                .align(Alignment.BottomCenter)
-                        )
+                        // Lottie animation removed. Godot Dragon is now in the background.
                     }
                 }
 

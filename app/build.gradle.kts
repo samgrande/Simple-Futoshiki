@@ -38,6 +38,12 @@ android {
         }
     }
 
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -66,7 +72,8 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.google.material)
     implementation(libs.coil.compose)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.compose.ui.viewbinding)
     debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
-    implementation("com.github.LottieFiles:dotlottie-android:0.13.5")
+    implementation(files("libs/godot-lib.aar"))
 }

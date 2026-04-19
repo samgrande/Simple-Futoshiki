@@ -8,6 +8,8 @@ composeBom = "2024.10.01"
 material = "1.12.0"
 coil = "2.7.0"
 splashscreen = "1.0.1"
+fragmentKtx = "1.8.0"
+composeUiViewBinding = "1.7.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -26,6 +28,8 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 google-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragmentKtx" }
+androidx-compose-ui-viewbinding = { group = "androidx.compose.ui", name = "ui-viewbinding", version.ref = "composeUiViewBinding" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
