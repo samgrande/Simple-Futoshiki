@@ -7,11 +7,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -38,12 +38,10 @@ fun PauseOverlay(
     onTheming: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showHelp by remember { mutableStateOf(false) }
-    var showConfirmQuit by remember { mutableStateOf(false) }
-    var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { visible = true }
+    var showHelp by rememberSaveable { mutableStateOf(false) }
+    var showConfirmQuit by rememberSaveable { mutableStateOf(false) }
 
-    BackHandler(enabled = visible) {
+    BackHandler(enabled = true) {
         when {
             showHelp -> showHelp = false
             showConfirmQuit -> showConfirmQuit = false
@@ -51,21 +49,12 @@ fun PauseOverlay(
         }
     }
 
-    val alpha by animateFloatAsState(
-        targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(180),
-        label = "alpha"
-    )
-
     Box(
         modifier = modifier.fillMaxSize()
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer {
-                    this.alpha = alpha
-                }
                 .background(FutoshikiColors.background()),
             contentAlignment = Alignment.Center
         ) {
@@ -84,21 +73,29 @@ fun PauseOverlay(
                 FutoshikiTitle(fontSize = 32.sp)
 
                 AnimatedContent(
-                    targetState = if (showConfirmQuit) "confirm" else if (showHelp) "help" else "menu",
+                    targetState = when {
+                        showConfirmQuit -> "confirm"
+                        showHelp -> "help"
+                        else -> "menu"
+                    },
                     transitionSpec = {
                         val duration = 280
                         if (targetState != "menu") {
                             (slideInVertically(tween(duration)) { it / 4 } + fadeIn(tween(duration)))
-                                .togetherWith(slideOutVertically(tween(duration)) { -it / 4 } + fadeOut(tween(400)))
+                                .togetherWith(
+                                    slideOutVertically(tween(duration)) { -it / 4 } + fadeOut(tween(400))
+                                )
                         } else {
                             (slideInVertically(tween(duration)) { -it / 4 } + fadeIn(tween(duration)))
-                                .togetherWith(slideOutVertically(tween(duration)) { it / 4 } + fadeOut(tween(400)))
+                                .togetherWith(
+                                    slideOutVertically(tween(duration)) { it / 4 } + fadeOut(tween(400))
+                                )
                         }.using(SizeTransform(clip = false))
                     },
                     label = "pauseContentTransition"
-                ) { state ->
+                ) { currentState ->
                     val isDark = LocalIsDark.current
-                    when (state) {
+                    when (currentState) {
                         "help" -> {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -114,6 +111,7 @@ fun PauseOverlay(
                                 )
                             }
                         }
+
                         "confirm" -> {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -121,11 +119,11 @@ fun PauseOverlay(
                             ) {
                                 Spacer(Modifier.height(32.dp))
                                 Text(
-                                    text          = "QUIT TO MAIN MENU?",
-                                    fontSize      = 14.sp,
-                                    fontWeight    = FontWeight.SemiBold,
-                                    fontFamily    = ReemKufi,
-                                    color         = if (isDark) Color(0xFF888888) else Color(0xFF999999),
+                                    text = "QUIT TO MAIN MENU?",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontFamily = ReemKufi,
+                                    color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
                                     letterSpacing = 2.sp
                                 )
                                 Spacer(Modifier.height(32.dp))
@@ -143,6 +141,7 @@ fun PauseOverlay(
                                 )
                             }
                         }
+
                         else -> {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -150,11 +149,11 @@ fun PauseOverlay(
                             ) {
                                 Spacer(Modifier.height(12.dp))
                                 Text(
-                                    text          = "PAUSED",
-                                    fontSize      = 14.sp,
-                                    fontWeight    = FontWeight.SemiBold,
-                                    fontFamily    = ReemKufi,
-                                    color         = if (isDark) Color(0xFF888888) else Color(0xFF999999),
+                                    text = "PAUSED",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontFamily = ReemKufi,
+                                    color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
                                     letterSpacing = 2.sp
                                 )
                                 Spacer(Modifier.height(48.dp))

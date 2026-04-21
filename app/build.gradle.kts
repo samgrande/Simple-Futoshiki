@@ -38,6 +38,11 @@ android {
         }
     }
 
+    aaptOptions {
+        // Godot reads the PCK/sparsepck with random-access seeks; must not be compressed.
+        noCompress("pck", "sparsepck")
+    }
+
     packaging {
         jniLibs {
             useLegacyPackaging = true

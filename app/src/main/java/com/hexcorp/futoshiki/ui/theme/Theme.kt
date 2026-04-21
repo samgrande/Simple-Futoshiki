@@ -3,6 +3,7 @@ package com.hexcorp.futoshiki.ui.theme
 import android.app.Activity
 import android.view.ContextThemeWrapper
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
@@ -13,7 +14,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.core.view.WindowCompat
 import com.hexcorp.futoshiki.R
-
 // ── Theme Enum ──────────────────────────────────────────────────────────────
 
 enum class AppTheme {
@@ -183,20 +183,20 @@ fun FutoshikiTheme(
     }
 
     val colorScheme = if (isDark) {
-        lightColorScheme(
-            background = FutoshikiColors.BackgroundDark,
-            surface    = FutoshikiColors.SurfaceDark,
-            primary    = accent,
-            onPrimary  = Color.White,
-            onSurface  = FutoshikiColors.OnSurfaceDark,
+        darkColorScheme(
+            background = Color.Transparent,
+            surface = FutoshikiColors.SurfaceDark,
+            primary = accent,
+            onPrimary = Color.White,
+            onSurface = FutoshikiColors.OnSurfaceDark,
         )
     } else {
         lightColorScheme(
-            background = FutoshikiColors.Background,
-            surface    = FutoshikiColors.Surface,
-            primary    = accent,
-            onPrimary  = Color.White,
-            onSurface  = FutoshikiColors.OnSurface,
+            background = Color.Transparent,
+            surface = FutoshikiColors.Surface,
+            primary = accent,
+            onPrimary = Color.White,
+            onSurface = FutoshikiColors.OnSurface,
         )
     }
 
@@ -221,3 +221,4 @@ fun FutoshikiTheme(
         )
     }
 }
+
