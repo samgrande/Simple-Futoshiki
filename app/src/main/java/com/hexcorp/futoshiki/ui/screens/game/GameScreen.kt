@@ -32,6 +32,7 @@ import com.hexcorp.futoshiki.ui.components.shared.DraggableSizeTabs
 import com.hexcorp.futoshiki.ui.screens.pause.PauseOverlay
 import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
 import com.hexcorp.futoshiki.ui.components.shared.TimerPill
+import com.hexcorp.futoshiki.ui.godot.GodotDragonView
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 
@@ -52,9 +53,8 @@ fun GameScreen(
     // Trigger Dragon aggression on error
     LaunchedEffect(errors) {
         if (errors.isNotEmpty() && godotFragment != null) {
-            godotFragment.getGodot()?.runOnRenderThread {
-                // godotFragment.getGodot()?.nativeCall("update_aggression", 1.0)
-            }
+            // Success: Dragon is visible and background is transparent!
+            // Note: In Godot 4.x, we'll need to define a proper JNI bridge or use signals to talk to GDScript.
         }
     }
 
@@ -72,16 +72,7 @@ fun GameScreen(
         }
     }
 
-    val canGoBack = !won || state.isSolved
-    BackHandler(enabled = canGoBack) {
-        if (isPaused) {
-            viewModel.resume()
-        } else if (state.isSolved) {
-            viewModel.newGame(size)
-        } else {
-            viewModel.pause()
-        }
-    }
+    // Removed BackHandler: Handled centrally in MainActivity to prevent Godot termination
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -99,7 +90,6 @@ fun GameScreen(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(FutoshikiColors.background())
             .onGloballyPositioned { containerCoordinates = it }
     ) {
         val vw = maxWidth
@@ -173,8 +163,12 @@ fun GameScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(totalTopSpace - headerH - 16.dp)
+                            .padding(horizontal = hPad)
+                            .clip(RoundedCornerShape(24.dp))
+                            .border(2.dp, if (isDark) Color.White.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
                     ) {
-                        // Lottie animation removed. Godot Dragon is now in the background.
+                        // GodotDragonView is now hosted in MainActivity to survive lifecycle/re-compositions
+                        // This box just serves as a border/placeholder in the UI layer
                     }
                 }
 
@@ -374,7 +368,8 @@ fun GameScreen(
         if (state.showCongrats) {
             WinModal(
                 timerSeconds = state.timerSeconds,
-                onPlayAgain  = { viewModel.newGame(size) }
+                onPlayAgain  = { viewModel.newGame(size) },
+                onMainMenu   = { viewModel.goToMainMenu() }
             )
         }
     }

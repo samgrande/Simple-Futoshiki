@@ -5,8 +5,18 @@ local.properties
 .gradle/
 build/
 app/build/
-.idea/
-local.properties
 app/release
 ~/*
 .kotlin
+
+# Claude Code
+.claude/
+
+# Temporary files
+*.tmp
+temp_aar/
+app/libs/godot-lib.aar
+
+# Godot generated files
+*.remap
+*.uid

@@ -38,6 +38,16 @@ android {
         }
     }
 
+    androidResources {
+        noCompress.addAll(listOf("pck", "binary", "godot", "ctex", "tscn", "gd", "res", "remap", "uid"))
+    }
+
+    @Suppress("DEPRECATION")
+    aaptOptions {
+        noCompress("pck", "binary", "godot", "ctex", "tscn", "gd", "res", "remap", "uid")
+        ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~"
+    }
+
     packaging {
         jniLibs {
             useLegacyPackaging = true

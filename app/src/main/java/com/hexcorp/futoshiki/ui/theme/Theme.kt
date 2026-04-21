@@ -27,9 +27,9 @@ enum class ThemeMode {
 // ── Brand colours ─────────────────────────────────────────────────────────────
 
 object FutoshikiColors {
-    val Background      = Color(0xFFF5F2F2)
-    val Surface         = Color(0xFFF4F4F4)
-    val OnSurface       = Color(0xFF111111)
+    val Background      = Color(0xFFFFFFFF)
+    val Surface         = Color(0xFFFFFFFF)
+    val OnSurface       = Color(0xFF000000)
     
     val BackgroundDark  = Color(0xFF0B0B0B)
     val SurfaceDark     = Color(0xFF161616)
@@ -184,7 +184,7 @@ fun FutoshikiTheme(
 
     val colorScheme = if (isDark) {
         lightColorScheme(
-            background = FutoshikiColors.BackgroundDark,
+            background = Color.Transparent, // Allow Godot to show through from LAYER 0
             surface    = FutoshikiColors.SurfaceDark,
             primary    = accent,
             onPrimary  = Color.White,
@@ -192,7 +192,7 @@ fun FutoshikiTheme(
         )
     } else {
         lightColorScheme(
-            background = FutoshikiColors.Background,
+            background = Color.Transparent, // Allow Godot to show through from LAYER 0
             surface    = FutoshikiColors.Surface,
             primary    = accent,
             onPrimary  = Color.White,
