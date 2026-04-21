@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-export JAVA_HOME="${JAVA_HOME:-/c/Program Files/Eclipse Adoptium/jdk-25.0.2.10-hotspot}"
+export JAVA_HOME="$HOME/.sdkman/candidates/java/21.0.5-jbr"
 export ANDROID_HOME="$HOME/android-sdk"
 
 GRADLE="./gradlew"
