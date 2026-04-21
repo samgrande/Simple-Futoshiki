@@ -40,10 +40,9 @@ import kotlinx.coroutines.delay
 @Composable
 fun WinModal(
     timerSeconds: Int,
-    onPlayAgain: () -> Unit,
-    onMainMenu: () -> Unit
+    onPlayAgain: () -> Unit
 ) {
-    BackHandler { onMainMenu() }
+    BackHandler { onPlayAgain() }
 
     var visible by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current

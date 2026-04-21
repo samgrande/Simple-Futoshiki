@@ -38,14 +38,9 @@ android {
         }
     }
 
-    androidResources {
-        noCompress.addAll(listOf("pck", "binary", "godot", "ctex", "tscn", "gd", "res", "remap", "uid"))
-    }
-
-    @Suppress("DEPRECATION")
     aaptOptions {
-        noCompress("pck", "binary", "godot", "ctex", "tscn", "gd", "res", "remap", "uid")
-        ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~"
+        // Godot reads the PCK/sparsepck with random-access seeks; must not be compressed.
+        noCompress("pck", "sparsepck")
     }
 
     packaging {

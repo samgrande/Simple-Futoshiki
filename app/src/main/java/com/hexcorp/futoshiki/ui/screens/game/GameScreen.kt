@@ -10,6 +10,8 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,12 +21,15 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.hexcorp.futoshiki.GodotBounds
+import com.hexcorp.futoshiki.LocalGodotBounds
 import com.hexcorp.futoshiki.game.FutoshikiViewModel
 import com.hexcorp.futoshiki.game.Screen
 import org.godotengine.godot.GodotFragment
@@ -32,7 +37,6 @@ import com.hexcorp.futoshiki.ui.components.shared.DraggableSizeTabs
 import com.hexcorp.futoshiki.ui.screens.pause.PauseOverlay
 import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
 import com.hexcorp.futoshiki.ui.components.shared.TimerPill
-import com.hexcorp.futoshiki.ui.godot.GodotDragonView
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 
@@ -50,21 +54,35 @@ fun GameScreen(
     val won       = state.won
     val gameKey   = state.gameKey
 
-    // Trigger Dragon aggression on error
     LaunchedEffect(errors) {
         if (errors.isNotEmpty() && godotFragment != null) {
-            // Success: Dragon is visible and background is transparent!
-            // Note: In Godot 4.x, we'll need to define a proper JNI bridge or use signals to talk to GDScript.
+            godotFragment.getGodot()?.runOnRenderThread {
+                // godotFragment.getGodot()?.nativeCall("update_aggression", 1.0)
+            }
         }
     }
 
     var pillCenter by remember { mutableStateOf(Offset.Zero) }
     var pillOffset by remember { mutableStateOf(Offset.Zero) }
     var containerCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
-    var showTabs by remember { mutableStateOf(false) }
+    var showTabs by rememberSaveable { mutableStateOf(false) }
 
     val isPaused = state.screen == Screen.PAUSE
-    val showPauseOverlay = state.screen == Screen.PAUSE
+    val hideGameContent = state.screen != Screen.GAME
+
+    var keepPauseOverlayVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.screen) {
+        if (state.screen == Screen.PAUSE) {
+            keepPauseOverlayVisible = true
+        } else if (keepPauseOverlayVisible) {
+            delay(220)
+            keepPauseOverlayVisible = false
+        }
+    }
+
+    val showPauseOverlay = state.screen == Screen.PAUSE || keepPauseOverlayVisible
+    val showScreenShield = state.screen != Screen.GAME || keepPauseOverlayVisible
 
     LaunchedEffect(state.screen) {
         if (state.screen != Screen.GAME && state.screen != Screen.PAUSE) {
@@ -72,7 +90,16 @@ fun GameScreen(
         }
     }
 
-    // Removed BackHandler: Handled centrally in MainActivity to prevent Godot termination
+    val canGoBack = !won || state.isSolved
+    BackHandler(enabled = canGoBack) {
+        if (isPaused) {
+            viewModel.resume()
+        } else if (state.isSolved) {
+            viewModel.newGame(size)
+        } else {
+            viewModel.pause()
+        }
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -95,15 +122,38 @@ fun GameScreen(
         val vw = maxWidth
         val vh = maxHeight
 
-        val hPad       = 20.dp
-        val usableW    = (vw - hPad * 2).coerceAtMost(380.dp)
+        val hPad = 20.dp
+        val usableW = (vw - hPad * 2).coerceAtMost(380.dp)
 
-        val headerH    = vh * 0.11f
-        val tabH       = vh * 0.065f
-        val numpadH    = vh * 0.095f
-        val refreshH   = vh * 0.075f
-        val gapTotal   = vh * 0.18f
+        val headerH = vh * 0.11f
+        val tabH = vh * 0.065f
+        val numpadH = vh * 0.095f
+        val refreshH = vh * 0.075f
+        val gapTotal = vh * 0.18f
         val boardBudgetH = vh - headerH - tabH - numpadH - refreshH - gapTotal
+        val totalTopSpace = vh * 0.26f
+
+        val bgColor = FutoshikiColors.background()
+
+        if (!state.isSolved) {
+            Column(Modifier.fillMaxSize()) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(headerH + 16.dp)
+                        .background(bgColor)
+                )
+                Spacer(Modifier.height(totalTopSpace - headerH - 16.dp))
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .background(bgColor)
+                )
+            }
+        } else {
+            Box(Modifier.fillMaxSize().background(bgColor))
+        }
 
         val arrowRatio = 0.32f
         val boardUnits = size + arrowRatio * (size - 1)
@@ -114,7 +164,11 @@ fun GameScreen(
         val numpadBtnDp = minOf((usableW - numpadSpacing * (size - 1)) / size, vh * 0.08f)
 
         val isDark = LocalIsDark.current
-        val targetCardBg = if (showTabs) (if (isDark) Color(0xFF1E1E1E) else Color(0xFFE0E0E0)) else Color.Transparent
+        val targetCardBg = if (showTabs) {
+            if (isDark) Color(0xFF1E1E1E) else Color(0xFFE0E0E0)
+        } else {
+            Color.Transparent
+        }
         val targetCardBorder = if (showTabs) Color.Black else Color.Transparent
 
         val animatedBg by animateColorAsState(targetCardBg, tween(400), label = "cardBg")
@@ -125,8 +179,8 @@ fun GameScreen(
                 .fillMaxSize()
                 .widthIn(max = 420.dp)
                 .align(Alignment.TopCenter)
+                .graphicsLayer { alpha = if (hideGameContent) 0f else 1f }
         ) {
-            // 1. Background Content (Board, Numpad, etc.)
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -138,13 +192,9 @@ fun GameScreen(
                     },
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Constant spacer to keep the grid in the same position
-                val totalTopSpace = vh * 0.32f
-
                 if (state.isSolved) {
-                    // In solution mode, we place the pill and its spacer within the totalTopSpace
                     val pillHeight = tabH
-                    val pillSpacing = vh * 0.08f // Increased from 0.02f to move the banner up
+                    val pillSpacing = vh * 0.08f
                     val topPadding = (totalTopSpace - pillHeight - pillSpacing).coerceAtLeast(0.dp)
 
                     Spacer(Modifier.height(topPadding))
@@ -158,47 +208,62 @@ fun GameScreen(
                     )
                     Spacer(Modifier.height(pillSpacing))
                 } else {
-                    Spacer(Modifier.height(headerH + 16.dp)) // Padding to clear the floating header
+                    Spacer(Modifier.height(headerH + 16.dp))
+                    val setGodotBounds = LocalGodotBounds.current
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(totalTopSpace - headerH - 16.dp)
-                            .padding(horizontal = hPad)
-                            .clip(RoundedCornerShape(24.dp))
-                            .border(2.dp, if (isDark) Color.White.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
-                    ) {
-                        // GodotDragonView is now hosted in MainActivity to survive lifecycle/re-compositions
-                        // This box just serves as a border/placeholder in the UI layer
-                    }
+                            .onGloballyPositioned { coords ->
+                                if (coords.isAttached) {
+                                    val pos = coords.positionInWindow()
+                                    setGodotBounds(
+                                        GodotBounds(
+                                            left = pos.x.toInt(),
+                                            top = pos.y.toInt(),
+                                            width = coords.size.width,
+                                            height = coords.size.height
+                                        )
+                                    )
+                                }
+                            }
+                    )
+                }
+
+                DisposableEffect(Unit) {
+                    onDispose { /* bounds are cleared by FutoshikiApp when leaving GAME */ }
                 }
 
                 Spacer(Modifier.height(35.dp))
 
-                val boardKey = remember(state.isSolved, gameKey) { if (state.isSolved) 9999 + gameKey else gameKey }
+                val boardKey = remember(state.isSolved, gameKey) {
+                    if (state.isSolved) 9999 + gameKey else gameKey
+                }
+
                 PuzzleBoard(
-                    puzzle      = puzzle,
-                    grid        = grid,
-                    size        = size,
-                    selected    = selected,
-                    errors      = errors,
-                    cellSizeDp  = cellSizeDp,
+                    puzzle = puzzle,
+                    grid = grid,
+                    size = size,
+                    selected = selected,
+                    errors = errors,
+                    cellSizeDp = cellSizeDp,
                     arrowSlotDp = arrowSlotDp,
-                    gameKey     = boardKey,
-                    isSolved    = state.isSolved,
-                    onCellTap   = { r, c -> if (!state.isSolved) viewModel.selectCell(r, c) },
+                    gameKey = boardKey,
+                    isSolved = state.isSolved,
+                    onCellTap = { r, c -> if (!state.isSolved) viewModel.selectCell(r, c) },
                     onCellClear = { r, c -> if (!state.isSolved) viewModel.clearCell(r, c) },
-                    modifier    = Modifier.padding(horizontal = hPad)
+                    modifier = Modifier.padding(horizontal = hPad)
                 )
 
                 if (!state.isSolved) {
                     Spacer(Modifier.height(vh * 0.025f))
 
                     NumberPad(
-                        size         = size,
+                        size = size,
                         buttonSizeDp = numpadBtnDp,
-                        spacingDp    = numpadSpacing,
-                        onNumber     = { viewModel.inputNumber(it) },
-                        modifier     = Modifier.padding(horizontal = hPad)
+                        spacingDp = numpadSpacing,
+                        onNumber = { viewModel.inputNumber(it) },
+                        modifier = Modifier.padding(horizontal = hPad)
                     )
                 }
 
@@ -207,26 +272,30 @@ fun GameScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .navigationBarsPadding()
                         .padding(horizontal = hPad)
-                        .padding(bottom = (vh * 0.06f)),
-                    horizontalArrangement = if (state.isSolved) Arrangement.Center else Arrangement.spacedBy(12.dp)
+                        .padding(bottom = 12.dp),
+                    horizontalArrangement = if (state.isSolved) {
+                        Arrangement.Center
+                    } else {
+                        Arrangement.spacedBy(12.dp)
+                    }
                 ) {
                     ThemedPillButton(
-                        label    = "NEW GAME",
-                        onClick  = { viewModel.newGame(size) },
+                        label = "NEW GAME",
+                        onClick = { viewModel.newGame(size) },
                         modifier = if (state.isSolved) Modifier.fillMaxWidth(0.6f) else Modifier.weight(1f)
                     )
                     if (!state.isSolved) {
                         ThemedPillButton(
-                            label    = "CLEAR",
-                            onClick  = { viewModel.clearAll() },
+                            label = "CLEAR",
+                            onClick = { viewModel.clearAll() },
                             modifier = Modifier.weight(1f)
                         )
                     }
                 }
             }
 
-            // 1.5 Dim Overlay for Depth
             AnimatedVisibility(
                 visible = showTabs && !state.isSolved,
                 enter = fadeIn(),
@@ -243,7 +312,6 @@ fun GameScreen(
                 )
             }
 
-            // 2. Floating Header Card (overlaps the content below when expanded)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -280,6 +348,7 @@ fun GameScreen(
                                     onClick = { showTabs = !showTabs },
                                     showUnderline = false
                                 )
+
                                 TimerPill(
                                     seconds = state.timerSeconds,
                                     won = won,
@@ -292,8 +361,7 @@ fun GameScreen(
                                         .onGloballyPositioned { coords ->
                                             containerCoordinates?.let { container ->
                                                 if (container.isAttached && coords.isAttached) {
-                                                    val localPos =
-                                                        container.localPositionOf(coords, Offset.Zero)
+                                                    val localPos = container.localPositionOf(coords, Offset.Zero)
                                                     pillOffset = localPos
                                                     pillCenter = Offset(
                                                         localPos.x + coords.size.width / 2f,
@@ -302,7 +370,7 @@ fun GameScreen(
                                                 }
                                             }
                                         }
-                                        .graphicsLayer { alpha = if (isPaused) 0f else 1f }
+                                        .graphicsLayer { alpha = if (hideGameContent) 0f else 1f }
                                 )
                             }
 
@@ -315,19 +383,16 @@ fun GameScreen(
                                     Spacer(Modifier.height(vh * 0.02f))
                                     DraggableSizeTabs(
                                         currentSize = size,
-                                        onSizeChange = {
-                                            viewModel.changeSize(it)
-                                        },
+                                        onSizeChange = { viewModel.changeSize(it) },
                                         height = tabH,
                                         modifier = Modifier.fillMaxWidth()
                                     )
-                                    Spacer(Modifier.height(vh * 0.015f)) // Added padding below the slider
+                                    Spacer(Modifier.height(vh * 0.015f))
                                 }
                             }
                         }
                     }
                 } else {
-                    // Simple Title for Solution Screen
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -352,24 +417,33 @@ fun GameScreen(
             }
         }
 
-        if (showPauseOverlay && pillCenter != Offset.Zero) {
+        if (showScreenShield) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(FutoshikiColors.background())
+                    .zIndex(9f)
+            )
+        }
+
+        if (showPauseOverlay) {
             PauseOverlay(
                 revealCenter = pillCenter,
                 pillOffset = pillOffset,
                 seconds = state.timerSeconds,
-                onResume   = { viewModel.resume() },
+                onResume = { viewModel.resume() },
                 onMainMenu = { viewModel.goToMainMenu() },
-                onSolve    = { viewModel.solve() },
-                onNewGame  = { viewModel.newGame(size) },
-                onTheming  = { viewModel.goToThemingFromGame() }
+                onSolve = { viewModel.solve() },
+                onNewGame = { viewModel.newGame(size) },
+                onTheming = { viewModel.goToThemingFromGame() },
+                modifier = Modifier.zIndex(10f)
             )
         }
 
         if (state.showCongrats) {
             WinModal(
                 timerSeconds = state.timerSeconds,
-                onPlayAgain  = { viewModel.newGame(size) },
-                onMainMenu   = { viewModel.goToMainMenu() }
+                onPlayAgain = { viewModel.newGame(size) }
             )
         }
     }

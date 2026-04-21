@@ -22,6 +22,21 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Download animation PCK from Godot library (latest release)
+        run: |
+          mkdir -p app/src/main/assets
+          if gh release download \
+            --repo "${{ github.repository_owner }}/Android-Godot-Futoshiki-library" \
+            --pattern "data.pck" \
+            --dir app/src/main/assets/ \
+            --clobber 2>/dev/null; then
+            echo "Animation PCK downloaded: $(du -sh app/src/main/assets/data.pck | cut -f1)"
+          else
+            echo "WARNING: Could not download animation PCK — linting without it"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
@@ -51,6 +66,21 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+
+      - name: Download animation PCK from Godot library (latest release)
+        run: |
+          mkdir -p app/src/main/assets
+          if gh release download \
+            --repo "${{ github.repository_owner }}/Android-Godot-Futoshiki-library" \
+            --pattern "data.pck" \
+            --dir app/src/main/assets/ \
+            --clobber 2>/dev/null; then
+            echo "Animation PCK downloaded: $(du -sh app/src/main/assets/data.pck | cut -f1)"
+          else
+            echo "WARNING: Could not download animation PCK — building without it"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
