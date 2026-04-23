@@ -21,30 +21,26 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.hexcorp.futoshiki.GodotBounds
-import com.hexcorp.futoshiki.LocalGodotBounds
 import com.hexcorp.futoshiki.game.FutoshikiViewModel
 import com.hexcorp.futoshiki.game.Screen
-import org.godotengine.godot.GodotFragment
 import com.hexcorp.futoshiki.ui.components.shared.DraggableSizeTabs
 import com.hexcorp.futoshiki.ui.screens.pause.PauseOverlay
 import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
 import com.hexcorp.futoshiki.ui.components.shared.TimerPill
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
+import com.hexcorp.futoshiki.ui.korge.KorGEView
 
 @Composable
 fun GameScreen(
     viewModel: FutoshikiViewModel,
     state: com.hexcorp.futoshiki.game.GameState,
-    godotFragment: GodotFragment? = null
 ) {
     val puzzle    = state.puzzle ?: return
     val size      = state.size
@@ -53,14 +49,6 @@ fun GameScreen(
     val errors    = state.errors
     val won       = state.won
     val gameKey   = state.gameKey
-
-    LaunchedEffect(errors) {
-        if (errors.isNotEmpty() && godotFragment != null) {
-            godotFragment.getGodot()?.runOnRenderThread {
-                // godotFragment.getGodot()?.nativeCall("update_aggression", 1.0)
-            }
-        }
-    }
 
     var pillCenter by remember { mutableStateOf(Offset.Zero) }
     var pillOffset by remember { mutableStateOf(Offset.Zero) }
@@ -134,16 +122,18 @@ fun GameScreen(
         val totalTopSpace = vh * 0.26f
 
         val bgColor = FutoshikiColors.background()
+        val korgeHeight = headerH + 16.dp + 150.dp
 
         if (!state.isSolved) {
+            KorGEView(
+                aggression = viewModel.korgeManager.aggression.collectAsState().value,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(korgeHeight)
+            )
+
             Column(Modifier.fillMaxSize()) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(headerH + 16.dp)
-                        .background(bgColor)
-                )
-                Spacer(Modifier.height(totalTopSpace - headerH - 16.dp))
+                Spacer(Modifier.height(korgeHeight))
                 Box(
                     Modifier
                         .fillMaxWidth()
@@ -152,7 +142,11 @@ fun GameScreen(
                 )
             }
         } else {
-            Box(Modifier.fillMaxSize().background(bgColor))
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(bgColor)
+            )
         }
 
         val arrowRatio = 0.32f
@@ -209,25 +203,7 @@ fun GameScreen(
                     Spacer(Modifier.height(pillSpacing))
                 } else {
                     Spacer(Modifier.height(headerH + 16.dp))
-                    val setGodotBounds = LocalGodotBounds.current
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(totalTopSpace - headerH - 16.dp)
-                            .onGloballyPositioned { coords ->
-                                if (coords.isAttached) {
-                                    val pos = coords.positionInWindow()
-                                    setGodotBounds(
-                                        GodotBounds(
-                                            left = pos.x.toInt(),
-                                            top = pos.y.toInt(),
-                                            width = coords.size.width,
-                                            height = coords.size.height
-                                        )
-                                    )
-                                }
-                            }
-                    )
+                    Spacer(Modifier.height(170.dp))
                 }
 
                 DisposableEffect(Unit) {

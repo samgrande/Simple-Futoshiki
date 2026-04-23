@@ -10,6 +10,7 @@ coil = "2.7.0"
 splashscreen = "1.0.1"
 fragmentKtx = "1.8.0"
 composeUiViewBinding = "1.7.0"
+korge = "6.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -30,8 +31,10 @@ google-material = { group = "com.google.android.material", name = "material", ve
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragmentKtx" }
 androidx-compose-ui-viewbinding = { group = "androidx.compose.ui", name = "ui-viewbinding", version.ref = "composeUiViewBinding" }
+korge-android = { group = "com.soywiz.korge", name = "korge-android", version.ref = "korge" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+korge = { id = "com.soywiz.korge", version.ref = "korge" }

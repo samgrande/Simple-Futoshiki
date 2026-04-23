@@ -2,7 +2,13 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    // alias(libs.plugins.korge) // Plugin is causing issues with AGP 9.1.0 and Gradle 9.3.1
 }
+
+// korge {
+//    targetAndroid()
+// }
+
 
 android {
     namespace = "com.hexcorp.futoshiki"
@@ -39,8 +45,8 @@ android {
     }
 
     aaptOptions {
-        // Godot reads the PCK/sparsepck with random-access seeks; must not be compressed.
-        noCompress("pck", "sparsepck")
+        // Assets for KorGE/Engine
+        noCompress("png", "jpg", "jpeg")
     }
 
     packaging {
@@ -50,14 +56,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
+    kotlinOptions {
+        jvmTarget = "21"
     }
 }
 
@@ -79,6 +83,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.compose.ui.viewbinding)
+    implementation(libs.korge.android)
+    implementation("com.soywiz.korge:korge-core-android:6.0.0")
     debugImplementation(libs.androidx.ui.tooling)
-    implementation(files("libs/godot-lib.aar"))
 }

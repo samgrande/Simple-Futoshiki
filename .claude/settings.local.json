@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(env *)",
+      "Bash(./build.sh debug *)",
+      "Bash(./gradlew assembleDebug)",
+      "Bash(ANDROID_HOME=\"/c/Users/Hex/AppData/Local/Android/Sdk\" ./gradlew assembleDebug)",
+      "Bash(git rm *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(java -version)",
+      "Bash(export JAVA_HOME=\"/c/Program Files/Eclipse Adoptium/jdk-25.0.2.10-hotspot\")",
+      "WebSearch",
+      "Bash(git restore *)",
+      "Bash(mkdir -p app/src/main/assets/sprites)",
+      "Bash(cp modules/assets/sprites/*.png app/src/main/assets/sprites/)",
+      "Bash(cp modules/assets/sprites/*.jpg app/src/main/assets/sprites/)",
+      "Bash(awk *)",
+      "Bash(./gradlew assembleDebug *)",
+      "Bash(./gradlew :app:dependencies *)",
+      "Bash(sed 's/ //g')",
+      "Bash(cmd *)",
+      "Bash(powershell *)",
+      "WebFetch(domain:korge.org)",
+      "Bash(curl -s https://korge.org)",
+      "Bash(curl -s https://korge.org/docs/getting-started/)",
+      "Bash(curl -s https://docs.korge.org/korge/)",
+      "Bash(curl *)",
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(./gradlew --version)",
+      "Bash(./gradlew clean *)",
+      "WebFetch(domain:docs.korge.org)",
+      "Bash(export ANDROID_HOME=\"/c/Users/Hex/AppData/Local/Android/Sdk\")",
+      "Bash(identify *)",
+      "Bash(chmod +x build.sh)",
+      "Bash(./build.sh)"
+    ]
+  }
+}

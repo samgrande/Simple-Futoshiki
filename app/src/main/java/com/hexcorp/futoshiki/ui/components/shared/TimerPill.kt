@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -53,8 +52,6 @@ fun TimerPill(
             .background(bgColor)
             .clickable(
                 enabled = true,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(),
                 onClick = onClick
             )
             .padding(horizontal = 16.dp, vertical = 7.dp),

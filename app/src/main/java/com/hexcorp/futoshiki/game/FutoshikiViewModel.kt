@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hexcorp.futoshiki.ui.theme.AppTheme
 import com.hexcorp.futoshiki.ui.theme.ThemeMode
+import com.hexcorp.futoshiki.ui.korge.KorGEGameManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,31 +14,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-// ── Screen enum ───────────────────────────────────────────────────────────────
-
-enum class Screen { LANDING, GAME, PAUSE, THEMING }
-
-// ── UI State ──────────────────────────────────────────────────────────────────
-
-data class GameState(
-    val screen: Screen = Screen.LANDING,
-    val previousScreen: Screen = Screen.LANDING,
-    val size: Int = 4,
-    val puzzle: Puzzle? = null,
-    val grid: List<List<Int>> = emptyList(),
-    val selected: Pair<Int, Int>? = null,
-    val errors: Set<String> = emptySet(),
-    val won: Boolean = false,
-    val showCongrats: Boolean = false,
-    val timerSeconds: Int = 0,
-    val timerRunning: Boolean = false,
-    val gameKey: Int = 0,
-    val theme: AppTheme = AppTheme.FIRE,
-    val isDark: Boolean = false,
-    val themeMode: ThemeMode = ThemeMode.AUTO,
-    val isSolved: Boolean = false
-)
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
 
@@ -52,6 +28,8 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         size = loadSize()
     ))
     val state: StateFlow<GameState> = _state.asStateFlow()
+
+    val korgeManager = KorGEGameManager()
 
     private var timerJob: Job? = null
 
@@ -87,6 +65,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         val puzzle = generatePuzzle(size)
         val grid = puzzle.initial.map { it.toMutableList().toList() }
         stopTimer()
+        korgeManager.updateAggression(0f)
         _state.update { st ->
             st.copy(
                 screen = Screen.GAME,
@@ -124,10 +103,15 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
         if (won) {
             stopTimer()
+            korgeManager.updateAggression(1.0f)
             viewModelScope.launch {
                 delay(300)
                 _state.update { it.copy(showCongrats = true) }
             }
+        } else if (errors.isNotEmpty()) {
+            korgeManager.updateAggression(0.5f)
+        } else {
+            korgeManager.updateAggression(0f)
         }
     }
 
