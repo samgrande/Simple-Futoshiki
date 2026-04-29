@@ -20,9 +20,10 @@ class NinjaEntity(
     private var autoRun = false
     private var velocityY = 0.0f
     private var velocityX = 0.0f
+    private var speedMultiplier = 1.0f
 
     private val GRAVITY = 0.5f
-    private val SPEED = 250.0f
+    private val BASE_SPEED = 250.0f
     private val JUMP_VELOCITY = -370.0f
 
     private lateinit var sprite: KorgeImage
@@ -65,7 +66,7 @@ class NinjaEntity(
             velocityX = 0.0f
         } else {
             if (autoRun) {
-                velocityX = SPEED
+                velocityX = BASE_SPEED * speedMultiplier
                 sprite.scaleX = 1.0 // Running towards the right
             }
         }
@@ -126,4 +127,10 @@ class NinjaEntity(
             velocityY = JUMP_VELOCITY
         }
     }
+
+    fun setSpeedMultiplier(multiplier: Float) {
+        speedMultiplier = multiplier
+    }
+
+    fun getSpeedMultiplier(): Float = speedMultiplier
 }

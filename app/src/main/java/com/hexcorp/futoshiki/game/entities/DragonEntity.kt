@@ -31,6 +31,7 @@ class DragonEntity(
     private var isChasing = false
     private var chaseTime = 0.0f
     private var currentAggression = 0.0f
+    private var distanceMultiplier = 1.0f
 
     private lateinit var sprite: KorgeImage
     private var currentFrame = 0
@@ -113,10 +114,11 @@ class DragonEntity(
         val progress = (1.0 - exp(-chaseTime * closingSpeed)).toFloat() // 0.0 to 1.0
         
         val baseMargin = startMargin + (minMargin - startMargin) * progress
+        val dynamicBaseMargin = baseMargin * distanceMultiplier
         
         val wave = sin(timePassed * pulseSpeed)
         // Reduce hover breadth as it gets closer for a more "focused" catch
-        val dynamicMargin = baseMargin + (wave * hoverBreadth * (1.0f - progress * 0.8f))
+        val dynamicMargin = dynamicBaseMargin + (wave * hoverBreadth * (1.0f - progress * 0.8f))
         val dynamicFloat = 160.0f + (cos(timePassed * pulseSpeed * 0.5f) * verticalSwing * (1.0f - progress * 0.5f))
 
         // 3. Target Position
@@ -184,5 +186,9 @@ class DragonEntity(
         currentAggression = value
         pulseSpeed = 2.0f + (value * 8.0f)
         stiffness = 5.0f + (value * 15.0f)
+    }
+
+    fun setDistanceMultiplier(multiplier: Float) {
+        distanceMultiplier = multiplier
     }
 }

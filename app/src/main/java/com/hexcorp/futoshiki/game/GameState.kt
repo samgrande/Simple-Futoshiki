@@ -25,5 +25,6 @@ data class GameState(
     val theme: AppTheme = AppTheme.FIRE,
     val isDark: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.AUTO,
-    val isSolved: Boolean = false
+    val isSolved: Boolean = false,
+    val completedRowsCount: Int = 0
 )

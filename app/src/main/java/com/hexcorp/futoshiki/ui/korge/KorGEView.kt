@@ -21,10 +21,14 @@ import androidx.compose.ui.graphics.toArgb
 @Composable
 fun KorGEView(
     aggression: Float,
+    speedMultiplier: Float = 1.0f,
+    distanceMultiplier: Float = 1.0f,
     modifier: Modifier = Modifier
 ) {
     val state = remember { KorGEState() }
     state.aggression = aggression
+    state.speedMultiplier = speedMultiplier
+    state.distanceMultiplier = distanceMultiplier
     val isDark = LocalIsDark.current
     val accent = accentColor()
     val accentHex = String.format("#%06X", 0xFFFFFF and accent.toArgb())
@@ -46,6 +50,8 @@ fun KorGEView(
                         world.startGame()
 
                         addUpdater { dt ->
+                            state.world?.setSpeedMultiplier(state.speedMultiplier)
+                            state.world?.setDistanceMultiplier(state.distanceMultiplier)
                             world.update(dt.seconds, state.aggression)
                         }
                     }
@@ -62,4 +68,6 @@ fun KorGEView(
 private class KorGEState {
     var world: GameWorld? = null
     var aggression: Float = 0f
+    var speedMultiplier: Float = 1.0f
+    var distanceMultiplier: Float = 1.0f
 }

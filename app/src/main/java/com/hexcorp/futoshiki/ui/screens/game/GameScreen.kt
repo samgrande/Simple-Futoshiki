@@ -5,16 +5,13 @@ import androidx.compose.animation.*
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -29,10 +26,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.hexcorp.futoshiki.game.FutoshikiViewModel
 import com.hexcorp.futoshiki.game.Screen
-import com.hexcorp.futoshiki.ui.components.shared.DraggableSizeTabs
 import com.hexcorp.futoshiki.ui.screens.pause.PauseOverlay
 import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
-import com.hexcorp.futoshiki.ui.components.shared.TimerPill
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import com.hexcorp.futoshiki.ui.korge.KorGEView
@@ -127,6 +122,8 @@ fun GameScreen(
         if (!state.isSolved) {
             KorGEView(
                 aggression = viewModel.korgeManager.aggression.collectAsState().value,
+                speedMultiplier = viewModel.korgeManager.speedMultiplier.collectAsState().value,
+                distanceMultiplier = viewModel.korgeManager.distanceMultiplier.collectAsState().value,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(korgeHeight)
@@ -245,31 +242,12 @@ fun GameScreen(
 
                 Spacer(Modifier.weight(1f))
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = hPad)
-                        .padding(bottom = 12.dp),
-                    horizontalArrangement = if (state.isSolved) {
-                        Arrangement.Center
-                    } else {
-                        Arrangement.spacedBy(12.dp)
-                    }
-                ) {
-                    ThemedPillButton(
-                        label = "NEW GAME",
-                        onClick = { viewModel.newGame(size) },
-                        modifier = if (state.isSolved) Modifier.fillMaxWidth(0.6f) else Modifier.weight(1f)
-                    )
-                    if (!state.isSolved) {
-                        ThemedPillButton(
-                            label = "CLEAR",
-                            onClick = { viewModel.clearAll() },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
+                GameFooter(
+                    isSolved = state.isSolved,
+                    onNewGame = { viewModel.newGame(size) },
+                    onClearAll = { viewModel.clearAll() },
+                    hPad = hPad
+                )
             }
 
             AnimatedVisibility(
@@ -294,80 +272,29 @@ fun GameScreen(
                     .zIndex(1f)
             ) {
                 if (!state.isSolved) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 8.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(animatedBg)
-                            .border(
-                                width = 1.dp,
-                                color = animatedBorder,
-                                shape = RoundedCornerShape(24.dp)
-                            )
-                            .animateContentSize(animationSpec = tween(400))
-                            .padding(horizontal = 12.dp, vertical = 12.dp)
-                    ) {
-                        Column {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(headerH),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                FutoshikiTitle(
-                                    size = size,
-                                    fontSize = 28.sp,
-                                    isSolved = false,
-                                    showTabs = showTabs,
-                                    onClick = { showTabs = !showTabs },
-                                    showUnderline = false
-                                )
-
-                                TimerPill(
-                                    seconds = state.timerSeconds,
-                                    won = won,
-                                    isPaused = isPaused,
-                                    onClick = {
-                                        showTabs = false
-                                        viewModel.pause()
-                                    },
-                                    modifier = Modifier
-                                        .onGloballyPositioned { coords ->
-                                            containerCoordinates?.let { container ->
-                                                if (container.isAttached && coords.isAttached) {
-                                                    val localPos = container.localPositionOf(coords, Offset.Zero)
-                                                    pillOffset = localPos
-                                                    pillCenter = Offset(
-                                                        localPos.x + coords.size.width / 2f,
-                                                        localPos.y + coords.size.height / 2f
-                                                    )
-                                                }
-                                            }
-                                        }
-                                        .graphicsLayer { alpha = if (hideGameContent) 0f else 1f }
-                                )
-                            }
-
-                            AnimatedVisibility(
-                                visible = showTabs,
-                                enter = fadeIn(animationSpec = tween(400)),
-                                exit = fadeOut(animationSpec = tween(400))
-                            ) {
-                                Column {
-                                    Spacer(Modifier.height(vh * 0.02f))
-                                    DraggableSizeTabs(
-                                        currentSize = size,
-                                        onSizeChange = { viewModel.changeSize(it) },
-                                        height = tabH,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                    Spacer(Modifier.height(vh * 0.015f))
-                                }
-                            }
-                        }
-                    }
+                    GameHeader(
+                        size = size,
+                        timerSeconds = state.timerSeconds,
+                        won = won,
+                        isPaused = isPaused,
+                        showTabs = showTabs,
+                        onTitleClick = { showTabs = !showTabs },
+                        onTimerClick = {
+                            showTabs = false
+                            viewModel.pause()
+                        },
+                        onSizeChange = { viewModel.changeSize(it) },
+                        animatedBg = animatedBg,
+                        animatedBorder = animatedBorder,
+                        headerH = headerH,
+                        tabH = tabH,
+                        containerCoordinates = containerCoordinates,
+                        onPillPositioned = { offset, center ->
+                            pillOffset = offset
+                            pillCenter = center
+                        },
+                        hideGameContent = hideGameContent
+                    )
                 } else {
                     Box(
                         modifier = Modifier

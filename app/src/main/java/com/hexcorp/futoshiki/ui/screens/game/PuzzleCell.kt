@@ -188,6 +188,7 @@ fun PuzzleCell(
                                     delay(200)
                                     flashAlpha = 0f
                                 }
+                                onTap(r, c)
                             }
                         } else {
                             onTap(r, c)

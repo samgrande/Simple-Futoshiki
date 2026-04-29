@@ -66,6 +66,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         val grid = puzzle.initial.map { it.toMutableList().toList() }
         stopTimer()
         korgeManager.updateAggression(0f)
+        korgeManager.resetBoost()
         _state.update { st ->
             st.copy(
                 screen = Screen.GAME,
@@ -79,7 +80,8 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
                 showCongrats = false,
                 timerSeconds = 0,
                 timerRunning = true,
-                gameKey = st.gameKey + 1
+                gameKey = st.gameKey + 1,
+                completedRowsCount = 0
             )
         }
         startTimer()
@@ -99,7 +101,14 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         val errors = validateGrid(newGrid, st.size, st.puzzle)
         val won = isWon(newGrid, errors)
 
-        _state.update { it.copy(grid = newGrid, errors = errors, won = won) }
+        val prevCompletedRows = st.completedRowsCount
+        val currentCompletedRows = getCompletedRowsCount(newGrid, st.size, errors)
+
+        if (currentCompletedRows > prevCompletedRows && errors.isEmpty()) {
+            korgeManager.applyRowCompletionBoost()
+        }
+
+        _state.update { it.copy(grid = newGrid, errors = errors, won = won, completedRowsCount = currentCompletedRows) }
 
         if (won) {
             stopTimer()
@@ -142,7 +151,10 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun selectCell(r: Int, c: Int) {
         val st = _state.value
-        if (st.puzzle?.initial?.get(r)?.get(c) != 0) return
+        if (st.puzzle?.initial?.get(r)?.get(c) != 0) {
+            _state.update { it.copy(selected = null) }
+            return
+        }
         _state.update { it.copy(selected = r to c) }
     }
 

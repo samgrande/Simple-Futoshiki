@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-export JAVA_HOME="${JAVA_HOME:-$HOME/.sdkman/candidates/java/21.0.5-jbr}"
+export JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/java-21-openjdk}"
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/android-sdk}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

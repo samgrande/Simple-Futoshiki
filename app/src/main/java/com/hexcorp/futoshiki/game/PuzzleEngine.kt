@@ -139,3 +139,19 @@ fun isWon(grid: List<List<Int>>, errors: Set<String>): Boolean {
     val full = grid.all { row -> row.all { it != 0 } }
     return full && errors.isEmpty()
 }
+
+fun getCompletedRows(grid: List<List<Int>>, size: Int, errors: Set<String>): Set<Int> {
+    if (errors.isNotEmpty()) return emptySet()
+    val completed = mutableSetOf<Int>()
+    for (r in 0 until size) {
+        val rowValues = grid[r]
+        if (rowValues.all { it != 0 } && rowValues.toSet().size == size) {
+            completed.add(r)
+        }
+    }
+    return completed
+}
+
+fun getCompletedRowsCount(grid: List<List<Int>>, size: Int, errors: Set<String>): Int {
+    return getCompletedRows(grid, size, errors).size
+}

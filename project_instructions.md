@@ -1,72 +1,55 @@
-# Futoshiki Puzzle Game
+# Simple-Futoshiki Project Instructions
 
-A clean and modern **Futoshiki** logic puzzle built entirely in **Kotlin + Jetpack Compose**, with **KorGE**-powered animations.
+This document consolidates all instructions and development practices for the Simple-Futoshiki project, derived from the project's structure, scripts, and existing documentation.
 
----
+## Project Overview
 
-## Repository
-
-GitHub: [https://github.com/samgrande/Simple-Futoshiki](https://github.com/samgrande/Simple-Futoshiki)
-
----
-
-## Features
-
-- Minimal and modern UI design
-- Challenging logic-based puzzles
-- Smooth and responsive interactions
-- Pure Kotlin + Jetpack Compose architecture
-- KorGE animated characters (dragon, ninja)
+Simple-Futoshiki is an Android game built using **Kotlin** and **Jetpack Compose**.
+*Note on animations:* The `README.md` references Godot 4.6, but the source code and build files (e.g., `app/build.gradle.kts`, `app/src/main/java/com/hexcorp/futoshiki/ui/korge/KorGEView.kt`) reveal that the project uses **KorGE** for its game entities and animations (e.g., Dragon and Ninja characters).
 
 ---
 
-## What is Futoshiki?
-
-Futoshiki is a Japanese logic puzzle played on a square grid. The objective is to:
-
-- Fill the grid with numbers
-- Ensure no number repeats in any row or column
-- Follow inequality constraints (`>`, `<`) between certain cells
-
----
-
-## Building the App
-
-The app is an Android game built using Kotlin and Jetpack Compose, with KorGE handling game entities and animations.
-
-The project includes a convenient `build.sh` script to streamline Android builds.
-
-### Prerequisites
+## 1. Prerequisites
 
 To build and run the app, ensure you have the following installed:
 - **JDK**: Version 21 (e.g., JetBrains Runtime JBR)
 - **Android SDK**: Latest version (expected at `~/android-sdk`)
+- *(Legacy/Optional depending on current branch state)* **Godot**: Version 4.6 stable headless (if Godot animations are still being exported from the companion `Android-Godot-Futoshiki-library` repository).
 
 ---
 
-### Building Locally
+## 2. Building the App
 
-**Step 1 — Build the app**
+The project includes a convenient `build.sh` script to streamline Android builds.
 
+### Using `build.sh`
+
+Navigate to the project root:
 ```bash
-cd Simple-Futoshiki
-
-# Debug APK (for sideloading / local testing)
-./build.sh debug
-# Output: app/build/outputs/apk/debug/app-debug.apk
-
-# Release APK (unsigned without signing env vars)
-./build.sh release
-# Output: app/build/outputs/apk/release/app-release.apk
-
-# Release AAB (for Play Store)
-./build.sh aab
-# Output: app/build/outputs/bundle/release/app-release.aab
+cd /path/to/Simple-Futoshiki
 ```
 
+**Debug APK** (Default, for sideloading/local testing):
+```bash
+./build.sh debug
+```
+Output: `app/build/outputs/apk/debug/app-debug.apk`
+
+**Release APK** (Signed/Unsigned):
+```bash
+./build.sh release
+```
+Output: `app/build/outputs/apk/release/app-release.apk`
+
+**Release AAB** (Android App Bundle for Play Store):
+```bash
+./build.sh aab
+```
+Output: `app/build/outputs/bundle/release/app-release.aab`
+
 ---
 
-## Keystore Management
+## 3. Keystore Management
 
 For building release APKs and AABs, the app must be signed. The project includes scripts to manage the Java Keystore (`.jks`).
 
@@ -96,7 +79,7 @@ source ~/.bashrc # or ~/.zshrc
 
 ---
 
-## Building on GitHub Actions / CI
+## 4. GitHub Actions / CI
 
 The project is configured to automatically build and release on pushes to the `main` branch.
 
@@ -109,8 +92,7 @@ To make the automated pipeline work, you must set the following repository secre
 | `KEYSTORE_PASSWORD` | Keystore password |
 | `KEY_ALIAS` | Key alias |
 | `KEY_PASSWORD` | Key password |
-
-*(Note: If a legacy Godot pipeline is ever restored, `GH_PAT` may also be required.)*
+| `GH_PAT` | (If Godot is still used) A Personal Access Token with **Contents: Read** permissions on the companion Godot library repo. |
 
 ### Release Artifacts
 Upon a successful build on the `main` branch, the workflow creates a new GitHub Release (tagged `build-N`) with:
@@ -118,39 +100,14 @@ Upon a successful build on the `main` branch, the workflow creates a new GitHub 
 - `Futoshiki-release.apk`
 - `Futoshiki-release.aab`
 
-To trigger manually without pushing: **Actions → Build & Publish APKs → Run workflow**.
-
 ---
 
-## Design Philosophy
+## 5. Architecture & Code Philosophy
 
-- Keep it **minimal**
-- Prioritize **usability**
-- Maintain **clarity over complexity**
-- Provide a **distraction-free puzzle experience**
+- **UI Framework**: Pure Kotlin with Jetpack Compose (`compileSdk = 35`, `targetSdk = 35`, `minSdk = 26`).
+- **Animations/Graphics**: KorGE (`com.soywiz.korge:korge-core-android`).
+- **Design Philosophy**: Minimal UI, focus on usability, distraction-free puzzle experience.
 
----
+## 6. Known Issues / Notes
 
-## Future Improvements
-
-- More puzzle sizes and difficulty levels
-- Additional animation themes
-- Leaderboard / time tracking
-- Offline puzzle packs
-
----
-
-## Contributing
-
-Contributions are welcome!
-
-1. Fork the repo
-2. Create your feature branch
-3. Commit your changes
-4. Open a pull request
-
----
-
-## License
-
-This project is licensed under the **Apache License 2.0**.
+- The KorGE Gradle plugin (`libs.plugins.korge`) is currently commented out in `app/build.gradle.kts` due to compatibility issues with AGP 9.1.0 and Gradle 9.3.1. It relies on standard Android implementation of KorGE dependencies instead.

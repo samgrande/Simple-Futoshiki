@@ -137,6 +137,18 @@ class GameWorld(
         }
     }
 
+    fun setSpeedMultiplier(multiplier: Float) {
+        if (::ninja.isInitialized) {
+            ninja.setSpeedMultiplier(multiplier)
+        }
+    }
+
+    fun setDistanceMultiplier(multiplier: Float) {
+        if (::dragon.isInitialized) {
+            dragon.setDistanceMultiplier(multiplier)
+        }
+    }
+
     fun update(dt: Double, aggression: Float) {
         if (!::ninja.isInitialized || !::dragon.isInitialized) return
         

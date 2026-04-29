@@ -10,12 +10,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hexcorp.futoshiki.ui.components.shared.BigButton
 import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
-import com.hexcorp.futoshiki.ui.components.shared.HelpPanel
 import com.hexcorp.futoshiki.ui.components.shared.LogoMark
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
@@ -136,83 +133,16 @@ fun LandingScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) { state ->
                     val isDark = LocalIsDark.current
-                    when (state) {
-                        "help" -> {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 20.dp)
-                            ) {
-                                Spacer(Modifier.height(24.dp))
-                                HelpPanel(
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.9f)
-                                        .fillMaxHeight(0.7f),
-                                    scrollable = true
-                                )
-                                Spacer(Modifier.height(20.dp))
-                                BigButton(
-                                    label = "BACK",
-                                    onClick = { showHelp = false },
-                                    isDark = isDark
-                                )
-                            }
-                        }
-                        "confirm" -> {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Spacer(Modifier.height(32.dp))
-                                Text(
-                                    text          = "Q U I T   T H E   G A M E  ?",
-                                    fontSize      = 13.sp,
-                                    fontWeight    = FontWeight.SemiBold,
-                                    fontFamily    = ReemKufi,
-                                    color         = if (isDark) Color(0xFF888888) else Color(0xFF999999),
-                                    letterSpacing = 2.sp
-                                )
-                                Spacer(Modifier.height(32.dp))
-                                BigButton(
-                                    label = "Y E S",
-                                    onClick = onQuit,
-                                    primary = true,
-                                    isDark = isDark
-                                )
-                                Spacer(Modifier.height(14.dp))
-                                BigButton(
-                                    label = "N O",
-                                    onClick = { showConfirmQuit = false },
-                                    isDark = isDark
-                                )
-                            }
-                        }
-                        else -> {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Spacer(Modifier.height(48.dp))
-                                BigButton(
-                                    label = "START",
-                                    onClick = onStart,
-                                    primary = true,
-                                    isDark = isDark
-                                )
-                                Spacer(Modifier.height(12.dp))
-                                BigButton(
-                                    label = "HELP",
-                                    onClick = { showHelp = true },
-                                    isDark = isDark
-                                )
-                                Spacer(Modifier.height(12.dp))
-                                BigButton(
-                                    label = "THEMES",
-                                    onClick = onTheming,
-                                    isDark = isDark
-                                )
-                            }
-                        }
-                    }
+                    LandingMenuContent(
+                        state = state,
+                        isDark = isDark,
+                        onStart = onStart,
+                        onTheming = onTheming,
+                        onQuit = onQuit,
+                        onShowHelp = { showHelp = true },
+                        onHideHelp = { showHelp = false },
+                        onHideConfirmQuit = { showConfirmQuit = false }
+                    )
                 }
             }
 
