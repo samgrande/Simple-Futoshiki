@@ -47,6 +47,47 @@ fun generateSolution(size: Int): List<List<Int>> {
     return grid.map { it.toList() }
 }
 
+fun countSolutions(initial: List<List<Int>>, constraints: List<Constraint>, size: Int, limit: Int = 2): Int {
+    val grid = Array(size) { r -> IntArray(size) { c -> initial[r][c] } }
+    var count = 0
+
+    fun isValid(row: Int, col: Int, num: Int): Boolean {
+        for (i in 0 until size) {
+            if (grid[row][i] == num || grid[i][col] == num) return false
+        }
+        for (cn in constraints) {
+            val v1 = if (cn.r1 == row && cn.c1 == col) num else grid[cn.r1][cn.c1]
+            val v2 = if (cn.r2 == row && cn.c2 == col) num else grid[cn.r2][cn.c2]
+            if (v1 != 0 && v2 != 0) {
+                if (cn.gt && v1 <= v2) return false
+                if (!cn.gt && v1 >= v2) return false
+            }
+        }
+        return true
+    }
+
+    fun solve(pos: Int): Boolean {
+        if (pos == size * size) {
+            count++
+            return count >= limit
+        }
+        val row = pos / size
+        val col = pos % size
+        if (grid[row][col] != 0) return solve(pos + 1)
+        for (n in 1..size) {
+            if (isValid(row, col, n)) {
+                grid[row][col] = n
+                if (solve(pos + 1)) return true
+                grid[row][col] = 0
+            }
+        }
+        return false
+    }
+
+    solve(0)
+    return count
+}
+
 // ── Constraint generator ──────────────────────────────────────────────────────
 
 fun generateConstraints(solution: List<List<Int>>, size: Int, count: Int): List<Constraint> {
@@ -70,18 +111,38 @@ fun generateConstraints(solution: List<List<Int>>, size: Int, count: Int): List<
 // ── Full puzzle builder ───────────────────────────────────────────────────────
 
 fun generatePuzzle(size: Int): Puzzle {
-    val solution = generateSolution(size)
-    val constraintCount = when (size) { 4 -> 4; 5 -> 6; else -> 8 }
-    val constraints = generateConstraints(solution, size, constraintCount)
+    var solution: List<List<Int>>
+    var constraints: List<Constraint>
+    var initialGrid: List<List<Int>>
 
-    val revealCount = when (size) { 4 -> 4; 5 -> 5; else -> 6 }
-    val allCells = (0 until size).flatMap { r -> (0 until size).map { c -> r to c } }
-    val revealed = allCells.shuffled().take(revealCount)
+    // Retry until we get a puzzle with a unique solution
+    while (true) {
+        solution = generateSolution(size)
+        // More constraints for larger grids to help uniqueness
+        val constraintCount = when (size) {
+            3 -> 3
+            4 -> 5
+            5 -> 7
+            else -> 9
+        }
+        constraints = generateConstraints(solution, size, constraintCount)
 
-    val initial = Array(size) { IntArray(size) }
-    for ((r, c) in revealed) initial[r][c] = solution[r][c]
+        val allCells = (0 until size).flatMap { r -> (0 until size).map { c -> r to c } }.shuffled()
+        val grid = Array(size) { IntArray(size) }
+        
+        // Reveal cells one by one until there's exactly one solution
+        for ((r, c) in allCells) {
+            grid[r][c] = solution[r][c]
+            if (countSolutions(grid.map { it.toList() }, constraints, size) == 1) {
+                break
+            }
+        }
+        
+        initialGrid = grid.map { it.toList() }
+        if (countSolutions(initialGrid, constraints, size) == 1) break
+    }
 
-    return Puzzle(solution, constraints, initial.map { it.toList() })
+    return Puzzle(solution, constraints, initialGrid)
 }
 
 // ── Validation ────────────────────────────────────────────────────────────────
