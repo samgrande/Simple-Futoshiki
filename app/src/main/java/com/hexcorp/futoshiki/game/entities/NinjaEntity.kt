@@ -12,7 +12,8 @@ class NinjaEntity(
     private val runSheet: Bitmap,
     private val jumpSheet: Bitmap,
     private val frameWidth: Int,
-    private val frameHeight: Int
+    private val frameHeight: Int,
+    private val manager: com.hexcorp.futoshiki.ui.korge.KorGEGameManager
 ) : Container() {
 
     private var currentState = NinjaAnimationState.STAND
@@ -39,23 +40,31 @@ class NinjaEntity(
         addChild(sprite)
     }
 
-    suspend fun runIntroSequence() {
+    suspend fun runIntroSequence(manager: com.hexcorp.futoshiki.ui.korge.KorGEGameManager) {
+        suspend fun waitPausable(ms: Long) {
+            var e = 0L
+            while (e < ms) {
+                if (!manager.isPaused) e += 16
+                delay(16)
+            }
+        }
+
         // 1. INITIAL STATE: Standing still, looking Right
         currentState = NinjaAnimationState.STAND
         sprite.scaleX = 1.0
-        delay(500)
+        waitPausable(500)
 
         // 2. THE TRACKING: Dragon is now flying through the sky (Right -> Left)
-        delay(1200)
+        waitPausable(1200)
 
         // Ninja "follows" the dragon by turning Left as it passes over him
         sprite.scaleX = -1.0
-        delay(1300)
+        waitPausable(1300)
 
         // 3. THE REACTION: Dragon has vanished to the left.
         // Ninja looks back Right, realizes the chase is starting, and bolts!
         sprite.scaleX = 1.0
-        delay(300)
+        waitPausable(300)
 
         isIntro = false
         autoRun = true
@@ -65,6 +74,13 @@ class NinjaEntity(
         x = 100.0
         isIntro = false
         autoRun = true
+    }
+
+    fun triggerWin() {
+        autoRun = false
+        velocityX = 0.0f
+        velocityY = 0.0f
+        currentState = NinjaAnimationState.STAND
     }
 
     fun update(dt: Double, floorY: Double) {

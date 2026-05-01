@@ -11,7 +11,8 @@ import kotlin.math.*
 class DragonEntity(
     private val spriteSheet: Bitmap,
     private val frameWidth: Int,
-    private val frameHeight: Int
+    private val frameHeight: Int,
+    private val manager: com.hexcorp.futoshiki.ui.korge.KorGEGameManager
 ) : Container() {
 
     // --- TUNED FOR TIGHTER CHASE ---
@@ -51,7 +52,8 @@ class DragonEntity(
         target = ninja
     }
 
-    suspend fun runCinematicIntro() {
+    suspend fun runCinematicIntro(manager: com.hexcorp.futoshiki.ui.korge.KorGEGameManager) {
+        while (manager.isPaused) delay(100)
         delay(200)
         val ninja = target ?: return
 
@@ -67,15 +69,22 @@ class DragonEntity(
         val startX = x
         val endX = ninja.x - 1000.0f
 
-        val startTime = System.currentTimeMillis()
-        while (System.currentTimeMillis() - startTime < duration * 1000) {
-            val progress = (System.currentTimeMillis() - startTime).toFloat() / (duration * 1000)
-            x = startX + (endX - startX) * progress
+        var elapsed = 0L
+        while (elapsed < duration * 1000) {
+            if (!manager.isPaused) {
+                val progress = elapsed.toFloat() / (duration * 1000)
+                x = startX + (endX - startX) * progress
+                elapsed += 16
+            }
             delay(16)
         }
 
         visible = false
-        delay(500)
+        var wait = 0L
+        while (wait < 500) {
+            if (!manager.isPaused) wait += 16
+            delay(16)
+        }
 
         // PHASE 2: START CHASE
         x = ninja.x - 400.0f
@@ -96,6 +105,27 @@ class DragonEntity(
         visible = true
         isChasing = true
         velocityX = 250.0f
+    }
+
+    suspend fun runWinFlyAway() {
+        isChasing = false
+        // Fly away to the left quickly
+        val startX = x
+        val startY = y
+        val duration = 2.5f
+        
+        var elapsed = 0L
+        while (elapsed < duration * 1000) {
+            if (!manager.isPaused) {
+                val progress = elapsed.toFloat() / (duration * 1000)
+                // Curve slightly upward and fast to the left
+                x = startX - (1200.0f * progress)
+                y = startY - (300.0f * sin(progress * PI.toFloat()))
+                elapsed += 16
+            }
+            delay(16)
+        }
+        visible = false
     }
 
     fun update(dt: Double, ninjaScreenX: Double) {

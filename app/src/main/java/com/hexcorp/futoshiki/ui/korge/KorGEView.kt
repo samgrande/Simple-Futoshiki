@@ -37,7 +37,7 @@ fun KorGEView(
                     displayMode = KorgeDisplayMode(ScaleMode.COVER, Anchor.BOTTOM_CENTER, clipBorders = true),
                     main = {
                         val assets = AssetManager()
-                        val world = GameWorld(assets, isDark, accentHex)
+                        val world = GameWorld(assets, manager, isDark, accentHex)
                         manager.gameWorld = world
                         
                         world.setupWorld()

@@ -10,6 +10,7 @@ import kotlinx.coroutines.*
 
 class GameWorld(
     private val assets: AssetManager,
+    private val manager: com.hexcorp.futoshiki.ui.korge.KorGEGameManager,
     private val isDark: Boolean = false,
     private val skyColorHex: String = "#0b0b0b"
 ) : Container() {
@@ -20,6 +21,7 @@ class GameWorld(
     private var floorY = 410.0
     private var targetNinjaScreenX = 500.0
     private var currentNinjaScreenX = 500.0
+    private var cameraStiffness = 0.2
 
     suspend fun setupWorld() {
         // 0. Setup Sky Background Color based on theme
@@ -110,7 +112,8 @@ class GameWorld(
             assets.loadImage("sprites/stand.png"),
             assets.loadImage("sprites/ninja.png"),
             assets.loadImage("sprites/jump.png"),
-            400, 400
+            400, 400,
+            manager
         ).apply {
             x = 100.0
             y = floorY + 95.0
@@ -121,7 +124,7 @@ class GameWorld(
 
         // 3. Setup Dragon
         val dragonSheet = assets.loadImage("sprites/dragon.png")
-        dragon = DragonEntity(dragonSheet, 400, 400).apply {
+        dragon = DragonEntity(dragonSheet, 400, 400, manager).apply {
             setTarget(ninja)
             zIndex = 10.0
             scale = 1.6
@@ -151,15 +154,37 @@ class GameWorld(
     }
 
     fun startGame(skipIntro: Boolean = false) {
+        cameraStiffness = 0.2
         if (skipIntro) {
             if (::ninja.isInitialized) ninja.skipIntro()
             if (::dragon.isInitialized) dragon.skipIntro(ninja)
         } else {
             // Run intros in parallel
             GlobalScope.launch {
-                if (::ninja.isInitialized) launch { ninja.runIntroSequence() }
-                if (::dragon.isInitialized) launch { dragon.runCinematicIntro() }
+                if (::ninja.isInitialized) launch { ninja.runIntroSequence(manager) }
+                if (::dragon.isInitialized) launch { dragon.runCinematicIntro(manager) }
             }
+        }
+    }
+
+    fun runWinSequence() {
+        if (::dragon.isInitialized) {
+            GlobalScope.launch {
+                dragon.runWinFlyAway()
+            }
+        }
+        
+        // Ninja keeps running for a bit while we center him slowly
+        GlobalScope.launch {
+        // 1. Slow down the camera centering speed temporarily for a "cinematic" feel
+        cameraStiffness = 0.05
+        targetNinjaScreenX = 500.0
+            
+        // 2. Wait for some time while he keeps running towards the center
+        delay(2000)
+            
+            // 3. Now stop him and make him stand
+            if (::ninja.isInitialized) ninja.triggerWin()
         }
     }
 
@@ -189,7 +214,7 @@ class GameWorld(
         // Smoothly move currentNinjaScreenX toward targetNinjaScreenX
         val diff = targetNinjaScreenX - currentNinjaScreenX
         if (kotlin.math.abs(diff) > 0.1) {
-            currentNinjaScreenX += diff * (1.0 - kotlin.math.exp(-0.2 * dt))
+            currentNinjaScreenX += diff * (1.0 - kotlin.math.exp(-cameraStiffness * dt))
         } else {
             currentNinjaScreenX = targetNinjaScreenX
         }

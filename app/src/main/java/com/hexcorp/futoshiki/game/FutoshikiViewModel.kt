@@ -67,6 +67,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         stopTimer()
         korgeManager.updateAggression(0f)
         korgeManager.resetBoost()
+        korgeManager.introFinished = false
         _state.update { st ->
             st.copy(
                 screen = Screen.GAME,
@@ -116,12 +117,9 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         ) }
 
         if (won) {
+            _state.update { it.copy(won = true, showCongrats = true) }
             stopTimer()
-            korgeManager.updateAggression(1.0f)
-            viewModelScope.launch {
-                delay(300)
-                _state.update { it.copy(showCongrats = true) }
-            }
+            korgeManager.gameWorld?.runWinSequence()
         } else if (errors.isNotEmpty()) {
             korgeManager.updateAggression(0.5f)
         } else {

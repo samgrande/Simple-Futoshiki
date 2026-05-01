@@ -120,13 +120,15 @@ fun GameScreen(
         val korgeHeight = headerH + 16.dp + 150.dp
 
         if (!state.isSolved) {
-            KorGEView(
-                manager = viewModel.korgeManager,
-                isPaused = isPaused,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(korgeHeight)
-            )
+            key(state.gameKey) {
+                KorGEView(
+                    manager = viewModel.korgeManager,
+                    isPaused = isPaused,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(korgeHeight)
+                )
+            }
 
             Column(Modifier.fillMaxSize()) {
                 Spacer(Modifier.height(korgeHeight))
@@ -212,37 +214,45 @@ fun GameScreen(
                     if (state.isSolved) 9999 + gameKey else gameKey
                 }
 
-                PuzzleBoard(
-                    puzzle = puzzle,
-                    grid = grid,
-                    size = size,
-                    selected = selected,
-                    errors = errors,
-                    cellSizeDp = cellSizeDp,
-                    arrowSlotDp = arrowSlotDp,
-                    gameKey = boardKey,
-                    isSolved = state.isSolved,
-                    onCellTap = { r, c -> if (!state.isSolved) viewModel.selectCell(r, c) },
-                    onCellClear = { r, c -> if (!state.isSolved) viewModel.clearCell(r, c) },
-                    modifier = Modifier.padding(horizontal = hPad)
-                )
-
-                if (!state.isSolved) {
-                    Spacer(Modifier.height(vh * 0.025f))
-
-                    NumberPad(
-                        size = size,
-                        buttonSizeDp = numpadBtnDp,
-                        spacingDp = numpadSpacing,
-                        onNumber = { viewModel.inputNumber(it) },
+                if (state.showCongrats) {
+                    CongratsView(
+                        timerSeconds = state.timerSeconds,
+                        onPlayAgain = { viewModel.newGame(size) },
                         modifier = Modifier.padding(horizontal = hPad)
                     )
+                } else {
+                    PuzzleBoard(
+                        puzzle = puzzle,
+                        grid = grid,
+                        size = size,
+                        selected = selected,
+                        errors = errors,
+                        cellSizeDp = cellSizeDp,
+                        arrowSlotDp = arrowSlotDp,
+                        gameKey = boardKey,
+                        isSolved = state.isSolved,
+                        onCellTap = { r, c -> if (!state.isSolved) viewModel.selectCell(r, c) },
+                        onCellClear = { r, c -> if (!state.isSolved) viewModel.clearCell(r, c) },
+                        modifier = Modifier.padding(horizontal = hPad)
+                    )
+
+                    if (!state.isSolved) {
+                        Spacer(Modifier.height(vh * 0.025f))
+
+                        NumberPad(
+                            size = size,
+                            buttonSizeDp = numpadBtnDp,
+                            spacingDp = numpadSpacing,
+                            onNumber = { viewModel.inputNumber(it) },
+                            modifier = Modifier.padding(horizontal = hPad)
+                        )
+                    }
                 }
 
                 Spacer(Modifier.weight(1f))
 
                 GameFooter(
-                    isSolved = state.isSolved,
+                    isSolved = state.isSolved || state.won || state.showCongrats,
                     onNewGame = { viewModel.newGame(size) },
                     onClearAll = { viewModel.clearAll() },
                     hPad = hPad
@@ -342,11 +352,6 @@ fun GameScreen(
             )
         }
 
-        if (state.showCongrats) {
-            WinModal(
-                timerSeconds = state.timerSeconds,
-                onPlayAgain = { viewModel.newGame(size) }
-            )
-        }
+        /* WinModal removed, now using inline CongratsView */
     }
 }
