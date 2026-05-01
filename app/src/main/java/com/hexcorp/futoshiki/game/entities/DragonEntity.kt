@@ -57,7 +57,7 @@ class DragonEntity(
 
         // PHASE 1: TEASER (Right -> Left)
         x = ninja.x + 1000.0f
-        y = ninja.y - 460.0f
+        y = ninja.y - 560.0f
         sprite.scaleX = -1.0
         sprite.scaleY = 1.0
         visible = true
@@ -79,7 +79,7 @@ class DragonEntity(
 
         // PHASE 2: START CHASE
         x = ninja.x - 400.0f
-        y = ninja.y - 400.0f
+        y = ninja.y - 500.0f
         sprite.scaleX = 1.0
         sprite.scaleY = 1.0
         visible = true
@@ -88,7 +88,17 @@ class DragonEntity(
         velocityX = 250.0f
     }
 
-    fun update(dt: Double) {
+    fun skipIntro(ninja: NinjaEntity) {
+        x = ninja.x - 400.0f
+        y = ninja.y - 500.0f
+        sprite.scaleX = 1.0
+        sprite.scaleY = 1.0
+        visible = true
+        isChasing = true
+        velocityX = 250.0f
+    }
+
+    fun update(dt: Double, ninjaScreenX: Double) {
         val ninja = target ?: return
 
         timePassed += dt.toFloat()
@@ -106,61 +116,22 @@ class DragonEntity(
 
         chaseTime += dt.toFloat()
 
-        // GRADUAL CLOSING LOGIC
-        // Starts far and approaches the ninja over time
-        val startMargin = 600.0f
-        val minMargin = 200.0f // Increased minimum gap to prevent clipping
-        val closingSpeed = 0.2f + (currentAggression * 0.3f)
-        val progress = (1.0 - exp(-chaseTime * closingSpeed)).toFloat() // 0.0 to 1.0
+        // STATIONARY ON SCREEN LOGIC
+        // Keep the dragon at a fixed screen position (e.g., 100px from the left edge)
+        // This means it won't move forward when the ninja moves forward.
+        val targetScreenX = 100.0
+        val actualMargin = ninjaScreenX - targetScreenX
         
-        val baseMargin = startMargin + (minMargin - startMargin) * progress
-        val dynamicBaseMargin = baseMargin * distanceMultiplier
-        
-        val wave = sin(timePassed * pulseSpeed)
-        // Reduce hover breadth as it gets closer for a more "focused" catch
-        val dynamicMargin = dynamicBaseMargin + (wave * hoverBreadth * (1.0f - progress * 0.8f))
-        val dynamicFloat = 160.0f + (cos(timePassed * pulseSpeed * 0.5f) * verticalSwing * (1.0f - progress * 0.5f))
-
+        // Keep the vertical hovering motion - Increased offset to 300.0 to prevent ground clipping
+        val dynamicFloat = 220.0f + (cos(timePassed * pulseSpeed * 0.5f) * verticalSwing)
+ 
         // 3. Target Position
-        val sideDir = -dynamicMargin
-        val targetX = ninja.x + sideDir
-        val targetY = ninja.y - dynamicFloat
-
-        // 4. Spring Physics with Dynamic Damping
-        val displacementX = targetX - x
-        val displacementY = targetY - y
-
-        // SLOW DOWN BEFORE CATCH: Use damping relative to the ninja's speed (approx 250)
-        // This prevents the dragon from falling behind due to world-space damping
-        val ninjaSpeedX = 250.0f
-        
-        val slowDownRange = 1.0f - progress // Transitions to 0
-        val effectiveStiffness = stiffness * (1.0f + progress * 2.0f) // Get "stronger" as it gets closer
-        val effectiveDamping = damping + (progress * 15.0f)
-
-        val springForceX = displacementX * effectiveStiffness.toDouble()
-        val springForceY = displacementY * effectiveStiffness.toDouble()
-        
-        // Damp relative to ninja's speed so we don't fight the forward movement
-        val relativeVelX = velocityX - ninjaSpeedX
-        val dampingForceX = relativeVelX.toDouble() * effectiveDamping.toDouble()
-        val dampingForceY = velocityY.toDouble() * effectiveDamping.toDouble()
-
-        velocityX += ((springForceX - dampingForceX) * dt).toFloat()
-        velocityY += ((springForceY - dampingForceY) * dt).toFloat()
-
-        // Speed Management - ensure we can always keep up with the ninja
-        val minSpeedNeeded = ninjaSpeedX + 50.0f
-        val currentMaxSpeed = max(minSpeedNeeded, maxEntranceSpeed * (0.6f + 0.4f * slowDownRange))
-        val currentSpeed = sqrt(velocityX.toDouble() * velocityX + velocityY * velocityY)
-        if (currentSpeed > currentMaxSpeed) {
-            val ratio = currentMaxSpeed / currentSpeed
-            velocityX *= ratio.toFloat()
-            velocityY *= ratio.toFloat()
-        }
-
-        x += velocityX * dt
-        y += velocityY * dt
+        val targetX = ninja.x - actualMargin
+        val targetY = ninja.y - dynamicFloat.toDouble()
+ 
+        // 4. Update Position directly
+        x = targetX
+        y = targetY
 
         updateAnimation(dt.toFloat())
     }

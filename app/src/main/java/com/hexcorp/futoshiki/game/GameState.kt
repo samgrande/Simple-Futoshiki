@@ -26,5 +26,8 @@ data class GameState(
     val isDark: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.AUTO,
     val isSolved: Boolean = false,
-    val completedRowsCount: Int = 0
+    val completedRowsCount: Int = 0,
+    val finishedRows: Set<Int> = emptySet(),
+    val finishedCols: Set<Int> = emptySet(),
+    val ninjaScreenX: Float = 500f
 )

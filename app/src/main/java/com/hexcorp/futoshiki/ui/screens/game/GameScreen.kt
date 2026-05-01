@@ -121,9 +121,8 @@ fun GameScreen(
 
         if (!state.isSolved) {
             KorGEView(
-                aggression = viewModel.korgeManager.aggression.collectAsState().value,
-                speedMultiplier = viewModel.korgeManager.speedMultiplier.collectAsState().value,
-                distanceMultiplier = viewModel.korgeManager.distanceMultiplier.collectAsState().value,
+                manager = viewModel.korgeManager,
+                isPaused = isPaused,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(korgeHeight)

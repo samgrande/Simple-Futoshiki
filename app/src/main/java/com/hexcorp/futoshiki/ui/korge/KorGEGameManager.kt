@@ -14,6 +14,11 @@ class KorGEGameManager {
     private val _distanceMultiplier = MutableStateFlow(1.0f)
     val distanceMultiplier = _distanceMultiplier.asStateFlow()
 
+    private val _ninjaScreenX = MutableStateFlow(500f)
+    val ninjaScreenX = _ninjaScreenX.asStateFlow()
+
+    var introFinished = false
+    var isPaused = false
     var gameWorld: GameWorld? = null
 
     fun updateAggression(value: Float) {
@@ -32,5 +37,10 @@ class KorGEGameManager {
     fun resetBoost() {
         _speedMultiplier.value = 1.0f
         _distanceMultiplier.value = 1.0f
+        _ninjaScreenX.value = 500f
+    }
+
+    fun updateNinjaScreenX(value: Float) {
+        _ninjaScreenX.value = value
     }
 }

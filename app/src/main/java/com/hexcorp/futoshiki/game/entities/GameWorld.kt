@@ -18,6 +18,8 @@ class GameWorld(
     private lateinit var dragon: DragonEntity
     private val layers = mutableListOf<ParallaxLayer>()
     private var floorY = 410.0
+    private var targetNinjaScreenX = 500.0
+    private var currentNinjaScreenX = 500.0
 
     suspend fun setupWorld() {
         // 0. Setup Sky Background Color based on theme
@@ -122,18 +124,42 @@ class GameWorld(
         dragon = DragonEntity(dragonSheet, 400, 400).apply {
             setTarget(ninja)
             zIndex = 10.0
-            scale = 1.2
+            scale = 1.6
         }
         addChild(dragon)
         
 
     }
 
-    fun startGame() {
-        // Run intros in parallel
-        GlobalScope.launch {
-            if (::ninja.isInitialized) launch { ninja.runIntroSequence() }
-            if (::dragon.isInitialized) launch { dragon.runCinematicIntro() }
+    fun updateTheme(isDark: Boolean, skyColorHex: String) {
+        val skyColor = if (isDark) {
+            val base = Colors[skyColorHex]
+            RGBA(
+                (base.r * 0.7).toInt(),
+                (base.g * 0.7).toInt(),
+                (base.b * 0.7).toInt(),
+                base.a
+            )
+        } else Colors["#f5f2f2"]
+        
+        children.firstOrNull { it is SolidRect }?.let { 
+            (it as SolidRect).color = skyColor
+        }
+        
+        // Note: Views.clearColor is harder to reach from here without the Views context,
+        // but the SolidRect covers the background anyway.
+    }
+
+    fun startGame(skipIntro: Boolean = false) {
+        if (skipIntro) {
+            if (::ninja.isInitialized) ninja.skipIntro()
+            if (::dragon.isInitialized) dragon.skipIntro(ninja)
+        } else {
+            // Run intros in parallel
+            GlobalScope.launch {
+                if (::ninja.isInitialized) launch { ninja.runIntroSequence() }
+                if (::dragon.isInitialized) launch { dragon.runCinematicIntro() }
+            }
         }
     }
 
@@ -149,16 +175,32 @@ class GameWorld(
         }
     }
 
+    fun setNinjaScreenX(value: Float) {
+        targetNinjaScreenX = value.toDouble()
+        // If we just jumped a large distance (e.g. initial setup), snap it
+        if (kotlin.math.abs(targetNinjaScreenX - currentNinjaScreenX) > 200) {
+            currentNinjaScreenX = targetNinjaScreenX
+        }
+    }
+
     fun update(dt: Double, aggression: Float) {
         if (!::ninja.isInitialized || !::dragon.isInitialized) return
         
+        // Smoothly move currentNinjaScreenX toward targetNinjaScreenX
+        val diff = targetNinjaScreenX - currentNinjaScreenX
+        if (kotlin.math.abs(diff) > 0.1) {
+            currentNinjaScreenX += diff * (1.0 - kotlin.math.exp(-0.2 * dt))
+        } else {
+            currentNinjaScreenX = targetNinjaScreenX
+        }
+
         // Use 60.0 offset to keep his feet at the grass line with the new larger 400x400 sprite
         ninja.update(dt, floorY + 95.0)
-        dragon.update(dt)
+        dragon.update(dt, currentNinjaScreenX)
         dragon.updateAggression(aggression)
 
-        // CAMERA FOLLOW: Keep the ninja at center of screen (virtualWidth = 1000, so center = 500)
-        this.x = 500.0 - ninja.x
+        // CAMERA FOLLOW: Keep the ninja at currentNinjaScreenX (virtualWidth = 1000)
+        this.x = currentNinjaScreenX - ninja.x
 
         // Update Parallax based on Ninja's world position
         layers.forEach { it.update(ninja.x) }

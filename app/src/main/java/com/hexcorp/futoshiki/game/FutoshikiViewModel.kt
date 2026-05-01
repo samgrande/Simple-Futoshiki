@@ -81,9 +81,13 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
                 timerSeconds = 0,
                 timerRunning = true,
                 gameKey = st.gameKey + 1,
-                completedRowsCount = 0
+                completedRowsCount = 0,
+                finishedRows = emptySet(),
+                finishedCols = emptySet(),
+                ninjaScreenX = 500f
             )
         }
+        korgeManager.updateNinjaScreenX(500f)
         startTimer()
     }
 
@@ -101,14 +105,15 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         val errors = validateGrid(newGrid, st.size, st.puzzle)
         val won = isWon(newGrid, errors)
 
-        val prevCompletedRows = st.completedRowsCount
-        val currentCompletedRows = getCompletedRowsCount(newGrid, st.size, errors)
+        val newNinjaScreenX = calculateNinjaScreenX(newGrid, st.size, st.puzzle.solution)
+        korgeManager.updateNinjaScreenX(newNinjaScreenX)
 
-        if (currentCompletedRows > prevCompletedRows && errors.isEmpty()) {
-            korgeManager.applyRowCompletionBoost()
-        }
-
-        _state.update { it.copy(grid = newGrid, errors = errors, won = won, completedRowsCount = currentCompletedRows) }
+        _state.update { it.copy(
+            grid = newGrid, 
+            errors = errors, 
+            won = won, 
+            ninjaScreenX = newNinjaScreenX
+        ) }
 
         if (won) {
             stopTimer()
@@ -132,7 +137,9 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
             if (ri == r) row.toMutableList().also { it[c] = 0 } else row
         }
         val errors = validateGrid(newGrid, st.size, st.puzzle)
-        _state.update { it.copy(grid = newGrid, errors = errors, won = false) }
+        val newNinjaScreenX = calculateNinjaScreenX(newGrid, st.size, st.puzzle.solution)
+        korgeManager.updateNinjaScreenX(newNinjaScreenX)
+        _state.update { it.copy(grid = newGrid, errors = errors, won = false, ninjaScreenX = newNinjaScreenX) }
     }
 
     fun clearSelectedCell() {
@@ -271,5 +278,33 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     override fun onCleared() {
         super.onCleared()
         timerJob?.cancel()
+    }
+
+    private fun calculateNinjaScreenX(grid: List<List<Int>>, size: Int, solution: List<List<Int>>): Float {
+        var correct = 0
+        var incorrect = 0
+        
+        // Rows
+        for (r in 0 until size) {
+            val row = grid[r]
+            if (row.all { it != 0 }) {
+                if (row == solution[r]) correct++ else incorrect++
+            }
+        }
+        // Columns
+        for (c in 0 until size) {
+            val col = (0 until size).map { grid[it][c] }
+            val solCol = (0 until size).map { solution[it][c] }
+            if (col.all { it != 0 }) {
+                if (col == solCol) correct++ else incorrect++
+            }
+        }
+        
+        val base = 500f
+        val forwardStep = 70f
+        val backwardStep = 110f
+        
+        val offset = (correct * forwardStep) - (incorrect * backwardStep)
+        return (base + offset).coerceIn(100f, 750f)
     }
 }

@@ -61,6 +61,12 @@ class NinjaEntity(
         autoRun = true
     }
 
+    fun skipIntro() {
+        x = 100.0
+        isIntro = false
+        autoRun = true
+    }
+
     fun update(dt: Double, floorY: Double) {
         if (isIntro) {
             velocityX = 0.0f

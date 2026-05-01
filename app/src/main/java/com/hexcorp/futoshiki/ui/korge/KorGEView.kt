@@ -20,15 +20,10 @@ import androidx.compose.ui.graphics.toArgb
 
 @Composable
 fun KorGEView(
-    aggression: Float,
-    speedMultiplier: Float = 1.0f,
-    distanceMultiplier: Float = 1.0f,
+    manager: KorGEGameManager,
+    isPaused: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    val state = remember { KorGEState() }
-    state.aggression = aggression
-    state.speedMultiplier = speedMultiplier
-    state.distanceMultiplier = distanceMultiplier
     val isDark = LocalIsDark.current
     val accent = accentColor()
     val accentHex = String.format("#%06X", 0xFFFFFF and accent.toArgb())
@@ -43,23 +38,31 @@ fun KorGEView(
                     main = {
                         val assets = AssetManager()
                         val world = GameWorld(assets, isDark, accentHex)
-                        state.world = world
-
-                        addChild(world)
+                        manager.gameWorld = world
+                        
                         world.setupWorld()
-                        world.startGame()
+                        world.startGame(skipIntro = manager.introFinished)
+                        
+                        // Mark as finished so future re-compositions (theme changes) skip the intro
+                        manager.introFinished = true
+                        
+                        addChild(world)
 
                         addUpdater { dt ->
-                            state.world?.setSpeedMultiplier(state.speedMultiplier)
-                            state.world?.setDistanceMultiplier(state.distanceMultiplier)
-                            world.update(dt.seconds, state.aggression)
+                            if (!manager.isPaused) {
+                                world.setSpeedMultiplier(manager.speedMultiplier.value)
+                                world.setDistanceMultiplier(manager.distanceMultiplier.value)
+                                world.setNinjaScreenX(manager.ninjaScreenX.value)
+                                world.update(dt.seconds, manager.aggression.value)
+                            }
                         }
                     }
                 ))
             }
         },
         update = { _ ->
-            // Aggression is updated via the state object in the updater
+            manager.gameWorld?.updateTheme(isDark, accentHex)
+            manager.isPaused = isPaused
         },
         modifier = modifier
     )
@@ -70,4 +73,5 @@ private class KorGEState {
     var aggression: Float = 0f
     var speedMultiplier: Float = 1.0f
     var distanceMultiplier: Float = 1.0f
+    var ninjaScreenX: Float = 500f
 }
