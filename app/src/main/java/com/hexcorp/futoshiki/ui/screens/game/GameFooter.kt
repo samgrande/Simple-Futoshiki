@@ -3,7 +3,6 @@ package com.hexcorp.futoshiki.ui.screens.game
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -24,7 +23,6 @@ fun GameFooter(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
             .padding(horizontal = hPad)
             .padding(bottom = 12.dp),
         horizontalArrangement = if (isSolved) {

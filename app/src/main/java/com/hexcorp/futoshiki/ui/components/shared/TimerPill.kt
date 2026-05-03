@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -37,7 +38,8 @@ fun TimerPill(
     won: Boolean,
     isPaused: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     val isDark = LocalIsDark.current
     val bgColor by animateColorAsState(
@@ -48,10 +50,11 @@ fun TimerPill(
 
     Row(
         modifier = modifier
+            .then(if (!enabled) Modifier.alpha(0.38f) else Modifier)
             .clip(RoundedCornerShape(20.dp))
             .background(bgColor)
             .clickable(
-                enabled = true,
+                enabled = enabled,
                 onClick = onClick
             )
             .padding(horizontal = 16.dp, vertical = 7.dp),

@@ -32,7 +32,7 @@ fun KorGEView(
         factory = { context ->
             KorgeAndroidView(context).also { view ->
                 view.loadModule(Korge(
-                    backgroundColor = if (isDark) Colors[accentHex] else Colors["#f5f2f2"],
+                    backgroundColor = Colors.TRANSPARENT,
                     virtualSize = Size(1000, 500),
                     displayMode = KorgeDisplayMode(ScaleMode.COVER, Anchor.BOTTOM_CENTER, clipBorders = true),
                     main = {
@@ -42,14 +42,14 @@ fun KorGEView(
                         
                         world.setupWorld()
                         world.startGame(skipIntro = manager.introFinished)
-                        
-                        // Scene is ready — signal so the Compose overlay fades out
-                        manager.signalSceneLoaded()
-                        
+
                         // Mark as finished so future re-compositions (theme changes) skip the intro
                         manager.introFinished = true
-                        
+
                         addChild(world)
+
+                        // Scene is ready — signal AFTER addChild so the cover fades only once rendered
+                        manager.signalSceneLoaded()
 
                         addUpdater { dt ->
                             if (!manager.isPaused) {

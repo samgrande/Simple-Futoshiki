@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.alpha
 import com.hexcorp.futoshiki.ui.components.shared.BigButton
 import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
 import com.hexcorp.futoshiki.ui.components.shared.HelpPanel
@@ -31,6 +32,7 @@ fun PauseOverlay(
     revealCenter: Offset,
     pillOffset: Offset,
     seconds: Int,
+    won: Boolean = false,
     onResume: () -> Unit,
     onMainMenu: () -> Unit,
     onSolve: () -> Unit,
@@ -167,8 +169,9 @@ fun PauseOverlay(
                                 Spacer(Modifier.height(20.dp))
                                 BigButton(
                                     label = "SOLVE",
-                                    onClick = onSolve,
-                                    isDark = isDark
+                                    onClick = { if (!won) onSolve() },
+                                    isDark = isDark,
+                                    modifier = Modifier.alpha(if (won) 0.35f else 1f)
                                 )
                                 Spacer(Modifier.height(20.dp))
                                 BigButton(

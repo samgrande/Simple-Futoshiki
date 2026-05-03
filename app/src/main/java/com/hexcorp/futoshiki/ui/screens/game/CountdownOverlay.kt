@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -16,6 +17,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.accentColor
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
@@ -93,7 +95,7 @@ fun CountdownOverlay(
 
     // ── Layout ───────────────────────────────────────────────────────────────
     Box(
-        modifier         = modifier,
+        modifier         = modifier.background(FutoshikiColors.background().copy(alpha = 0.70f)),
         contentAlignment = Alignment.Center
     ) {
         AnimatedContent(
