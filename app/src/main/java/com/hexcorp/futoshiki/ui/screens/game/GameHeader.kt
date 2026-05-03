@@ -32,6 +32,7 @@ fun GameHeader(
     won: Boolean,
     isPaused: Boolean,
     showTabs: Boolean,
+    showCountdown: Boolean,
     onTitleClick: () -> Unit,
     onTimerClick: () -> Unit,
     onSizeChange: (Int) -> Unit,
@@ -70,7 +71,7 @@ fun GameHeader(
                     fontSize = 28.sp,
                     isSolved = false,
                     showTabs = showTabs,
-                    onClick = onTitleClick,
+                    onClick = if (showCountdown) null else onTitleClick,
                     showUnderline = false
                 )
 
@@ -78,6 +79,7 @@ fun GameHeader(
                     seconds = timerSeconds,
                     won = won,
                     isPaused = isPaused,
+                    enabled = !showCountdown,
                     onClick = onTimerClick,
                     modifier = Modifier
                         .onGloballyPositioned { coords ->

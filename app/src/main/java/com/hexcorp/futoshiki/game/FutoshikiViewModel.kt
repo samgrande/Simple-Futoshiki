@@ -91,7 +91,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
             )
         }
         korgeManager.updateNinjaScreenX(500f)
-        startTimer()
+        // Timer is started by resumeTimer() once the countdown overlay finishes
     }
 
     // ── Cell input ───────────────────────────────────────────────────────────
@@ -175,6 +175,14 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         val nr = (r + dr).coerceIn(0, st.size - 1)
         val nc = (c + dc).coerceIn(0, st.size - 1)
         _state.update { it.copy(selected = nr to nc) }
+    }
+
+    // ── Countdown timer hold ─────────────────────────────────────────────────
+
+    fun pauseTimer() { stopTimer() }
+
+    fun resumeTimer() {
+        if (_state.value.screen == Screen.GAME && !_state.value.won) startTimer()
     }
 
     // ── Pause / Resume ───────────────────────────────────────────────────────

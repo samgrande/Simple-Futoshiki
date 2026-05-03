@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
-export JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/java-21-openjdk}"
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/android-sdk}"
+export JAVA_HOME="${JAVA_HOME:-$HOME/jdk21}"
+
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GRADLE="./gradlew"

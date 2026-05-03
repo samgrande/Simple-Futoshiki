@@ -1,34 +1,62 @@
 package com.hexcorp.futoshiki.ui.screens.game
 
 import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import com.hexcorp.futoshiki.R
 import com.hexcorp.futoshiki.ui.components.shared.formatTimer
+import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import com.hexcorp.futoshiki.ui.theme.Midorima
 import com.hexcorp.futoshiki.ui.theme.accentColor
 import kotlinx.coroutines.delay
+import java.io.File
+import java.io.FileOutputStream
+
+private fun shareScreenshot(context: Context, view: android.view.View) {
+    val bitmap = android.graphics.Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(bitmap)
+    view.draw(canvas)
+    val file = File(context.cacheDir, "futoshiki_win.png")
+    FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "image/png"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(intent, "Share win"))
+}
 
 @Composable
 fun CongratsView(
@@ -38,6 +66,7 @@ fun CongratsView(
 ) {
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
+    val view = LocalView.current
     @Suppress("DEPRECATION")
     val vibrator = remember { context.applicationContext.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator }
     val isDark = LocalIsDark.current
@@ -136,7 +165,24 @@ fun CongratsView(
             letterSpacing = 2.sp
         )
 
-        // Small bottom spacer to give some breathing room above the footer
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(FutoshikiColors.timerBg())
+                .clickable { shareScreenshot(context, view) },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Share,
+                contentDescription = "Share",
+                tint = FutoshikiColors.timerText(),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
         Spacer(modifier = Modifier.height(8.dp))
     }
 }

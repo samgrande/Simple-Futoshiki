@@ -36,7 +36,8 @@
       "Bash(export ANDROID_HOME=\"/c/Users/Hex/AppData/Local/Android/Sdk\")",
       "Bash(identify *)",
       "Bash(chmod +x build.sh)",
-      "Bash(./build.sh)"
+      "Bash(./build.sh)",
+      "Bash(adb shell *)"
     ]
   }
 }
