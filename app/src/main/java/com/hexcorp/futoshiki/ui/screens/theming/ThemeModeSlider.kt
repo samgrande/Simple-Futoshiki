@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.R
 import com.hexcorp.futoshiki.ui.theme.AppTheme
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.ThemeMode
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -102,7 +102,7 @@ fun ThemeModeSlider(
                 Text(
                     text = mode.name,
                     fontSize = 9.sp,
-                    fontFamily = ReemKufi,
+                    fontFamily = PixelF,
                     fontWeight = FontWeight.Bold,
                     color = FutoshikiColors.onSurface().copy(alpha = if (isSelected) 1f else 0.4f),
                     letterSpacing = 1.sp,

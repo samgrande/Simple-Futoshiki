@@ -13,6 +13,7 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -31,6 +32,7 @@ import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import com.hexcorp.futoshiki.ui.korge.KorGEView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun GameScreen(
@@ -49,6 +51,31 @@ fun GameScreen(
     var pillOffset by remember { mutableStateOf(Offset.Zero) }
     var containerCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
     var showTabs by rememberSaveable { mutableStateOf(false) }
+
+    // Countdown: observe the ninja signal
+    val ninjaRunning by viewModel.korgeManager.runningStarted.collectAsStateWithLifecycle()
+
+    // showCountdown is a local var — true for the very first game intro, false for repeated games.
+    // It only flips false via onDone (called after GO! + brief hold in CountdownOverlay).
+    var showCountdown by remember { mutableStateOf(!viewModel.korgeManager.introFinished) }
+
+    // When gameKey changes (newGame) and the intro is NOT being skipped, re-show the countdown
+    LaunchedEffect(gameKey) {
+        showCountdown = !viewModel.korgeManager.introFinished
+    }
+
+    // Screen entrance: fade in when first composed
+    var screenAlpha by remember { mutableStateOf(0f) }
+    LaunchedEffect(Unit) {
+        // Let the first frame render, then animate in
+        delay(50)
+        screenAlpha = 1f
+    }
+    val animatedScreenAlpha by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = screenAlpha,
+        animationSpec = tween(450),
+        label = "screenEntrance"
+    )
 
     val isPaused = state.screen == Screen.PAUSE
     val hideGameContent = state.screen != Screen.GAME
@@ -96,10 +123,13 @@ fun GameScreen(
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
+    val bgColor = FutoshikiColors.background()
 
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
+            .background(bgColor)
+            .graphicsLayer { alpha = animatedScreenAlpha }
             .onGloballyPositioned { containerCoordinates = it }
     ) {
         val vw = maxWidth
@@ -116,18 +146,39 @@ fun GameScreen(
         val boardBudgetH = vh - headerH - tabH - numpadH - refreshH - gapTotal
         val totalTopSpace = vh * 0.26f
 
-        val bgColor = FutoshikiColors.background()
         val korgeHeight = headerH + 16.dp + 150.dp
+
+        // Animated alpha for KorGE scene fade-in (starts at 0, fades in when ninja starts running)
+        val korgeAlpha by androidx.compose.animation.core.animateFloatAsState(
+            targetValue = if (ninjaRunning) 1f else 0f,
+            animationSpec = tween(600),
+            label = "korgeAlpha"
+        )
 
         if (!state.isSolved) {
             key(state.gameKey) {
-                KorGEView(
-                    manager = viewModel.korgeManager,
-                    isPaused = isPaused,
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(korgeHeight)
-                )
+                ) {
+                    // The KorGE scene itself, fades in when the ninja starts running
+                    KorGEView(
+                        manager = viewModel.korgeManager,
+                        isPaused = isPaused,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(korgeHeight)
+                            .graphicsLayer { alpha = korgeAlpha }
+                    )
+                    // Black overlay on top, fades away as KorGE fades in
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(korgeHeight)
+                            .background(bgColor.copy(alpha = 1f - korgeAlpha))
+                    )
+                }
             }
 
             Column(Modifier.fillMaxSize()) {
@@ -221,30 +272,55 @@ fun GameScreen(
                         modifier = Modifier.padding(horizontal = hPad)
                     )
                 } else {
-                    PuzzleBoard(
-                        puzzle = puzzle,
-                        grid = grid,
-                        size = size,
-                        selected = selected,
-                        errors = errors,
-                        cellSizeDp = cellSizeDp,
-                        arrowSlotDp = arrowSlotDp,
-                        gameKey = boardKey,
-                        isSolved = state.isSolved,
-                        onCellTap = { r, c -> if (!state.isSolved) viewModel.selectCell(r, c) },
-                        onCellClear = { r, c -> if (!state.isSolved) viewModel.clearCell(r, c) },
-                        modifier = Modifier.padding(horizontal = hPad)
-                    )
+                    // The board slot: either countdown or puzzle board (same height, fades between them)
+                    val boardH = cellSizeDp * (size + 0.32f * (size - 1))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(boardH),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AnimatedContent(
+                            targetState = showCountdown,
+                            transitionSpec = {
+                                fadeIn(tween(350)) togetherWith fadeOut(tween(250))
+                            },
+                            label = "boardOrCountdown"
+                        ) { counting ->
+                            if (counting) {
+                                CountdownOverlay(
+                                    ninjaRunning = ninjaRunning,
+                                    onDone       = { showCountdown = false },
+                                    modifier     = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                PuzzleBoard(
+                                    puzzle       = puzzle,
+                                    grid         = grid,
+                                    size         = size,
+                                    selected     = selected,
+                                    errors       = errors,
+                                    cellSizeDp   = cellSizeDp,
+                                    arrowSlotDp  = arrowSlotDp,
+                                    gameKey      = boardKey,
+                                    isSolved     = state.isSolved,
+                                    onCellTap    = { r, c -> if (!state.isSolved) viewModel.selectCell(r, c) },
+                                    onCellClear  = { r, c -> if (!state.isSolved) viewModel.clearCell(r, c) },
+                                    modifier     = Modifier.padding(horizontal = hPad)
+                                )
+                            }
+                        }
+                    }
 
-                    if (!state.isSolved) {
+                    // Numpad always lives OUTSIDE the AnimatedContent so it never shifts
+                    if (!state.isSolved && !showCountdown) {
                         Spacer(Modifier.height(vh * 0.025f))
-
                         NumberPad(
-                            size = size,
+                            size         = size,
                             buttonSizeDp = numpadBtnDp,
-                            spacingDp = numpadSpacing,
-                            onNumber = { viewModel.inputNumber(it) },
-                            modifier = Modifier.padding(horizontal = hPad)
+                            spacingDp    = numpadSpacing,
+                            onNumber     = { viewModel.inputNumber(it) },
+                            modifier     = Modifier.padding(horizontal = hPad)
                         )
                     }
                 }
@@ -252,10 +328,11 @@ fun GameScreen(
                 Spacer(Modifier.weight(1f))
 
                 GameFooter(
-                    isSolved = state.isSolved || state.won || state.showCongrats,
-                    onNewGame = { viewModel.newGame(size) },
-                    onClearAll = { viewModel.clearAll() },
-                    hPad = hPad
+                    isSolved      = state.isSolved || state.won || state.showCongrats,
+                    showCountdown = showCountdown,
+                    onNewGame     = { viewModel.newGame(size) },
+                    onClearAll    = { viewModel.clearAll() },
+                    hPad          = hPad
                 )
             }
 

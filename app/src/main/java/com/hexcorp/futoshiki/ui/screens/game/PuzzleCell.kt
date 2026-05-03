@@ -17,8 +17,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -27,7 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.Midorima
 import com.hexcorp.futoshiki.ui.theme.accentColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -117,29 +121,36 @@ fun PuzzleCell(
     }
 
     val accent = accentColor()
-    val bg = when {
+    val targetBg = when {
         hasError   -> FutoshikiColors.errorBg()
         isSelected -> accent.copy(alpha = 0.12f)
         isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = 0.12f * animatedFlashAlpha)
         isRelated  -> FutoshikiColors.cellRelated()
         else       -> FutoshikiColors.cellDefault()
     }
-    val borderColor = when {
+    val bg by androidx.compose.animation.animateColorAsState(targetBg, tween(150), label = "bg")
+
+    val targetBorderColor = when {
         hasError   -> FutoshikiColors.ErrorStroke
         isSelected -> accent
         isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = animatedFlashAlpha)
         else       -> FutoshikiColors.onSurface()
     }
-    val borderWidth = if (isSelected || (isGiven && animatedFlashAlpha > 0f)) 2.5.dp else 1.5.dp
+    val borderColor by androidx.compose.animation.animateColorAsState(targetBorderColor, tween(150), label = "borderColor")
+
+    val targetBorderWidth = if (isSelected || (isGiven && animatedFlashAlpha > 0f)) 2.5.dp else 1.5.dp
+    val borderWidth by animateDpAsState(targetBorderWidth, tween(150), label = "borderWidth")
+
     val textColor   = if (hasError) FutoshikiColors.ErrorStroke else FutoshikiColors.onSurface()
     val cornerRadius = sizeDp * 0.27f
 
-    val shadowColor = when {
+    val targetShadowColor = when {
         hasError   -> FutoshikiColors.ErrorStroke.copy(alpha = 0.22f)
         isSelected -> accent.copy(alpha = 0.4f)
         isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = 0.4f * animatedFlashAlpha)
         else       -> Color(0x42000000)
     }
+    val shadowColor by androidx.compose.animation.animateColorAsState(targetShadowColor, tween(150), label = "shadowColor")
 
     Box(
         modifier = Modifier
@@ -151,20 +162,11 @@ fun PuzzleCell(
                 translationX = currentOffsetX
                 translationY = currentOffsetY
             }
+            .background(bg, RoundedCornerShape(cornerRadius))
     ) {
         Box(
             modifier = Modifier
-                .offset(x = 2.dp, y = 2.dp)
                 .fillMaxSize()
-                .clip(RoundedCornerShape(cornerRadius))
-                .background(shadowColor)
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(cornerRadius))
-                .background(bg)
-                .border(borderWidth, borderColor, RoundedCornerShape(cornerRadius))
                 .combinedClickable(
                     interactionSource = interactionSource,
                     indication = null,
@@ -220,9 +222,15 @@ fun PuzzleCell(
                 Text(
                     text       = value.toString(),
                     color      = textColor,
-                    fontSize   = (sizeDp.value * 0.38f).sp,
-                    fontWeight = if (isGiven) FontWeight.Bold else FontWeight.Medium,
-                    fontFamily = ReemKufi
+                    fontSize   = (sizeDp.value * 0.45f).sp,
+                    fontWeight = FontWeight.Normal,
+                    fontFamily = Midorima,
+                    textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
+                    style      = androidx.compose.ui.text.TextStyle(
+                        platformStyle = androidx.compose.ui.text.PlatformTextStyle(
+                            includeFontPadding = false
+                        )
+                    )
                 )
             }
         }

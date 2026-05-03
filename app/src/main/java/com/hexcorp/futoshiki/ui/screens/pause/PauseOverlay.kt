@@ -23,7 +23,7 @@ import com.hexcorp.futoshiki.ui.components.shared.LogoMark
 import com.hexcorp.futoshiki.ui.components.shared.TimerPill
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.Midorima
 import kotlin.math.roundToInt
 
 @Composable
@@ -70,7 +70,7 @@ fun PauseOverlay(
 
                 LogoMark(size = 80.dp)
                 Spacer(Modifier.height(16.dp))
-                FutoshikiTitle(fontSize = 32.sp)
+                FutoshikiTitle(fontSize = 38.sp)
 
                 AnimatedContent(
                     targetState = when {
@@ -107,6 +107,7 @@ fun PauseOverlay(
                                 BigButton(
                                     label = "← BACK",
                                     onClick = { showHelp = false },
+                                    inverted = true,
                                     isDark = isDark
                                 )
                             }
@@ -120,9 +121,9 @@ fun PauseOverlay(
                                 Spacer(Modifier.height(32.dp))
                                 Text(
                                     text = "QUIT TO MAIN MENU?",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontFamily = ReemKufi,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = Midorima,
                                     color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
                                     letterSpacing = 2.sp
                                 )
@@ -130,10 +131,10 @@ fun PauseOverlay(
                                 BigButton(
                                     label = "YES",
                                     onClick = onMainMenu,
-                                    primary = true,
+                                    inverted = true,
                                     isDark = isDark
                                 )
-                                Spacer(Modifier.height(14.dp))
+                                Spacer(Modifier.height(20.dp))
                                 BigButton(
                                     label = "NO",
                                     onClick = { showConfirmQuit = false },
@@ -152,7 +153,7 @@ fun PauseOverlay(
                                     text = "PAUSED",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    fontFamily = ReemKufi,
+                                    fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
                                     color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
                                     letterSpacing = 2.sp
                                 )
@@ -160,22 +161,22 @@ fun PauseOverlay(
                                 BigButton(
                                     label = "MAIN MENU",
                                     onClick = { showConfirmQuit = true },
-                                    primary = true,
+                                    inverted = true,
                                     isDark = isDark
                                 )
-                                Spacer(Modifier.height(14.dp))
+                                Spacer(Modifier.height(20.dp))
                                 BigButton(
                                     label = "SOLVE",
                                     onClick = onSolve,
                                     isDark = isDark
                                 )
-                                Spacer(Modifier.height(14.dp))
+                                Spacer(Modifier.height(20.dp))
                                 BigButton(
                                     label = "HELP",
                                     onClick = { showHelp = true },
                                     isDark = isDark
                                 )
-                                Spacer(Modifier.height(14.dp))
+                                Spacer(Modifier.height(20.dp))
                                 BigButton(
                                     label = "THEMES",
                                     onClick = onTheming,

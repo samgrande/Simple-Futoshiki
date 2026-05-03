@@ -43,6 +43,9 @@ fun KorGEView(
                         world.setupWorld()
                         world.startGame(skipIntro = manager.introFinished)
                         
+                        // Scene is ready — signal so the Compose overlay fades out
+                        manager.signalSceneLoaded()
+                        
                         // Mark as finished so future re-compositions (theme changes) skip the intro
                         manager.introFinished = true
                         

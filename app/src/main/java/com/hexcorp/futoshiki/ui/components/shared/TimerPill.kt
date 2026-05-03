@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.Midorima
 import com.hexcorp.futoshiki.ui.theme.accentColor
 
 @Composable
@@ -92,8 +92,8 @@ fun TimerPill(
             color      = if (isPaused) FutoshikiColors.onSurface() else FutoshikiColors.timerText(),
             fontSize   = 14.sp,
             fontWeight = FontWeight.Bold,
-            fontFamily = ReemKufi,
-            letterSpacing = 1.5.sp
+            fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
+            letterSpacing = 1.sp
         )
     }
 }

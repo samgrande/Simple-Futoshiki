@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.components.shared.BigButton
 import com.hexcorp.futoshiki.ui.theme.AppTheme
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.ThemeMode
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -64,7 +64,7 @@ fun ThemingScreen(
             Text(
                 text = "T H E M E S",
                 fontSize = 13.sp,
-                fontFamily = ReemKufi,
+                fontFamily = PixelF,
                 fontWeight = FontWeight.SemiBold,
                 color = FutoshikiColors.onSurface().copy(alpha = 0.6f),
                 letterSpacing = 4.sp,

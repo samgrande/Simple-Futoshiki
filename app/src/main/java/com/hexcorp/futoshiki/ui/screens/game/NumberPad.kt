@@ -13,9 +13,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -23,7 +28,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.Midorima
+import com.hexcorp.futoshiki.ui.theme.LocalIsDark
+import androidx.compose.ui.graphics.graphicsLayer
 
 @Composable
 fun NumberPad(
@@ -64,15 +71,16 @@ private fun NumberButton(label: String, sizeDp: Dp, enabled: Boolean, onClick: (
         animationSpec = tween(80), label = "numBtnOffset"
     )
 
+    val themeColor = if (LocalIsDark.current) Color(0xFF333333) else Color(0xFFE0E0E0)
+    
     Box(
         modifier = Modifier
             .size(sizeDp)
-            .offset(x = offset, y = offset)
-            .shadow(if (isPressed && enabled) 1.dp else 3.dp, CircleShape,
-                ambientColor = Color(0x6B000000), spotColor = Color(0x6B000000))
-            .clip(CircleShape)
-            .background(FutoshikiColors.background())
-            .border(1.5.dp, if (enabled) FutoshikiColors.onSurface() else FutoshikiColors.onSurface().copy(alpha = 0.3f), CircleShape)
+            .graphicsLayer {
+                translationX = offset.toPx()
+                translationY = offset.toPx()
+            }
+            .background(themeColor, CircleShape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -85,10 +93,16 @@ private fun NumberButton(label: String, sizeDp: Dp, enabled: Boolean, onClick: (
     ) {
         Text(
             text       = label,
-            fontSize   = (sizeDp.value * 0.38f).sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = ReemKufi,
-            color      = if (enabled) FutoshikiColors.onSurface() else FutoshikiColors.onSurface().copy(alpha = 0.3f)
+            fontSize   = (sizeDp.value * 0.32f).sp,
+            fontWeight = FontWeight.Normal,
+            fontFamily = Midorima,
+            color      = if (enabled) FutoshikiColors.onSurface() else FutoshikiColors.onSurface().copy(alpha = 0.3f),
+            textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
+            style      = androidx.compose.ui.text.TextStyle(
+                platformStyle = androidx.compose.ui.text.PlatformTextStyle(
+                    includeFontPadding = false
+                )
+            )
         )
     }
 }

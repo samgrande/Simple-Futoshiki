@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.R
 import com.hexcorp.futoshiki.ui.components.shared.formatTimer
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.Midorima
 import com.hexcorp.futoshiki.ui.theme.accentColor
 import kotlinx.coroutines.delay
 
@@ -105,7 +105,7 @@ fun CongratsView(
             color         = accentColor(),
             fontSize      = 11.sp, // Slightly smaller
             fontWeight    = FontWeight.SemiBold,
-            fontFamily    = ReemKufi,
+            fontFamily    = com.hexcorp.futoshiki.ui.theme.PixelF,
             letterSpacing = 2.sp
         )
 
@@ -116,7 +116,7 @@ fun CongratsView(
             color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.65f),
             fontSize      = 8.5.sp, // Slightly smaller
             fontWeight    = FontWeight.Medium,
-            fontFamily    = ReemKufi,
+            fontFamily    = com.hexcorp.futoshiki.ui.theme.PixelF,
             letterSpacing = 3.sp
         )
 
@@ -132,7 +132,7 @@ fun CongratsView(
             color         = if (isDark) Color.White else Color.Black,
             fontSize      = 22.sp, // Slightly smaller
             fontWeight    = FontWeight.Bold,
-            fontFamily    = ReemKufi,
+            fontFamily    = Midorima,
             letterSpacing = 2.sp
         )
 

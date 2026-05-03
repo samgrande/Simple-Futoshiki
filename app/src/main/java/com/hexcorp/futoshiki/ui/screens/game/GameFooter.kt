@@ -13,10 +13,14 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun GameFooter(
     isSolved: Boolean,
+    showCountdown: Boolean,
     onNewGame: () -> Unit,
     onClearAll: () -> Unit,
     hPad: Dp
 ) {
+    // Hide the footer completely while the intro countdown is running
+    if (showCountdown) return
+
     Row(
         modifier = Modifier
             .fillMaxWidth()

@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.Midorima
 import com.hexcorp.futoshiki.ui.theme.accentColor
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -46,7 +46,7 @@ private fun SizeLabel(
         color = color,
         fontSize = 16.sp,
         fontWeight = fontWeight,
-        fontFamily = ReemKufi
+        fontFamily = Midorima
     )
 }
 

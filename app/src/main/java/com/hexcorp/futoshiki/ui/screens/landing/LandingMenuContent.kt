@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.components.shared.BigButton
 import com.hexcorp.futoshiki.ui.components.shared.HelpPanel
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.Midorima
 
 @Composable
 fun LandingMenuContent(
@@ -44,6 +44,7 @@ fun LandingMenuContent(
                 BigButton(
                     label = "BACK",
                     onClick = onHideHelp,
+                    inverted = true,
                     isDark = isDark
                 )
             }
@@ -58,7 +59,7 @@ fun LandingMenuContent(
                     text          = "Q U I T   T H E   G A M E  ?",
                     fontSize      = 13.sp,
                     fontWeight    = FontWeight.SemiBold,
-                    fontFamily    = ReemKufi,
+                    fontFamily    = Midorima,
                     color         = if (isDark) Color(0xFF888888) else Color(0xFF999999),
                     letterSpacing = 2.sp
                 )
@@ -66,10 +67,10 @@ fun LandingMenuContent(
                 BigButton(
                     label = "Y E S",
                     onClick = onQuit,
-                    primary = true,
+                    inverted = true,
                     isDark = isDark
                 )
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(35.dp))
                 BigButton(
                     label = "N O",
                     onClick = onHideConfirmQuit,
@@ -86,16 +87,16 @@ fun LandingMenuContent(
                 BigButton(
                     label = "START",
                     onClick = onStart,
-                    primary = true,
+                    inverted = true,
                     isDark = isDark
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(35.dp))
                 BigButton(
                     label = "HELP",
                     onClick = onShowHelp,
                     isDark = isDark
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(35.dp))
                 BigButton(
                     label = "THEMES",
                     onClick = onTheming,

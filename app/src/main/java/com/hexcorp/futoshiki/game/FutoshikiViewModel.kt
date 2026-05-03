@@ -68,6 +68,8 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         korgeManager.updateAggression(0f)
         korgeManager.resetBoost()
         korgeManager.introFinished = false
+        korgeManager.resetRunningStarted()
+        korgeManager.resetSceneLoaded()
         _state.update { st ->
             st.copy(
                 screen = Screen.GAME,

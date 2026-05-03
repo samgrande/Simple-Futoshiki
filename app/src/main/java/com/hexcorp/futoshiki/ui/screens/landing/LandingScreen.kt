@@ -16,7 +16,7 @@ import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
 import com.hexcorp.futoshiki.ui.components.shared.LogoMark
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.Midorima
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -99,7 +99,7 @@ fun LandingScreen(
                     }
                 } else Modifier
             ) {
-                FutoshikiTitle(fontSize = 38.sp)
+                FutoshikiTitle(fontSize = 46.sp)
             }
 
             Box(
@@ -165,7 +165,7 @@ fun LandingScreen(
                     text = "Made with ♡ by @HeX",
                     fontSize = 12.sp,
                     color = Color(0xFF888888),
-                    fontFamily = ReemKufi
+                    fontFamily = Midorima
                 )
             }
         }

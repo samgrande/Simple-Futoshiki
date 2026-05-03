@@ -68,12 +68,14 @@ class NinjaEntity(
 
         isIntro = false
         autoRun = true
+        manager.signalRunningStarted()
     }
 
     fun skipIntro() {
         x = 100.0
         isIntro = false
         autoRun = true
+        manager.signalRunningStarted()
     }
 
     fun triggerWin() {

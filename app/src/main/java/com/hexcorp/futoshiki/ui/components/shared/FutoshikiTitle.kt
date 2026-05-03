@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.Midorima
 import com.hexcorp.futoshiki.ui.theme.accentColor
 
 @Composable
@@ -44,13 +44,13 @@ fun FutoshikiTitle(
                  text = "Futoshiki",
                 fontSize = fontSize,
                 fontWeight = FontWeight.Bold,
-                fontFamily = ReemKufi,
+                fontFamily = Midorima,
                 color = FutoshikiColors.onSurface(),
-                letterSpacing = (-0.5).sp,
+                letterSpacing = 4.sp,
                 lineHeight = fontSize
             )
             if (showUnderline) {
-                val waveWidth = if (isSolved) (fontSize.value * 4.0f).dp else (fontSize.value * 4.2f).dp
+                val waveWidth = if (isSolved) (fontSize.value * 4.8f).dp else (fontSize.value * 5.0f).dp
                 val waveHeight = (fontSize.value * 0.32f).dp
                 WavyUnderline(
                     width = waveWidth,
@@ -65,17 +65,17 @@ fun FutoshikiTitle(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = 30.dp, y = (-4).dp)
+                    .offset(x = 45.dp, y = (-4).dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(if (showTabs) accent.copy(alpha = 0.2f) else Color.Transparent)
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                    .background(Color.Transparent)
+                    .padding(horizontal = 10.dp, vertical = 2.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "$size x $size",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = ReemKufi,
+                    fontFamily = Midorima,
                     color = FutoshikiColors.onSurface()
                 )
             }

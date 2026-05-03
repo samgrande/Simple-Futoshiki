@@ -25,33 +25,33 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.PixelF
 
 @Composable
 fun HelpContent(modifier: Modifier = Modifier) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = "How to Play Futoshiki",
-            fontSize = 15.sp,
+            fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            fontFamily = ReemKufi,
+            fontFamily = PixelF,
             color = FutoshikiColors.onSurface(),
             modifier = Modifier.padding(bottom = 8.dp)
         )
         Text(
             text = "Futoshiki (Japanese for \"inequality\") is a logic puzzle played on a square grid—usually 5×5. The goal is to fill the board so that every row and column contains a unique set of digits (1–5).",
-            fontSize = 13.sp,
+            fontSize = 15.sp,
             fontWeight = FontWeight.Normal,
-            fontFamily = ReemKufi,
+            fontFamily = PixelF,
             color = if (LocalIsDark.current) Color(0xFFBBBBBB) else Color(0xFF444444),
-            lineHeight = 20.sp,
+            lineHeight = 22.sp,
             modifier = Modifier.padding(bottom = 12.dp)
         )
         Text(
             text = "The Core Rules",
-            fontSize = 14.sp,
+            fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
-            fontFamily = ReemKufi,
+            fontFamily = PixelF,
             color = FutoshikiColors.onSurface(),
             modifier = Modifier.padding(bottom = 8.dp)
         )
@@ -103,8 +103,8 @@ private fun HelpListItem(number: String, boldPart: String, body: String) {
     Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp)) {
         Text(
             text = number,
-            fontSize = 13.sp,
-            fontFamily = ReemKufi,
+            fontSize = 15.sp,
+            fontFamily = PixelF,
             color = if (isDark) Color(0xFFBBBBBB) else Color(0xFF444444),
             lineHeight = 21.sp,
             modifier = Modifier.width(20.dp)
@@ -118,9 +118,9 @@ private fun HelpListItem(number: String, boldPart: String, body: String) {
                     append(body)
                 }
             },
-            fontSize = 13.sp,
-            fontFamily = ReemKufi,
-            lineHeight = 21.sp,
+            fontSize = 15.sp,
+            fontFamily = PixelF,
+            lineHeight = 22.sp,
             modifier = Modifier.weight(1f)
         )
     }

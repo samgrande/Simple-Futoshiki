@@ -21,6 +21,28 @@ class KorGEGameManager {
     var isPaused = false
     var gameWorld: GameWorld? = null
 
+    private val _runningStarted = MutableStateFlow(false)
+    val runningStarted = _runningStarted.asStateFlow()
+
+    fun signalRunningStarted() {
+        _runningStarted.value = true
+    }
+
+    fun resetRunningStarted() {
+        _runningStarted.value = false
+    }
+
+    private val _sceneLoaded = MutableStateFlow(false)
+    val sceneLoaded = _sceneLoaded.asStateFlow()
+
+    fun signalSceneLoaded() {
+        _sceneLoaded.value = true
+    }
+
+    fun resetSceneLoaded() {
+        _sceneLoaded.value = false
+    }
+
     fun updateAggression(value: Float) {
         _aggression.value = value
     }

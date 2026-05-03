@@ -41,12 +41,12 @@ object FutoshikiColors {
     val EarthAccent     = Color(0xFF34C759)
     val WoodAccent      = Color(0xFFFF8D28)
 
-    val CellDefault     = Color(0xFFEBEBEB)
-    val CellDefaultDark = Color(0xFF141414)
+    val CellDefault     = Color(0xFFDCDCDC)
+    val CellDefaultDark = Color(0xFF222222)
     val CellSelected    = Color(0xFFFFFFFF)
-    val CellSelectedDark = Color(0xFF2A2A2A)
-    val CellRelated     = Color(0xFFDCDCDC)
-    val CellRelatedDark = Color(0xFF0F0F0F)
+    val CellSelectedDark = Color(0xFF333333)
+    val CellRelated     = Color(0xFFC0C0C0)
+    val CellRelatedDark = Color(0xFF1A1A1A)
     val ErrorBg         = Color(0xFFFFE5E5)
     val ErrorBgDark     = Color(0xFF3D1D1D)
     val ErrorStroke     = Color(0xFFE24B4A)
@@ -139,11 +139,12 @@ val LocalIsDark = staticCompositionLocalOf { false }
 
 // ── Typography ───────────────────────────────────────────────────────────────
 
-val ReemKufi = FontFamily(
-    Font(R.font.reem_kufi_regular,   FontWeight.Normal),
-    Font(R.font.reem_kufi_medium,    FontWeight.Medium),
-    Font(R.font.reem_kufi_semibold,  FontWeight.SemiBold),
-    Font(R.font.reem_kufi_bold,      FontWeight.Bold)
+val Midorima = FontFamily(
+    Font(R.font.midorima, FontWeight.Normal)
+)
+
+val PixelF = FontFamily(
+    Font(R.font.pixel_f, FontWeight.Normal)
 )
 
 // ── Material theme wrapper ────────────────────────────────────────────────────

@@ -21,7 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.PixelF
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -157,7 +157,7 @@ fun ThemeCarousel(
                     Text(
                         text = name,
                         fontSize = 13.sp,
-                        fontFamily = ReemKufi,
+                        fontFamily = PixelF,
                         fontWeight = FontWeight.Medium,
                         color = FutoshikiColors.onSurface(),
                         letterSpacing = 4.sp,
