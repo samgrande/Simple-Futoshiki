@@ -25,6 +25,8 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         theme = loadTheme(),
         themeMode = loadThemeMode(),
         isDark = loadIsDark(),
+        customMonoAccent = loadCustomMonoAccent(),
+        customDayNight = loadCustomDayNight(),
         size = loadSize()
     ))
     val state: StateFlow<GameState> = _state.asStateFlow()
@@ -59,10 +61,18 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         return prefs.getInt("game_size", 4)
     }
 
+    private fun loadCustomMonoAccent(): Boolean {
+        return prefs.getBoolean("custom_mono_accent", false)
+    }
+
+    private fun loadCustomDayNight(): Boolean {
+        return prefs.getBoolean("custom_day_night", false)
+    }
+
     // ── New game ─────────────────────────────────────────────────────────────
 
-    fun newGame(size: Int) {
-        val puzzle = generatePuzzle(size)
+    fun newGame(size: Int, difficulty: Difficulty = Difficulty.EASY) {
+        val puzzle = generatePuzzle(size, difficulty)
         val grid = puzzle.initial.map { it.toMutableList().toList() }
         stopTimer()
         korgeManager.updateAggression(0f)
@@ -87,6 +97,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
                 completedRowsCount = 0,
                 finishedRows = emptySet(),
                 finishedCols = emptySet(),
+                difficulty = difficulty,
                 ninjaScreenX = 500f
             )
         }
@@ -177,6 +188,15 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         _state.update { it.copy(selected = nr to nc) }
     }
 
+    fun updatePillPosition(offset: androidx.compose.ui.geometry.Offset, center: androidx.compose.ui.geometry.Offset) {
+        _state.update { it.copy(
+            pillOffsetX = offset.x,
+            pillOffsetY = offset.y,
+            pillCenterX = center.x,
+            pillCenterY = center.y
+        ) }
+    }
+
     // ── Countdown timer hold ─────────────────────────────────────────────────
 
     fun pauseTimer() { stopTimer() }
@@ -238,6 +258,16 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         val newIsDark = !_state.value.isDark
         prefs.edit().putBoolean("is_dark", newIsDark).apply()
         _state.update { it.copy(isDark = newIsDark) }
+    }
+
+    fun updateCustomMonoAccent(isAccent: Boolean) {
+        prefs.edit().putBoolean("custom_mono_accent", isAccent).apply()
+        _state.update { it.copy(customMonoAccent = isAccent) }
+    }
+
+    fun updateCustomDayNight(isNight: Boolean) {
+        prefs.edit().putBoolean("custom_day_night", isNight).apply()
+        _state.update { it.copy(customDayNight = isNight) }
     }
 
     // ── Solve (cheat) ────────────────────────────────────────────────────────

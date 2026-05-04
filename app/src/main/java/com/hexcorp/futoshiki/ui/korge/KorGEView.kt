@@ -21,10 +21,11 @@ import androidx.compose.ui.graphics.toArgb
 @Composable
 fun KorGEView(
     manager: KorGEGameManager,
+    isSkyboxDark: Boolean,
     isPaused: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    val isDark = LocalIsDark.current
+    val isAppDark = LocalIsDark.current
     val accent = accentColor()
     val accentHex = String.format("#%06X", 0xFFFFFF and accent.toArgb())
 
@@ -37,7 +38,7 @@ fun KorGEView(
                     displayMode = KorgeDisplayMode(ScaleMode.COVER, Anchor.BOTTOM_CENTER, clipBorders = true),
                     main = {
                         val assets = AssetManager()
-                        val world = GameWorld(assets, manager, isDark, accentHex)
+                        val world = GameWorld(assets, manager, isSkyboxDark, isAppDark, accentHex)
                         manager.gameWorld = world
                         
                         world.setupWorld()
@@ -64,7 +65,7 @@ fun KorGEView(
             }
         },
         update = { _ ->
-            manager.gameWorld?.updateTheme(isDark, accentHex)
+            manager.gameWorld?.updateTheme(isSkyboxDark, isAppDark, accentHex)
             manager.isPaused = isPaused
         },
         modifier = modifier

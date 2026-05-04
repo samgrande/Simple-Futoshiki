@@ -2,8 +2,11 @@ package com.hexcorp.futoshiki.ui.screens.landing
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
+import com.hexcorp.futoshiki.game.Difficulty
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -17,11 +20,13 @@ import com.hexcorp.futoshiki.ui.components.shared.LogoMark
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import com.hexcorp.futoshiki.ui.theme.Midorima
+import com.hexcorp.futoshiki.ui.theme.PixelF
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun LandingScreen(
-    onStart: () -> Unit,
+    currentSize: Int,
+    onStart: (Int, Difficulty) -> Unit,
     onTheming: () -> Unit,
     onQuit: () -> Unit,
     modifier: Modifier = Modifier,
@@ -29,11 +34,20 @@ fun LandingScreen(
 ) {
     var showHelp by remember { mutableStateOf(false) }
     var showConfirmQuit by remember { mutableStateOf(false) }
+    var startExpanded by remember { mutableStateOf(false) }
+    
+    var selectedSize by remember { mutableIntStateOf(currentSize) }
+    var selectedDifficulty by remember { mutableStateOf(Difficulty.EASY) }
 
     BackHandler(enabled = true) {
         when {
             showHelp -> showHelp = false
             showConfirmQuit -> showConfirmQuit = false
+            startExpanded -> {
+                selectedSize = currentSize
+                selectedDifficulty = Difficulty.EASY
+                startExpanded = false
+            }
             else -> showConfirmQuit = true
         }
     }
@@ -44,6 +58,23 @@ fun LandingScreen(
             .background(FutoshikiColors.background()),
         contentAlignment = Alignment.Center
     ) {
+        // Dismissal Scrim
+        if (startExpanded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { 
+                            selectedSize = currentSize
+                            selectedDifficulty = Difficulty.EASY
+                            startExpanded = false 
+                        }
+                    )
+            )
+        }
+
         Column(
             modifier = Modifier
                 .widthIn(max = 420.dp)
@@ -136,7 +167,13 @@ fun LandingScreen(
                     LandingMenuContent(
                         state = state,
                         isDark = isDark,
-                        onStart = onStart,
+                        selectedSize = selectedSize,
+                        onSizeSelected = { selectedSize = it },
+                        selectedDifficulty = selectedDifficulty,
+                        onDifficultyChange = { selectedDifficulty = it },
+                        startExpanded = startExpanded,
+                        onStartToggle = { startExpanded = !startExpanded },
+                        onStart = { onStart(selectedSize, selectedDifficulty) },
                         onTheming = onTheming,
                         onQuit = onQuit,
                         onShowHelp = { showHelp = true },
@@ -165,7 +202,7 @@ fun LandingScreen(
                     text = "Made with ♡ by @HeX",
                     fontSize = 12.sp,
                     color = Color(0xFF888888),
-                    fontFamily = Midorima
+                    fontFamily = PixelF
                 )
             }
         }

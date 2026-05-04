@@ -16,6 +16,10 @@ data class Puzzle(
     val initial: List<List<Int>>
 )
 
+enum class Difficulty {
+    EASY, MEDIUM, HARD
+}
+
 // ── Solver (backtracking Latin-square) ────────────────────────────────────────
 
 fun generateSolution(size: Int): List<List<Int>> {
@@ -110,7 +114,7 @@ fun generateConstraints(solution: List<List<Int>>, size: Int, count: Int): List<
 
 // ── Full puzzle builder ───────────────────────────────────────────────────────
 
-fun generatePuzzle(size: Int): Puzzle {
+fun generatePuzzle(size: Int, difficulty: Difficulty = Difficulty.EASY): Puzzle {
     var solution: List<List<Int>>
     var constraints: List<Constraint>
     var initialGrid: List<List<Int>>
@@ -118,22 +122,41 @@ fun generatePuzzle(size: Int): Puzzle {
     // Retry until we get a puzzle with a unique solution
     while (true) {
         solution = generateSolution(size)
-        // More constraints for larger grids to help uniqueness
-        val constraintCount = when (size) {
-            3 -> 3
-            4 -> 5
-            5 -> 7
-            else -> 9
+        // Adjust constraint count based on difficulty and size
+        val baseConstraints = when (size) {
+            3 -> 2
+            4 -> 4
+            5 -> 6
+            else -> 8
         }
+        val constraintCount = when (difficulty) {
+            Difficulty.EASY -> baseConstraints + 2
+            Difficulty.MEDIUM -> baseConstraints
+            Difficulty.HARD -> baseConstraints - 1
+        }.coerceAtLeast(1)
+
         constraints = generateConstraints(solution, size, constraintCount)
 
         val allCells = (0 until size).flatMap { r -> (0 until size).map { c -> r to c } }.shuffled()
         val grid = Array(size) { IntArray(size) }
         
         // Reveal cells one by one until there's exactly one solution
+        var revealedCount = 0
         for ((r, c) in allCells) {
             grid[r][c] = solution[r][c]
+            revealedCount++
             if (countSolutions(grid.map { it.toList() }, constraints, size) == 1) {
+                // For easier difficulties, reveal even more cells
+                val extraToReveal = when (difficulty) {
+                    Difficulty.EASY -> (size * size / 4)
+                    Difficulty.MEDIUM -> (size * size / 8)
+                    Difficulty.HARD -> 0
+                }
+                
+                val remainingCells = allCells.drop(revealedCount).take(extraToReveal)
+                for ((rr, cc) in remainingCells) {
+                    grid[rr][cc] = solution[rr][cc]
+                }
                 break
             }
         }

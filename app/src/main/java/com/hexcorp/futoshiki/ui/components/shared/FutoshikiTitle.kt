@@ -2,6 +2,7 @@ package com.hexcorp.futoshiki.ui.components.shared
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,22 +21,25 @@ import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.Midorima
 import com.hexcorp.futoshiki.ui.theme.accentColor
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun FutoshikiTitle(
     size: Int? = null,
     showTabs: Boolean = false,
     onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     fontSize: TextUnit = 36.sp,
     isSolved: Boolean = false,
     showUnderline: Boolean = true
 ) {
     val accent = accentColor()
     Box(
-        modifier = if (onClick != null) {
-            Modifier.clickable(
+        modifier = if (onClick != null || onLongClick != null) {
+            Modifier.combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClick = onClick
+                onClick = onClick ?: {},
+                onLongClick = onLongClick
             )
         } else Modifier
     ) {

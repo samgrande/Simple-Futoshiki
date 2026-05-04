@@ -21,7 +21,7 @@ enum class AppTheme {
 }
 
 enum class ThemeMode {
-    AUTO, DAY, NIGHT, BLISS
+    AUTO, DAY, NIGHT, CUSTOM
 }
 
 // ── Brand colours ─────────────────────────────────────────────────────────────

@@ -51,6 +51,7 @@ fun PuzzleCell(
     r: Int,
     c: Int,
     isSolved: Boolean,
+    revealTrigger: Int,
     onTap: (Int, Int) -> Unit,
     onClear: (Int, Int) -> Unit
 ) {
@@ -64,9 +65,17 @@ fun PuzzleCell(
     var flashAlpha by remember { mutableStateOf(0f) }
     val animatedFlashAlpha by animateFloatAsState(
         targetValue = flashAlpha,
-        animationSpec = tween(if (flashAlpha > 0f) 60 else 300),
+        animationSpec = if (flashAlpha > 0f) tween(100) else tween(700),
         label = "flashAlpha"
     )
+
+    LaunchedEffect(revealTrigger) {
+        if (revealTrigger > 0 && isGiven) {
+            flashAlpha = 1.0f
+            delay(150)
+            flashAlpha = 0f
+        }
+    }
 
     LaunchedEffect(isShaking) {
         if (isShaking) {
@@ -124,7 +133,7 @@ fun PuzzleCell(
     val targetBg = when {
         hasError   -> FutoshikiColors.errorBg()
         isSelected -> accent.copy(alpha = 0.12f)
-        isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = 0.12f * animatedFlashAlpha)
+        isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = 0.25f * animatedFlashAlpha)
         isRelated  -> FutoshikiColors.cellRelated()
         else       -> FutoshikiColors.cellDefault()
     }
@@ -134,11 +143,14 @@ fun PuzzleCell(
         hasError   -> FutoshikiColors.ErrorStroke
         isSelected -> accent
         isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = animatedFlashAlpha)
-        else       -> FutoshikiColors.onSurface()
+        else       -> Color.Transparent
     }
     val borderColor by androidx.compose.animation.animateColorAsState(targetBorderColor, tween(150), label = "borderColor")
 
-    val targetBorderWidth = if (isSelected || (isGiven && animatedFlashAlpha > 0f)) 2.5.dp else 1.5.dp
+    val targetBorderWidth = when {
+        hasError || isSelected || (isGiven && animatedFlashAlpha > 0f) -> 2.2.dp
+        else -> 0.dp
+    }
     val borderWidth by animateDpAsState(targetBorderWidth, tween(150), label = "borderWidth")
 
     val textColor   = if (hasError) FutoshikiColors.ErrorStroke else FutoshikiColors.onSurface()
@@ -147,7 +159,7 @@ fun PuzzleCell(
     val targetShadowColor = when {
         hasError   -> FutoshikiColors.ErrorStroke.copy(alpha = 0.22f)
         isSelected -> accent.copy(alpha = 0.4f)
-        isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = 0.4f * animatedFlashAlpha)
+        isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = 0.5f * animatedFlashAlpha)
         else       -> Color(0x42000000)
     }
     val shadowColor by androidx.compose.animation.animateColorAsState(targetShadowColor, tween(150), label = "shadowColor")
@@ -162,6 +174,10 @@ fun PuzzleCell(
                 translationX = currentOffsetX
                 translationY = currentOffsetY
             }
+            .then(
+                if (borderWidth > 0.dp) Modifier.border(borderWidth, borderColor, RoundedCornerShape(cornerRadius))
+                else Modifier
+            )
             .background(bg, RoundedCornerShape(cornerRadius))
     ) {
         Box(
@@ -185,11 +201,6 @@ fun PuzzleCell(
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 }
                                 isShaking = true
-                                scope.launch {
-                                    flashAlpha = 1f
-                                    delay(200)
-                                    flashAlpha = 0f
-                                }
                                 onTap(r, c)
                             }
                         } else {

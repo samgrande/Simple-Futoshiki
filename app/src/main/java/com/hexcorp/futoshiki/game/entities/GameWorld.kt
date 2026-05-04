@@ -11,7 +11,8 @@ import kotlinx.coroutines.*
 class GameWorld(
     private val assets: AssetManager,
     private val manager: com.hexcorp.futoshiki.ui.korge.KorGEGameManager,
-    private val isDark: Boolean = false,
+    private val isSkyboxDark: Boolean = false,
+    private val isAppDark: Boolean = false,
     private val skyColorHex: String = "#0b0b0b"
 ) : Container() {
 
@@ -25,14 +26,25 @@ class GameWorld(
 
     suspend fun setupWorld() {
         // 0. Setup Sky Background Color based on theme
-        val skyColor = if (isDark) {
+        val skyColor = if (isSkyboxDark) {
             val base = Colors[skyColorHex]
-            RGBA(
-                (base.r * 0.7).toInt(),
-                (base.g * 0.7).toInt(),
-                (base.b * 0.7).toInt(),
-                base.a
-            )
+            if (isAppDark) {
+                RGBA(
+                    (base.r * 0.7).toInt(),
+                    (base.g * 0.7).toInt(),
+                    (base.b * 0.7).toInt(),
+                    base.a
+                )
+            } else {
+                // Mix with white to make it a light pastel version for Day mode
+                val ratio = 0.85
+                RGBA(
+                    (base.r * (1 - ratio) + 255 * ratio).toInt(),
+                    (base.g * (1 - ratio) + 255 * ratio).toInt(),
+                    (base.b * (1 - ratio) + 255 * ratio).toInt(),
+                    base.a
+                )
+            }
         } else Colors["#f5f2f2"]
         val bg = SolidRect(20000, 1000, skyColor).apply {
             anchor(0.5, 0.5)
@@ -134,15 +146,26 @@ class GameWorld(
 
     }
 
-    fun updateTheme(isDark: Boolean, skyColorHex: String) {
-        val skyColor = if (isDark) {
+    fun updateTheme(isSkyboxDark: Boolean, isAppDark: Boolean, skyColorHex: String) {
+        val skyColor = if (isSkyboxDark) {
             val base = Colors[skyColorHex]
-            RGBA(
-                (base.r * 0.7).toInt(),
-                (base.g * 0.7).toInt(),
-                (base.b * 0.7).toInt(),
-                base.a
-            )
+            if (isAppDark) {
+                RGBA(
+                    (base.r * 0.7).toInt(),
+                    (base.g * 0.7).toInt(),
+                    (base.b * 0.7).toInt(),
+                    base.a
+                )
+            } else {
+                // Mix with white to make it a light pastel version for Day mode
+                val ratio = 0.85
+                RGBA(
+                    (base.r * (1 - ratio) + 255 * ratio).toInt(),
+                    (base.g * (1 - ratio) + 255 * ratio).toInt(),
+                    (base.b * (1 - ratio) + 255 * ratio).toInt(),
+                    base.a
+                )
+            }
         } else Colors["#f5f2f2"]
         
         children.firstOrNull { it is SolidRect }?.let { 

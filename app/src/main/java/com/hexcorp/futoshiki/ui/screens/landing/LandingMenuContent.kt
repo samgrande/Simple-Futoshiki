@@ -9,14 +9,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hexcorp.futoshiki.game.Difficulty
 import com.hexcorp.futoshiki.ui.components.shared.BigButton
+import com.hexcorp.futoshiki.ui.components.shared.ExpandableStartButton
 import com.hexcorp.futoshiki.ui.components.shared.HelpPanel
 import com.hexcorp.futoshiki.ui.theme.Midorima
+import com.hexcorp.futoshiki.ui.theme.PixelF
 
 @Composable
 fun LandingMenuContent(
     state: String,
     isDark: Boolean,
+    selectedSize: Int,
+    onSizeSelected: (Int) -> Unit,
+    selectedDifficulty: Difficulty,
+    onDifficultyChange: (Difficulty) -> Unit,
+    startExpanded: Boolean,
+    onStartToggle: () -> Unit,
     onStart: () -> Unit,
     onTheming: () -> Unit,
     onQuit: () -> Unit,
@@ -59,7 +68,7 @@ fun LandingMenuContent(
                     text          = "Q U I T   T H E   G A M E  ?",
                     fontSize      = 13.sp,
                     fontWeight    = FontWeight.SemiBold,
-                    fontFamily    = Midorima,
+                    fontFamily    = PixelF,
                     color         = if (isDark) Color(0xFF888888) else Color(0xFF999999),
                     letterSpacing = 2.sp
                 )
@@ -84,12 +93,19 @@ fun LandingMenuContent(
                 modifier = modifier
             ) {
                 Spacer(Modifier.height(48.dp))
-                BigButton(
+                
+                ExpandableStartButton(
                     label = "START",
-                    onClick = onStart,
-                    inverted = true,
+                    isExpanded = startExpanded,
+                    onExpandToggle = onStartToggle,
+                    selectedSize = selectedSize,
+                    onSizeSelected = onSizeSelected,
+                    selectedDifficulty = selectedDifficulty,
+                    onDifficultyChange = onDifficultyChange,
+                    onStart = onStart,
                     isDark = isDark
                 )
+                
                 Spacer(Modifier.height(35.dp))
                 BigButton(
                     label = "HELP",

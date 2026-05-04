@@ -78,10 +78,7 @@ fun FutoshikiApp(
         ThemeMode.AUTO -> systemDark
         ThemeMode.DAY -> false
         ThemeMode.NIGHT -> true
-        ThemeMode.BLISS -> {
-            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-            hour < 6 || hour >= 18
-        }
+        ThemeMode.CUSTOM -> state.customDayNight
     }
 
     FutoshikiTheme(
@@ -108,7 +105,8 @@ fun FutoshikiApp(
             when (screen) {
                 Screen.LANDING -> {
                     LandingScreen(
-                        onStart = { vm.newGame(state.size) },
+                        currentSize = state.size,
+                        onStart = { size, difficulty -> vm.newGame(size, difficulty) },
                         onTheming = { vm.goToTheming() },
                         onQuit = onQuit,
                         modifier = Modifier.fillMaxSize(),
@@ -128,8 +126,14 @@ fun FutoshikiApp(
                         currentTheme = state.theme,
                         themeMode = state.themeMode,
                         isDark = isDark,
+                        customMonoAccent = state.customMonoAccent,
+                        customDayNight = state.customDayNight,
                         onThemeModeChange = { mode -> vm.updateThemeMode(mode) },
                         onThemeChange = { theme -> vm.updateTheme(theme) },
+                        onCustomThemeChange = { monoAccent, dayNight ->
+                            vm.updateCustomMonoAccent(monoAccent)
+                            vm.updateCustomDayNight(dayNight)
+                        },
                         onBack = { vm.backFromTheming() },
                         modifier = Modifier.fillMaxSize(),
                         scope = this

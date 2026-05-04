@@ -3,7 +3,9 @@ package com.hexcorp.futoshiki.ui.screens.game
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.EaseOutBack
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -50,10 +52,11 @@ fun GameScreen(
     val won       = state.won
     val gameKey   = state.gameKey
 
-    var pillCenter by remember { mutableStateOf(Offset.Zero) }
-    var pillOffset by remember { mutableStateOf(Offset.Zero) }
+    val pillCenter = Offset(state.pillCenterX, state.pillCenterY)
+    val pillOffset = Offset(state.pillOffsetX, state.pillOffsetY)
     var containerCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
     var showTabs by rememberSaveable { mutableStateOf(false) }
+    var forceQuitInPause by rememberSaveable { mutableStateOf(false) }
 
     // Countdown: observe the ninja signal
     val ninjaRunning by viewModel.korgeManager.runningStarted.collectAsStateWithLifecycle()
@@ -109,12 +112,13 @@ fun GameScreen(
         }
     }
 
-    val canGoBack = !won || state.isSolved
+    val canGoBack = !won || state.isSolved || won // Always true if won
     BackHandler(enabled = canGoBack) {
         if (showCountdown) return@BackHandler
         if (isPaused) {
+            forceQuitInPause = false
             viewModel.resume()
-        } else if (state.isSolved) {
+        } else if (state.isSolved || won) {
             viewModel.newGame(size)
         } else {
             viewModel.pause()
@@ -175,9 +179,11 @@ fun GameScreen(
                         .height(korgeHeight)
                         .zIndex(2f)
                 ) {
+                    val isSkyboxDark = if (state.themeMode == com.hexcorp.futoshiki.ui.theme.ThemeMode.CUSTOM) state.customMonoAccent else state.isDark
                     // KorGE is always visible at full alpha
                     KorGEView(
                         manager = viewModel.korgeManager,
+                        isSkyboxDark = isSkyboxDark,
                         isPaused = isPaused,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -231,12 +237,27 @@ fun GameScreen(
         val animatedBg by animateColorAsState(targetCardBg, tween(400), label = "cardBg")
         val animatedBorder by animateColorAsState(targetCardBorder, tween(400), label = "cardBorder")
 
+        val gridAlpha by animateFloatAsState(
+            targetValue = if (hideGameContent || showCountdown) 0f else 1f,
+            animationSpec = tween(300),
+            label = "gridAlpha"
+        )
+        val gridScale by animateFloatAsState(
+            targetValue = if (hideGameContent || showCountdown) 0.92f else 1f,
+            animationSpec = tween(300),
+            label = "gridScale"
+        )
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .widthIn(max = 420.dp)
                 .align(Alignment.TopCenter)
-                .graphicsLayer { alpha = if (hideGameContent) 0f else 1f }
+                .graphicsLayer {
+                    alpha = gridAlpha
+                    scaleX = gridScale
+                    scaleY = gridScale
+                }
         ) {
             Column(
                 modifier = Modifier
@@ -274,10 +295,13 @@ fun GameScreen(
                     onDispose { /* bounds are cleared by FutoshikiApp when leaving GAME */ }
                 }
 
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(40.dp)) // Lowered the grid
 
-                val boardKey = remember(state.isSolved, gameKey) {
-                    if (state.isSolved) 9999 + gameKey else gameKey
+                val boardKey = remember(state.isSolved, gameKey, showCountdown) {
+                    // Changing the key when countdown ends triggers the staggered pop animations in PuzzleBoard
+                    if (state.isSolved) 9999 + gameKey 
+                    else if (showCountdown) -1 
+                    else gameKey
                 }
 
                 if (state.showCongrats) {
@@ -312,26 +336,40 @@ fun GameScreen(
 
                     if (!state.isSolved) {
                         Spacer(Modifier.height(vh * 0.025f))
-                        NumberPad(
-                            size         = size,
-                            buttonSizeDp = numpadBtnDp,
-                            spacingDp    = numpadSpacing,
-                            onNumber     = { viewModel.inputNumber(it) },
-                            modifier     = Modifier.padding(horizontal = hPad)
-                        )
+                        AnimatedVisibility(
+                            visible = !showCountdown,
+                            enter = fadeIn(tween(600, delayMillis = 300)) + 
+                                    slideInVertically(tween(600, delayMillis = 300)) { it / 2 },
+                            label = "numpadEntrance"
+                        ) {
+                            NumberPad(
+                                size         = size,
+                                buttonSizeDp = numpadBtnDp,
+                                spacingDp    = numpadSpacing,
+                                onNumber     = { viewModel.inputNumber(it) },
+                                modifier     = Modifier.padding(horizontal = hPad)
+                            )
+                        }
                     }
                 }
 
                 Spacer(Modifier.height(16.dp))
                 Spacer(Modifier.weight(1f))
 
-                GameFooter(
-                    isSolved      = state.isSolved || state.won || state.showCongrats,
-                    showCountdown = showCountdown,
-                    onNewGame     = { viewModel.newGame(size) },
-                    onClearAll    = { viewModel.clearAll() },
-                    hPad          = hPad
-                )
+                AnimatedVisibility(
+                    visible = !showCountdown,
+                    enter = fadeIn(tween(600, delayMillis = 500)) + 
+                            slideInVertically(tween(600, delayMillis = 500)) { it / 2 },
+                    label = "footerEntrance"
+                ) {
+                    GameFooter(
+                        isSolved      = state.isSolved || state.won || state.showCongrats,
+                        showCountdown = showCountdown,
+                        onNewGame     = { viewModel.newGame(size) },
+                        onClearAll    = { viewModel.clearAll() },
+                        hPad          = hPad
+                    )
+                }
             }
 
             AnimatedVisibility(
@@ -378,33 +416,43 @@ fun GameScreen(
                     .zIndex(3f)
             ) {
                 if (!state.isSolved) {
-                    GameHeader(
-                        size = size,
-                        timerSeconds = state.timerSeconds,
-                        won = won,
-                        isPaused = isPaused,
-                        showTabs = showTabs,
-                        showCountdown = showCountdown,
-                        onTitleClick = { showTabs = !showTabs },
-                        onTimerClick = {
-                            showTabs = false
-                            viewModel.pause()
-                        },
-                        onSizeChange = {
-                            showTabs = false
-                            viewModel.changeSize(it)
-                        },
-                        animatedBg = animatedBg,
-                        animatedBorder = animatedBorder,
-                        headerH = headerH,
-                        tabH = tabH,
-                        containerCoordinates = containerCoordinates,
-                        onPillPositioned = { offset, center ->
-                            pillOffset = offset
-                            pillCenter = center
-                        },
-                        hideGameContent = hideGameContent
-                    )
+                    val isCustomMonoNight = state.themeMode == com.hexcorp.futoshiki.ui.theme.ThemeMode.CUSTOM && !state.customMonoAccent && state.customDayNight
+                    CompositionLocalProvider(LocalIsDark provides if (isCustomMonoNight) false else LocalIsDark.current) {
+                        GameHeader(
+                            size = size,
+                            timerSeconds = state.timerSeconds,
+                            won = won,
+                            isPaused = isPaused,
+                            showTabs = showTabs,
+                            showCountdown = showCountdown,
+                            onTitleClick = { showTabs = !showTabs },
+                            onTimerClick = {
+                                showTabs = false
+                                if (won) forceQuitInPause = true
+                                viewModel.pause()
+                            },
+                            onTimerLongClick = {
+                                if (!won) {
+                                    forceQuitInPause = true
+                                    viewModel.pause()
+                                }
+                            },
+                            onSizeChange = { newSize ->
+                                showTabs = false
+                                viewModel.changeSize(newSize)
+                            },
+                            onTitleLongClick = { /* Handle if needed */ },
+                            animatedBg = animatedBg,
+                            animatedBorder = animatedBorder,
+                            headerH = headerH,
+                            tabH = tabH,
+                            containerCoordinates = containerCoordinates,
+                            onPillPositioned = { offset, center ->
+                                viewModel.updatePillPosition(offset, center)
+                            },
+                            hideGameContent = hideGameContent
+                        )
+                    }
                 } else {
                     Box(
                         modifier = Modifier
@@ -445,12 +493,18 @@ fun GameScreen(
                 pillOffset = pillOffset,
                 seconds = state.timerSeconds,
                 won = won,
-                onResume = { viewModel.resume() },
+                currentSize = size,
+                currentDifficulty = state.difficulty,
+                onResume = {
+                    forceQuitInPause = false
+                    viewModel.resume()
+                },
                 onMainMenu = { viewModel.goToMainMenu() },
                 onSolve = { viewModel.solve() },
-                onNewGame = { viewModel.newGame(size) },
+                onNewGame = { s, d -> viewModel.newGame(s, d) },
                 onTheming = { viewModel.goToThemingFromGame() },
-                modifier = Modifier.zIndex(10f)
+                modifier = Modifier.zIndex(10f),
+                startWithQuitConfirm = forceQuitInPause
             )
         }
 

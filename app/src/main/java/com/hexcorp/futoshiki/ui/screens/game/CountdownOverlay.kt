@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
-import com.hexcorp.futoshiki.ui.theme.PixelF
+import com.hexcorp.futoshiki.ui.theme.Midorima
 import com.hexcorp.futoshiki.ui.theme.accentColor
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import kotlinx.coroutines.delay
@@ -61,7 +61,9 @@ fun CountdownOverlay(
         label = "2"
         delay(DIGIT_DURATION_MS)
         label = "1"
-        // Hold on "1" until the ninja actually starts running
+        // Finish 800ms earlier than original (550ms GO hold + 250ms of "1")
+        delay(DIGIT_DURATION_MS - 250)
+        onDone()
     }
 
     // As soon as ninjaRunning flips true, switch to GO! then call onDone
@@ -69,8 +71,7 @@ fun CountdownOverlay(
         if (ninjaRunning && !goneDone) {
             label    = "GO!"
             goneDone = true
-            delay(GO_HOLD_MS)
-            onDone()
+            // Grid is already fading in thanks to the earlier onDone() call
         }
     }
 
@@ -96,7 +97,7 @@ fun CountdownOverlay(
     // ── Layout ───────────────────────────────────────────────────────────────
     Box(
         modifier         = modifier.background(FutoshikiColors.background().copy(alpha = 0.70f)),
-        contentAlignment = Alignment.Center
+        contentAlignment = androidx.compose.ui.BiasAlignment(0f, 0.2f)
     ) {
         AnimatedContent(
             targetState  = label,
@@ -108,8 +109,8 @@ fun CountdownOverlay(
         ) { lbl ->
             Text(
                 text       = lbl,
-                fontFamily = PixelF,
-                fontSize   = if (lbl == "GO!") 72.sp else 96.sp,
+                fontFamily = Midorima,
+                fontSize   = if (lbl == "GO!") 84.sp else 110.sp,
                 fontWeight = FontWeight.Normal,   // PixelF is single-weight
                 color      = textColor,
                 modifier   = Modifier.scale(if (isGo) 1f else pulse)

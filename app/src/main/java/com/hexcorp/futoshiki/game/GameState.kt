@@ -25,9 +25,16 @@ data class GameState(
     val theme: AppTheme = AppTheme.FIRE,
     val isDark: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.AUTO,
+    val customMonoAccent: Boolean = false,
+    val customDayNight: Boolean = false,
     val isSolved: Boolean = false,
     val completedRowsCount: Int = 0,
     val finishedRows: Set<Int> = emptySet(),
     val finishedCols: Set<Int> = emptySet(),
-    val ninjaScreenX: Float = 500f
+    val difficulty: Difficulty = Difficulty.EASY,
+    val ninjaScreenX: Float = 500f,
+    val pillOffsetX: Float = 0f,
+    val pillOffsetY: Float = 0f,
+    val pillCenterX: Float = 0f,
+    val pillCenterY: Float = 0f
 )

@@ -31,6 +31,9 @@ fun PuzzleBoard(
         puzzle.initial.sumOf { row -> row.count { it != 0 } }
     }
 
+    // Trigger for the "glowing pulse" reveal of prefilled cells
+    var revealTrigger by remember { mutableIntStateOf(0) }
+
     val constraintsMap = remember(puzzle) {
         val map = mutableMapOf<String, Constraint>()
         puzzle.constraints.forEach {
@@ -65,7 +68,7 @@ fun PuzzleBoard(
                                                  (selected.first == r || selected.second == c)
                                 val hasError   = errors.contains("$r,$c")
                                 val cellIdx    = r * size + c
-                                val delay      = cellIdx * 22
+                                val delay      = cellIdx * 15 // Faster, more fluid entrance
 
                                 key(r, c) {
                                     PuzzleCell(
@@ -81,7 +84,13 @@ fun PuzzleBoard(
                                         r          = r,
                                         c          = c,
                                         isSolved   = isSolved,
-                                        onTap      = onCellTap,
+                                        revealTrigger = revealTrigger,
+                                        onTap      = { row, col ->
+                                            if (isGiven) {
+                                                revealTrigger++
+                                            }
+                                            onCellTap(row, col)
+                                        },
                                         onClear    = onCellClear
                                     )
                                 }
@@ -100,10 +109,13 @@ fun PuzzleBoard(
                                 ) {
                                     if (cn != null) {
                                         val dir = if (cn.gt) ArrowDirection.RIGHT else ArrowDirection.LEFT
+                                        val delay = ((r * size + c1) * 15 + 7)
                                         key(cn) {
                                             ConstraintArrow(
                                                 direction = dir,
-                                                sizeDp    = arrowSlotDp * 0.9f
+                                                sizeDp    = arrowSlotDp * 0.9f,
+                                                animDelay = delay,
+                                                gameKey   = gameKey
                                             )
                                         }
                                     }
@@ -123,10 +135,13 @@ fun PuzzleBoard(
                                 ) {
                                     if (cn != null) {
                                         val dir = if (cn.gt) ArrowDirection.DOWN else ArrowDirection.UP
+                                        val delay = ((r1 * size + c) * 15 + 7)
                                         key(cn) {
                                             ConstraintArrow(
                                                 direction = dir,
-                                                sizeDp    = arrowSlotDp * 0.9f
+                                                sizeDp    = arrowSlotDp * 0.9f,
+                                                animDelay = delay,
+                                                gameKey   = gameKey
                                             )
                                         }
                                     }

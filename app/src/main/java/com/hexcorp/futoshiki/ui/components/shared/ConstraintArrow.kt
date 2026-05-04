@@ -2,7 +2,7 @@ package com.hexcorp.futoshiki.ui.components.shared
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -18,8 +18,23 @@ enum class ArrowDirection { UP, RIGHT, DOWN, LEFT }
 fun ConstraintArrow(
     direction: ArrowDirection,
     sizeDp: Dp = 24.dp,
+    animDelay: Int = 0,
+    gameKey: Int = 0,
     modifier: Modifier = Modifier
 ) {
+    var triggered by androidx.compose.runtime.remember(gameKey) { androidx.compose.runtime.mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(gameKey) {
+        triggered = false
+        kotlinx.coroutines.delay(animDelay.toLong())
+        triggered = true
+    }
+
+    val scale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (triggered) 1f else 0f,
+        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.55f, stiffness = 400f),
+        label = "arrowPop"
+    )
+
     val degrees = when (direction) {
         ArrowDirection.UP    -> 270f
         ArrowDirection.RIGHT -> 0f
@@ -31,7 +46,11 @@ fun ConstraintArrow(
     Canvas(
         modifier = modifier
             .size(sizeDp)
-            .graphicsLayer { rotationZ = degrees }
+            .graphicsLayer { 
+                rotationZ = degrees 
+                scaleX = scale
+                scaleY = scale
+            }
     ) {
         val scaleX = size.width / 12f
         val scaleY = size.height / 19f

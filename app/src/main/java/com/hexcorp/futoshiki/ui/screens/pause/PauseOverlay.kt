@@ -3,28 +3,35 @@ package com.hexcorp.futoshiki.ui.screens.pause
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.draw.alpha
-import com.hexcorp.futoshiki.ui.components.shared.BigButton
-import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
-import com.hexcorp.futoshiki.ui.components.shared.HelpPanel
-import com.hexcorp.futoshiki.ui.components.shared.LogoMark
-import com.hexcorp.futoshiki.ui.components.shared.TimerPill
+import com.hexcorp.futoshiki.game.Difficulty
+import com.hexcorp.futoshiki.ui.components.shared.*
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
-import com.hexcorp.futoshiki.ui.theme.Midorima
+import com.hexcorp.futoshiki.ui.theme.PixelF
 import kotlin.math.roundToInt
 
 @Composable
@@ -33,20 +40,34 @@ fun PauseOverlay(
     pillOffset: Offset,
     seconds: Int,
     won: Boolean = false,
+    currentSize: Int = 4,
+    currentDifficulty: Difficulty = Difficulty.EASY,
     onResume: () -> Unit,
     onMainMenu: () -> Unit,
     onSolve: () -> Unit,
-    onNewGame: () -> Unit,
+    onNewGame: (Int, Difficulty) -> Unit,
     onTheming: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    startWithQuitConfirm: Boolean = false
 ) {
     var showHelp by rememberSaveable { mutableStateOf(false) }
-    var showConfirmQuit by rememberSaveable { mutableStateOf(false) }
+    var showConfirmQuit by rememberSaveable { mutableStateOf(startWithQuitConfirm) }
+    var showConfirmNewGame by rememberSaveable { mutableStateOf(false) }
+    var newGameExpanded by rememberSaveable { mutableStateOf(false) }
+    
+    var selectedSize by remember { mutableIntStateOf(currentSize) }
+    var selectedDifficulty by remember { mutableStateOf(currentDifficulty) }
 
     BackHandler(enabled = true) {
         when {
             showHelp -> showHelp = false
-            showConfirmQuit -> showConfirmQuit = false
+            showConfirmQuit -> if (won) onResume() else showConfirmQuit = false
+            showConfirmNewGame -> showConfirmNewGame = false
+            newGameExpanded -> {
+                selectedSize = currentSize
+                selectedDifficulty = currentDifficulty
+                newGameExpanded = false
+            }
             else -> onResume()
         }
     }
@@ -60,6 +81,23 @@ fun PauseOverlay(
                 .background(FutoshikiColors.background()),
             contentAlignment = Alignment.Center
         ) {
+            // Dismissal Scrim
+            if (newGameExpanded) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { 
+                                selectedSize = currentSize
+                                selectedDifficulty = currentDifficulty
+                                newGameExpanded = false 
+                            }
+                        )
+                )
+            }
+            
             Column(
                 modifier = Modifier
                     .widthIn(max = 420.dp)
@@ -70,13 +108,17 @@ fun PauseOverlay(
             ) {
                 Spacer(Modifier.weight(0.8f))
 
-                LogoMark(size = 80.dp)
-                Spacer(Modifier.height(16.dp))
+                if (!newGameExpanded) {
+                    LogoMark(size = 80.dp)
+                    Spacer(Modifier.height(16.dp))
+                }
+                
                 FutoshikiTitle(fontSize = 38.sp)
 
                 AnimatedContent(
                     targetState = when {
-                        showConfirmQuit -> "confirm"
+                        showConfirmQuit -> "confirm_quit"
+                        showConfirmNewGame -> "confirm_new_game"
                         showHelp -> "help"
                         else -> "menu"
                     },
@@ -115,7 +157,7 @@ fun PauseOverlay(
                             }
                         }
 
-                        "confirm" -> {
+                        "confirm_quit" -> {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.fillMaxWidth()
@@ -125,7 +167,7 @@ fun PauseOverlay(
                                     text = "QUIT TO MAIN MENU?",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
-                                    fontFamily = Midorima,
+                                    fontFamily = PixelF,
                                     color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
                                     letterSpacing = 2.sp
                                 )
@@ -139,7 +181,50 @@ fun PauseOverlay(
                                 Spacer(Modifier.height(20.dp))
                                 BigButton(
                                     label = "NO",
-                                    onClick = { showConfirmQuit = false },
+                                    onClick = { if (won) onResume() else showConfirmQuit = false },
+                                    isDark = isDark
+                                )
+                            }
+                        }
+
+                        "confirm_new_game" -> {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Spacer(Modifier.height(32.dp))
+                                Text(
+                                    text = "THE CURRENT PUZZLE WILL END",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = PixelF,
+                                    color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
+                                    letterSpacing = 1.sp,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = "PROCEED?",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = PixelF,
+                                    color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
+                                    letterSpacing = 2.sp
+                                )
+                                Spacer(Modifier.height(32.dp))
+                                BigButton(
+                                    label = "YES",
+                                    onClick = { onNewGame(selectedSize, selectedDifficulty) },
+                                    inverted = true,
+                                    isDark = isDark
+                                )
+                                Spacer(Modifier.height(20.dp))
+                                BigButton(
+                                    label = "NO",
+                                    onClick = { 
+                                        selectedSize = currentSize
+                                        showConfirmNewGame = false 
+                                    },
                                     isDark = isDark
                                 )
                             }
@@ -155,34 +240,57 @@ fun PauseOverlay(
                                     text = "PAUSED",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
+                                    fontFamily = PixelF,
                                     color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
                                     letterSpacing = 2.sp
                                 )
                                 Spacer(Modifier.height(48.dp))
-                                BigButton(
-                                    label = "MAIN MENU",
-                                    onClick = { showConfirmQuit = true },
-                                    inverted = true,
+                                
+                                // NEW GAME (Expandable)
+                                ExpandableStartButton(
+                                    label = "NEW GAME",
+                                    isExpanded = newGameExpanded,
+                                    onExpandToggle = { newGameExpanded = !newGameExpanded },
+                                    selectedSize = selectedSize,
+                                    onSizeSelected = { selectedSize = it },
+                                    selectedDifficulty = selectedDifficulty,
+                                    onDifficultyChange = { selectedDifficulty = it },
+                                    onStart = { 
+                                        if (won) {
+                                            onNewGame(selectedSize, selectedDifficulty)
+                                        } else {
+                                            showConfirmNewGame = true
+                                        }
+                                    },
                                     isDark = isDark
                                 )
+                                
                                 Spacer(Modifier.height(20.dp))
+                                
+                                // SOLVE
                                 BigButton(
                                     label = "SOLVE",
                                     onClick = { if (!won) onSolve() },
                                     isDark = isDark,
                                     modifier = Modifier.alpha(if (won) 0.35f else 1f)
                                 )
+                                
                                 Spacer(Modifier.height(20.dp))
-                                BigButton(
-                                    label = "HELP",
-                                    onClick = { showHelp = true },
-                                    isDark = isDark
-                                )
-                                Spacer(Modifier.height(20.dp))
+                                
+                                // THEMES
                                 BigButton(
                                     label = "THEMES",
                                     onClick = onTheming,
+                                    isDark = isDark
+                                )
+                                
+                                Spacer(Modifier.height(20.dp))
+                                
+                                // MAIN MENU
+                                BigButton(
+                                    label = "MAIN MENU",
+                                    onClick = { showConfirmQuit = true },
+                                    inverted = false,
                                     isDark = isDark
                                 )
                             }
@@ -194,14 +302,16 @@ fun PauseOverlay(
             }
         }
 
-        TimerPill(
-            seconds = seconds,
-            won = false,
-            isPaused = true,
-            onClick = onResume,
-            modifier = Modifier.offset {
-                IntOffset(pillOffset.x.roundToInt(), pillOffset.y.roundToInt())
-            }
-        )
+        if (!showConfirmQuit && !showConfirmNewGame) {
+            TimerPill(
+                seconds = seconds,
+                won = won,
+                isPaused = true,
+                onClick = onResume,
+                modifier = Modifier.offset {
+                    IntOffset(pillOffset.x.roundToInt(), pillOffset.y.roundToInt())
+                }
+            )
+        }
     }
 }
