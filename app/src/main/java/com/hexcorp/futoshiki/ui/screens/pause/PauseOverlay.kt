@@ -44,7 +44,6 @@ fun PauseOverlay(
     currentDifficulty: Difficulty = Difficulty.EASY,
     onResume: () -> Unit,
     onMainMenu: () -> Unit,
-    onSolve: () -> Unit,
     onNewGame: (Int, Difficulty) -> Unit,
     onTheming: () -> Unit,
     modifier: Modifier = Modifier,
@@ -267,12 +266,11 @@ fun PauseOverlay(
                                 
                                 Spacer(Modifier.height(20.dp))
                                 
-                                // SOLVE
+                                // HELP
                                 BigButton(
-                                    label = "SOLVE",
-                                    onClick = { if (!won) onSolve() },
-                                    isDark = isDark,
-                                    modifier = Modifier.alpha(if (won) 0.35f else 1f)
+                                    label = "HELP",
+                                    onClick = { showHelp = true },
+                                    isDark = isDark
                                 )
                                 
                                 Spacer(Modifier.height(20.dp))

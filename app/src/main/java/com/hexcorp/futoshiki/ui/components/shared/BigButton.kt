@@ -2,6 +2,7 @@ package com.hexcorp.futoshiki.ui.components.shared
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,10 +16,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -33,16 +37,21 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 
+import androidx.compose.foundation.combinedClickable
+
 private val ShadowDepth = 4.dp
 
 // ── Big pill button (primary = themed accent, secondary = outlined) ──────────────────
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun BigButton(
     label: String,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     primary: Boolean = false,
     inverted: Boolean = false,
+    bordered: Boolean = true,
     isDark: Boolean = LocalIsDark.current,
     modifier: Modifier = Modifier
 ) {
@@ -94,10 +103,23 @@ fun BigButton(
         }
     }
 
-    val fColor = faceColor as Color
-    val sColor = shadowColor as Color
-    val tColor = textColor as Color
-    val stColor = strokeColor as Color
+    val sColor by androidx.compose.animation.animateColorAsState(shadowColor as Color, tween(300), label = "sColor")
+    val tColor by androidx.compose.animation.animateColorAsState(textColor as Color, tween(300), label = "tColor")
+    val stColor by androidx.compose.animation.animateColorAsState(strokeColor as Color, tween(300), label = "stColor")
+
+    val targetFaceColor = faceColor as Color
+    var oldFaceColor by remember { mutableStateOf(targetFaceColor) }
+    var currentFaceColor by remember { mutableStateOf(targetFaceColor) }
+    val revealAnim = remember { androidx.compose.animation.core.Animatable(1f) }
+
+    androidx.compose.runtime.LaunchedEffect(targetFaceColor) {
+        if (currentFaceColor != targetFaceColor) {
+            oldFaceColor = currentFaceColor
+            currentFaceColor = targetFaceColor
+            revealAnim.snapTo(0f)
+            revealAnim.animateTo(1f, animationSpec = tween(400, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+        }
+    }
 
     @Suppress("DEPRECATION")
     val customRipple = androidx.compose.material3.ripple(color = Color.White)
@@ -109,24 +131,48 @@ fun BigButton(
             .fillMaxWidth(0.9f)
             .height(64.dp)
             .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-            .background(fColor)
-            .border(2.dp, stColor, androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-            .clickable(
+            .drawBehind {
+                drawRect(oldFaceColor)
+                val radius = size.width * 1.5f * revealAnim.value
+                drawCircle(
+                    color = currentFaceColor,
+                    radius = radius,
+                    center = Offset(size.width / 2f, size.height / 2f)
+                )
+            }
+            .then(
+                if (bordered) Modifier.border(2.dp, stColor, androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                else Modifier
+            )
+            .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = btnIndication
-            ) {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onClick()
-            },
+                indication = btnIndication,
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onClick()
+                },
+                onLongClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongClick?.invoke()
+                }
+            ),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = label,
-            color = tColor,
-            fontSize = 18.sp, // Slightly increased for pixel font clarity
-            fontWeight = FontWeight.Normal,
-            fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
-            letterSpacing = 1.sp
-        )
+        androidx.compose.animation.AnimatedContent(
+            targetState = label,
+            transitionSpec = {
+                androidx.compose.animation.fadeIn(tween(300)) togetherWith androidx.compose.animation.fadeOut(tween(300))
+            },
+            label = "buttonLabel"
+        ) { text ->
+            Text(
+                text = text,
+                color = tColor,
+                fontSize = 18.sp, // Slightly increased for pixel font clarity
+                fontWeight = FontWeight.Normal,
+                fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
+                letterSpacing = 1.sp
+            )
+        }
     }
 }

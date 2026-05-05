@@ -30,8 +30,8 @@ import kotlinx.coroutines.delay
 //   Ninja reacts right : 300
 //   TOTAL              : 3300  →  3 × 1100ms per digit
 
-private const val DIGIT_DURATION_MS = 1100L  // each digit lasts this long
-private const val GO_HOLD_MS        = 550L   // how long "GO!" stays visible before grid fades in
+private const val DIGIT_DURATION_MS = 1500L  // each digit lasts this long
+private const val GO_HOLD_MS        = 300L   // how long "GO!" stays visible before grid fades in
 
 /**
  * Full-screen countdown that replaces the puzzle grid during the KorGE intro.
@@ -54,24 +54,22 @@ fun CountdownOverlay(
     var label by remember { mutableStateOf("3") }
     var goneDone by remember { mutableStateOf(false) }
 
-    // ── Digit ticker: counts 3 → 2 → 1, then waits for ninjaRunning ─────────
+    // ── Digit ticker: counts 3 → 2 → 1 ───────────────────────────────────────
     LaunchedEffect(Unit) {
         label = "3"
         delay(DIGIT_DURATION_MS)
-        label = "2"
+        if (!goneDone) label = "2"
         delay(DIGIT_DURATION_MS)
-        label = "1"
-        // Finish 800ms earlier than original (550ms GO hold + 250ms of "1")
-        delay(DIGIT_DURATION_MS - 250)
-        onDone()
+        if (!goneDone) label = "1"
     }
 
     // As soon as ninjaRunning flips true, switch to GO! then call onDone
     LaunchedEffect(ninjaRunning) {
         if (ninjaRunning && !goneDone) {
-            label    = "GO!"
             goneDone = true
-            // Grid is already fading in thanks to the earlier onDone() call
+            label    = "GO!"
+            delay(GO_HOLD_MS)
+            onDone()
         }
     }
 

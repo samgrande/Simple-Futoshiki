@@ -2,11 +2,10 @@ package com.hexcorp.futoshiki.ui.screens.game
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.EaseOutBack
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
@@ -33,6 +32,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.hexcorp.futoshiki.game.FutoshikiViewModel
 import com.hexcorp.futoshiki.game.Screen
 import com.hexcorp.futoshiki.ui.screens.pause.PauseOverlay
+import com.hexcorp.futoshiki.ui.components.game.SolutionBanner
 import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
@@ -55,7 +55,6 @@ fun GameScreen(
     val pillCenter = Offset(state.pillCenterX, state.pillCenterY)
     val pillOffset = Offset(state.pillOffsetX, state.pillOffsetY)
     var containerCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
-    var showTabs by rememberSaveable { mutableStateOf(false) }
     var forceQuitInPause by rememberSaveable { mutableStateOf(false) }
 
     // Countdown: observe the ninja signal
@@ -73,26 +72,24 @@ fun GameScreen(
 
     // Hold the timer while the countdown overlay is active
     LaunchedEffect(showCountdown) {
-        if (showCountdown) viewModel.pauseTimer() else viewModel.resumeTimer()
+        if (showCountdown) {
+            viewModel.pauseTimer()
+        } else {
+            delay(300)
+            viewModel.resumeTimer()
+        }
     }
-
-    // Screen entrance: fade in when first composed
-    var screenAlpha by remember { mutableStateOf(0f) }
-    LaunchedEffect(Unit) {
-        // Let the first frame render, then animate in
-        delay(50)
-        screenAlpha = 1f
-    }
-    val animatedScreenAlpha by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = screenAlpha,
-        animationSpec = tween(450),
-        label = "screenEntrance"
-    )
 
     val isPaused = state.screen == Screen.PAUSE
     val hideGameContent = state.screen != Screen.GAME
 
     var keepPauseOverlayVisible by remember { mutableStateOf(false) }
+    var isSolveMode by remember { mutableStateOf(false) }
+    
+    // New Game states for the solution screen footer
+    var newGameExpanded by rememberSaveable { mutableStateOf(false) }
+    var selectedSize by remember { mutableIntStateOf(state.size) }
+    var selectedDifficulty by remember { mutableStateOf(state.difficulty) }
 
     LaunchedEffect(state.screen) {
         if (state.screen == Screen.PAUSE) {
@@ -106,11 +103,6 @@ fun GameScreen(
     val showPauseOverlay = state.screen == Screen.PAUSE || keepPauseOverlayVisible
     val showScreenShield = state.screen != Screen.GAME || keepPauseOverlayVisible
 
-    LaunchedEffect(state.screen) {
-        if (state.screen != Screen.GAME && state.screen != Screen.PAUSE) {
-            showTabs = false
-        }
-    }
 
     val canGoBack = !won || state.isSolved || won // Always true if won
     BackHandler(enabled = canGoBack) {
@@ -137,13 +129,14 @@ fun GameScreen(
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
+
+    // Screen entrance handled by MainActivity's circular reveal
     val bgColor = FutoshikiColors.background()
 
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(bgColor)
-            .graphicsLayer { alpha = animatedScreenAlpha }
             .onGloballyPositioned { containerCoordinates = it }
     ) {
         val vw = maxWidth
@@ -167,7 +160,7 @@ fun GameScreen(
         // KorGE's uninitialized background color before assets are ready.
         val sceneCoverAlpha by androidx.compose.animation.core.animateFloatAsState(
             targetValue = if (sceneLoaded) 0f else 1f,
-            animationSpec = tween(600),
+            animationSpec = tween(900),
             label = "sceneCover"
         )
 
@@ -227,15 +220,6 @@ fun GameScreen(
         val numpadBtnDp = minOf((usableW - numpadSpacing * (size - 1)) / size, vh * 0.08f)
 
         val isDark = LocalIsDark.current
-        val targetCardBg = if (showTabs) {
-            if (isDark) Color(0xFF1E1E1E) else Color(0xFFE0E0E0)
-        } else {
-            Color.Transparent
-        }
-        val targetCardBorder = if (showTabs) Color.Black else Color.Transparent
-
-        val animatedBg by animateColorAsState(targetCardBg, tween(400), label = "cardBg")
-        val animatedBorder by animateColorAsState(targetCardBorder, tween(400), label = "cardBorder")
 
         val gridAlpha by animateFloatAsState(
             targetValue = if (hideGameContent || showCountdown) 0f else 1f,
@@ -266,26 +250,46 @@ fun GameScreen(
                     .pointerInput(Unit) {
                         detectTapGestures {
                             viewModel.deselectCell()
-                            showTabs = false
                         }
                     },
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (state.isSolved) {
-                    val pillHeight = tabH
-                    val pillSpacing = vh * 0.08f
-                    val topPadding = (totalTopSpace - pillHeight - pillSpacing).coerceAtLeast(0.dp)
-
+                    val topPadding by animateDpAsState(
+                        targetValue = if (newGameExpanded) 0.dp else (vh * 0.1f),
+                        animationSpec = tween(400),
+                        label = "topPadding"
+                    )
                     Spacer(Modifier.height(topPadding))
-                    ThemedPillButton(
-                        label = "S O L U T I O N",
-                        onClick = null,
+                    
+                    val accentColor = com.hexcorp.futoshiki.ui.theme.accentColor()
+                    // Dynamic space that collapses when new game is expanded
+                    val targetHeaderSpace by animateDpAsState(
+                        targetValue = if (newGameExpanded) headerH else (headerH + 16.dp + 150.dp),
+                        animationSpec = tween(400),
+                        label = "headerSpace"
+                    )
+                    
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = hPad)
-                            .height(pillHeight)
-                    )
-                    Spacer(Modifier.height(pillSpacing))
+                            .height(targetHeaderSpace),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = !newGameExpanded,
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut(tween(300)) + shrinkVertically(tween(300)) + slideOutVertically { -it / 2 }
+                        ) {
+                            SolutionBanner(
+                                isDark = LocalIsDark.current,
+                                accentColor = accentColor,
+                                modifier = Modifier
+                                    .padding(horizontal = hPad)
+                                    .offset(y = 20.dp) // Move a bit down as requested
+                            )
+                        }
+                    }
                 } else {
                     Spacer(Modifier.height(headerH + 16.dp))
                     Spacer(Modifier.height(150.dp))
@@ -295,7 +299,14 @@ fun GameScreen(
                     onDispose { /* bounds are cleared by FutoshikiApp when leaving GAME */ }
                 }
 
-                Spacer(Modifier.height(40.dp)) // Lowered the grid
+                val gridTopSpacerHeight by animateDpAsState(
+                    targetValue = if (state.isSolved) {
+                        if (newGameExpanded) (vh * 0.12f) else 60.dp
+                    } else 40.dp,
+                    animationSpec = tween(400),
+                    label = "gridTopSpacer"
+                )
+                Spacer(Modifier.height(gridTopSpacerHeight)) // Lowered the grid
 
                 val boardKey = remember(state.isSolved, gameKey, showCountdown) {
                     // Changing the key when countdown ends triggers the staggered pop animations in PuzzleBoard
@@ -356,36 +367,55 @@ fun GameScreen(
                 Spacer(Modifier.height(16.dp))
                 Spacer(Modifier.weight(1f))
 
-                AnimatedVisibility(
-                    visible = !showCountdown,
-                    enter = fadeIn(tween(600, delayMillis = 500)) + 
-                            slideInVertically(tween(600, delayMillis = 500)) { it / 2 },
-                    label = "footerEntrance"
-                ) {
-                    GameFooter(
-                        isSolved      = state.isSolved || state.won || state.showCongrats,
-                        showCountdown = showCountdown,
-                        onNewGame     = { viewModel.newGame(size) },
-                        onClearAll    = { viewModel.clearAll() },
-                        hPad          = hPad
-                    )
-                }
-            }
+            } // End Column
 
-            AnimatedVisibility(
-                visible = showTabs && !state.isSolved,
-                enter = fadeIn(),
-                exit = fadeOut(),
-            ) {
+            // Invisible scrim to dismiss solve mode when clicking outside the button
+            if (isSolveMode || newGameExpanded) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.4f))
-                        .pointerInput(Unit) {
-                            detectTapGestures { showTabs = false }
-                        }
+                        .zIndex(20f)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { 
+                                isSolveMode = false 
+                                newGameExpanded = false
+                            }
+                        )
                 )
             }
+
+            AnimatedVisibility(
+                visible = !showCountdown,
+                enter = fadeIn(tween(600, delayMillis = 500)) + 
+                        slideInVertically(tween(600, delayMillis = 500)) { it / 2 },
+                label = "footerEntrance",
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .zIndex(30f)
+                    .navigationBarsPadding()
+            ) {
+                GameFooter(
+                    isSolved      = state.isSolved || state.won || state.showCongrats,
+                    showCountdown = showCountdown,
+                    onClearAll    = { viewModel.clearAll() },
+                    onSolve       = { viewModel.solve() },
+                    isSolveMode   = isSolveMode,
+                    onSolveModeChange = { isSolveMode = it },
+                    hPad          = hPad,
+                    // New parameters for solution screen new game
+                    newGameExpanded = newGameExpanded,
+                    onNewGameExpandedChange = { newGameExpanded = it },
+                    selectedSize = selectedSize,
+                    onSizeSelected = { selectedSize = it },
+                    selectedDifficulty = selectedDifficulty,
+                    onDifficultyChange = { selectedDifficulty = it },
+                    onNewGame = { s, d -> viewModel.newGame(s, d) }
+                )
+            }
+
+
 
         }
 
@@ -423,13 +453,10 @@ fun GameScreen(
                             timerSeconds = state.timerSeconds,
                             won = won,
                             isPaused = isPaused,
-                            showTabs = showTabs,
                             showCountdown = showCountdown,
-                            onTitleClick = { showTabs = !showTabs },
+                            onTitleClick = { },
                             onTimerClick = {
-                                showTabs = false
-                                if (won) forceQuitInPause = true
-                                viewModel.pause()
+                                if (!isPaused) viewModel.pause() else viewModel.resume()
                             },
                             onTimerLongClick = {
                                 if (!won) {
@@ -438,14 +465,10 @@ fun GameScreen(
                                 }
                             },
                             onSizeChange = { newSize ->
-                                showTabs = false
                                 viewModel.changeSize(newSize)
                             },
                             onTitleLongClick = { /* Handle if needed */ },
-                            animatedBg = animatedBg,
-                            animatedBorder = animatedBorder,
                             headerH = headerH,
-                            tabH = tabH,
                             containerCoordinates = containerCoordinates,
                             onPillPositioned = { offset, center ->
                                 viewModel.updatePillPosition(offset, center)
@@ -500,7 +523,6 @@ fun GameScreen(
                     viewModel.resume()
                 },
                 onMainMenu = { viewModel.goToMainMenu() },
-                onSolve = { viewModel.solve() },
                 onNewGame = { s, d -> viewModel.newGame(s, d) },
                 onTheming = { viewModel.goToThemingFromGame() },
                 modifier = Modifier.zIndex(10f),

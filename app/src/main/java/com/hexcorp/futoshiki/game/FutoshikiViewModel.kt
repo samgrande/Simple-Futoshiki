@@ -72,6 +72,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     // ── New game ─────────────────────────────────────────────────────────────
 
     fun newGame(size: Int, difficulty: Difficulty = Difficulty.EASY) {
+        prefs.edit().putInt("game_size", size).apply()
         val puzzle = generatePuzzle(size, difficulty)
         val grid = puzzle.initial.map { it.toMutableList().toList() }
         stopTimer()
@@ -82,6 +83,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         korgeManager.resetSceneLoaded()
         _state.update { st ->
             st.copy(
+                previousScreen = st.screen,
                 screen = Screen.GAME,
                 size = size,
                 puzzle = puzzle,
@@ -102,7 +104,6 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
             )
         }
         korgeManager.updateNinjaScreenX(500f)
-        // Timer is started by resumeTimer() once the countdown overlay finishes
     }
 
     // ── Cell input ───────────────────────────────────────────────────────────
@@ -210,12 +211,12 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     fun pause() {
         if (_state.value.screen != Screen.GAME) return
         stopTimer()
-        _state.update { it.copy(screen = Screen.PAUSE, timerRunning = false) }
+        _state.update { it.copy(previousScreen = it.screen, screen = Screen.PAUSE, timerRunning = false) }
     }
 
     fun resume() {
         val isWon = _state.value.won
-        _state.update { it.copy(screen = Screen.GAME, timerRunning = !isWon) }
+        _state.update { it.copy(previousScreen = it.screen, screen = Screen.GAME, timerRunning = !isWon) }
         if (!isWon) {
             startTimer()
         }
@@ -223,22 +224,22 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun goToMainMenu() {
         stopTimer()
-        _state.update { it.copy(screen = Screen.LANDING) }
+        _state.update { it.copy(previousScreen = it.screen, screen = Screen.LANDING) }
     }
 
     fun goToTheming() {
         stopTimer()
-        _state.update { it.copy(screen = Screen.THEMING, previousScreen = Screen.LANDING) }
+        _state.update { it.copy(previousScreen = it.screen, screen = Screen.THEMING) }
     }
 
     fun goToThemingFromGame() {
-        _state.update { it.copy(screen = Screen.THEMING, previousScreen = Screen.PAUSE) }
+        _state.update { it.copy(previousScreen = it.screen, screen = Screen.THEMING) }
     }
 
     fun backFromTheming() {
         val prev = _state.value.previousScreen
-        if (prev == Screen.PAUSE) {
-            _state.update { it.copy(screen = Screen.PAUSE) }
+        if (prev == Screen.PAUSE || prev == Screen.GAME) {
+            _state.update { it.copy(previousScreen = it.screen, screen = Screen.PAUSE) }
         } else {
             goToMainMenu()
         }
@@ -277,6 +278,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         stopTimer()
         _state.update { st ->
             st.copy(
+                previousScreen = st.screen,
                 grid = puzzle.solution.map { it.toList() },
                 errors = emptySet(),
                 selected = null,
@@ -321,15 +323,12 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     private fun calculateNinjaScreenX(grid: List<List<Int>>, size: Int, solution: List<List<Int>>): Float {
         var correct = 0
         var incorrect = 0
-        
-        // Rows
         for (r in 0 until size) {
             val row = grid[r]
             if (row.all { it != 0 }) {
                 if (row == solution[r]) correct++ else incorrect++
             }
         }
-        // Columns
         for (c in 0 until size) {
             val col = (0 until size).map { grid[it][c] }
             val solCol = (0 until size).map { solution[it][c] }
@@ -337,11 +336,9 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
                 if (col == solCol) correct++ else incorrect++
             }
         }
-        
         val base = 500f
         val forwardStep = 70f
         val backwardStep = 110f
-        
         val offset = (correct * forwardStep) - (incorrect * backwardStep)
         return (base + offset).coerceIn(100f, 750f)
     }

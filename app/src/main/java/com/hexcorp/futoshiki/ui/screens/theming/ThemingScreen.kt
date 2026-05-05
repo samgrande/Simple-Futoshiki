@@ -107,8 +107,36 @@ fun ThemingScreen(
 
             Spacer(Modifier.weight(0.7f))
 
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(132.dp)
+                    .then(if (scope != null) {
+                        with(scope) {
+                            Modifier.animateEnterExit(
+                                enter = slideInVertically(tween(600)) { it * 2 } + fadeIn(tween(400)),
+                                exit = slideOutVertically(tween(600)) { it * 2 } + fadeOut(tween(400))
+                            )
+                        }
+                    } else Modifier),
+                contentAlignment = Alignment.Center
+            ) {
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = themeMode == ThemeMode.CUSTOM,
+                    enter = fadeIn(tween(300)) + slideInVertically(tween(300)) { it / 2 },
+                    exit = fadeOut(tween(300)) + slideOutVertically(tween(300)) { it / 2 }
+                ) {
+                    CustomThemeToggle(
+                        customMonoAccent = customMonoAccent,
+                        customDayNight = customDayNight,
+                        isDark = isDark,
+                        onCustomThemeChange = onCustomThemeChange
+                    )
+                }
+            }
+
             ThemeModeSlider(
-                currentTheme = themes[currentIndex].theme,
+                currentTheme = currentTheme,
                 currentMode = themeMode,
                 onModeChange = onThemeModeChange,
                 isDark = isDark,
@@ -124,50 +152,6 @@ fun ThemingScreen(
                         }
                     } else Modifier)
             )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(116.dp)
-                    .then(if (scope != null) {
-                        with(scope) {
-                            Modifier.animateEnterExit(
-                                enter = slideInVertically(tween(600)) { it * 2 } + fadeIn(tween(400)),
-                                exit = slideOutVertically(tween(600)) { it * 2 } + fadeOut(tween(400))
-                            )
-                        }
-                    } else Modifier),
-                contentAlignment = Alignment.BottomCenter
-            ) {
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = themeMode == ThemeMode.CUSTOM,
-                    enter = fadeIn(tween(300)) + slideInVertically(tween(300)) { -it / 2 },
-                    exit = fadeOut(tween(300)) + slideOutVertically(tween(300)) { -it / 2 }
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .wrapContentWidth()
-                            .padding(bottom = 0.dp),
-                        horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.spacedBy(24.dp)
-                    ) {
-                        val monoLabel = if (customMonoAccent) "ACCENT" else "MONO"
-                        val dayLabel = if (customDayNight) "NIGHT" else "DAY"
-                        CustomRadioToggle(
-                            label = monoLabel,
-                            isOn = customMonoAccent,
-                            isDark = isDark,
-                            onClick = { onCustomThemeChange(!customMonoAccent, customDayNight) }
-                        )
-                        CustomRadioToggle(
-                            label = dayLabel,
-                            isOn = customDayNight,
-                            isDark = isDark,
-                            onClick = { onCustomThemeChange(customMonoAccent, !customDayNight) }
-                        )
-                    }
-                }
-            }
 
             Spacer(Modifier.weight(0.8f))
 
@@ -194,69 +178,3 @@ fun ThemingScreen(
     }
 }
 
-@Composable
-fun CustomRadioToggle(
-    label: String,
-    isOn: Boolean,
-    isDark: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    
-    Row(
-        modifier = modifier
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            ),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Toggle container
-        Box(
-            modifier = Modifier
-                .size(width = 20.dp, height = 7.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            // The Track (Line) - Still using alpha for a muted look
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(FutoshikiColors.onSurface().copy(alpha = 0.4f))
-            )
-            
-            // The Thumb (Circle) - OPAQUE
-            val thumbOffset by animateDpAsState(
-                targetValue = if (isOn) 13.dp else 0.dp,
-                animationSpec = tween(300)
-            )
-            
-            // Opaque colors that match the theme
-            val offColor = if (isDark) Color(0xFFD9D9D9) else Color(0xFF757575)
-            val onColor = FutoshikiColors.onSurface()
-
-            Box(
-                modifier = Modifier
-                    .offset(x = thumbOffset)
-                    .size(7.dp)
-                    .background(
-                        color = if (isOn) onColor else offColor,
-                        shape = CircleShape
-                    )
-            )
-        }
-        
-        Spacer(Modifier.width(16.dp))
-        
-        Text(
-            text = label.map { "$it " }.joinToString("").trim(),
-            fontFamily = PixelF,
-            fontSize = 10.sp,
-            letterSpacing = 1.sp,
-            color = FutoshikiColors.onSurface().copy(alpha = 0.8f),
-            modifier = Modifier.width(60.dp)
-        )
-    }
-}

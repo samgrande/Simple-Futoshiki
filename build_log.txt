@@ -43,14 +43,14 @@ It will be removed in version 10.0 of the Android Gradle plugin.
 > Task :app:compileDebugKotlin
 > Task :app:compileDebugJavaWithJavac NO-SOURCE
 > Task :app:dexBuilderDebug
+> Task :app:mergeDebugGlobalSynthetics UP-TO-DATE
 > Task :app:processDebugJavaRes UP-TO-DATE
 > Task :app:mergeDebugJavaResource UP-TO-DATE
-> Task :app:mergeDebugGlobalSynthetics
 > Task :app:mergeProjectDexDebug
 > Task :app:packageDebug
 > Task :app:createDebugApkListingFileRedirect UP-TO-DATE
 > Task :app:assembleDebug
 
 BUILD SUCCESSFUL in 1s
-36 actionable tasks: 5 executed, 31 up-to-date
+36 actionable tasks: 4 executed, 32 up-to-date
 Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.3.1/userguide/configuration_cache_enabling.html

@@ -28,16 +28,12 @@ fun GameHeader(
     won: Boolean,
     isPaused: Boolean,
     showCountdown: Boolean,
-    showTabs: Boolean = false,
     onTitleClick: () -> Unit,
     onTitleLongClick: () -> Unit = {},
     onTimerClick: () -> Unit,
     onTimerLongClick: () -> Unit,
     onSizeChange: (Int) -> Unit = {},
-    animatedBg: Color,
-    animatedBorder: Color,
     headerH: Dp,
-    tabH: Dp = 0.dp,
     containerCoordinates: LayoutCoordinates?,
     onPillPositioned: (Offset, Offset) -> Unit,
     hideGameContent: Boolean
@@ -45,16 +41,7 @@ fun GameHeader(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 8.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(animatedBg)
-            .border(
-                width = 1.dp,
-                color = animatedBorder,
-                shape = RoundedCornerShape(24.dp)
-            )
-            .animateContentSize(animationSpec = tween(400))
-            .padding(horizontal = 12.dp, vertical = 12.dp)
+            .padding(horizontal = 20.dp, vertical = 20.dp)
     ) {
         Row(
             modifier = Modifier

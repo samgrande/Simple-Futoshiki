@@ -40,14 +40,15 @@ fun ExpandableStartButton(
     selectedDifficulty: Difficulty,
     onDifficultyChange: (Difficulty) -> Unit,
     onStart: () -> Unit,
-    isDark: Boolean
+    isDark: Boolean,
+    modifier: Modifier = Modifier
 ) {
     val bgColor = if (isDark) Color(0xFFEAEAEA) else Color.Black
     val textColor = if (isDark) Color.Black else Color.White
     val haptics = LocalHapticFeedback.current
     
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth(0.9f)
             .animateContentSize(
                 animationSpec = spring(
