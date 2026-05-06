@@ -86,49 +86,21 @@ fun LandingScreen(
             Spacer(Modifier.weight(1.2f))
 
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(if (scope != null) {
-                        with(scope) {
-                            Modifier.animateEnterExit(
-                                exit = slideOutVertically(tween(600)) { -it * 2 } + fadeOut(tween(400))
-                            )
-                        }
-                    } else Modifier),
+                modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                AnimatedContent(
-                    targetState = !showHelp,
-                    contentAlignment = Alignment.Center,
-                    transitionSpec = {
-                        (fadeIn(tween(350)) + scaleIn(tween(350), initialScale = 0.5f))
-                            .togetherWith(fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f))
-                            .using(SizeTransform(clip = false))
-                    },
-                    label = "logoTransition"
-                ) { isVisible ->
-                    if (isVisible) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.wrapContentSize()
-                        ) {
-                            LogoMark(size = 96.dp)
-                            Spacer(Modifier.height(18.dp))
-                        }
-                    } else {
-                        Spacer(Modifier.size(0.dp))
-                    }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.wrapContentSize()
+                ) {
+                    LogoMark(size = 96.dp)
+                    Spacer(Modifier.height(18.dp))
                 }
             }
 
             Box(
-                modifier = if (scope != null) {
-                    with(scope) {
-                        Modifier.animateEnterExit(
-                            exit = slideOutVertically(tween(600)) { -it * 2 } + fadeOut(tween(400))
-                        )
-                    }
-                } else Modifier
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
             ) {
                 FutoshikiTitle(fontSize = 46.sp)
             }

@@ -190,25 +190,41 @@ class GameWorld(
         }
     }
 
-    fun runWinSequence() {
+    fun runWinSequence(immediate: Boolean = false) {
         if (::dragon.isInitialized) {
             GlobalScope.launch {
                 dragon.runWinFlyAway()
             }
         }
         
-        // Ninja keeps running for a bit while we center him slowly
+        // Ninja keeps running for a bit while we center him slowly (unless immediate)
         GlobalScope.launch {
-        // 1. Slow down the camera centering speed temporarily for a "cinematic" feel
-        cameraStiffness = 0.05
-        targetNinjaScreenX = 500.0
-            
-        // 2. Wait for some time while he keeps running towards the center
-        delay(2000)
-            
+            // 1. Slow down the camera centering speed temporarily for a "cinematic" feel
+            cameraStiffness = if (immediate) 0.4 else 0.05
+            targetNinjaScreenX = 500.0
+                
+            // 2. Wait for some time while he keeps running towards the center (skip if immediate)
+            if (!immediate) {
+                delay(2000)
+            }
+                
             // 3. Now stop him and make him stand
             if (::ninja.isInitialized) ninja.triggerWin()
         }
+    }
+
+    fun runSolveSequence() {
+        if (::dragon.isInitialized) {
+            GlobalScope.launch {
+                dragon.runWinFlyAway()
+            }
+        }
+        if (::ninja.isInitialized) {
+            ninja.triggerWin() // Instantly go to stand
+        }
+        cameraStiffness = 1.0 // Snap to center
+        targetNinjaScreenX = 500.0
+        currentNinjaScreenX = 500.0
     }
 
     fun setSpeedMultiplier(multiplier: Float) {

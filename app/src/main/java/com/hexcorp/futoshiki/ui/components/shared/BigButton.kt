@@ -53,6 +53,8 @@ fun BigButton(
     inverted: Boolean = false,
     bordered: Boolean = true,
     isDark: Boolean = LocalIsDark.current,
+    height: androidx.compose.ui.unit.Dp = 64.dp,
+    monochrome: Boolean = false,
     modifier: Modifier = Modifier
 ) {
 
@@ -60,42 +62,45 @@ fun BigButton(
 
     // Determine colors based on design specifications
     val (faceColor, shadowColor, textColor, strokeColor) = if (primary) {
-        val accent = com.hexcorp.futoshiki.ui.theme.accentColor()
-        val shadowFactor = if (isDark) 0.85f else 0.7f
-        val darkAccent = accent.copy(
-            red = (accent.red * shadowFactor).coerceIn(0f, 1f),
-            green = (accent.green * shadowFactor).coerceIn(0f, 1f),
-            blue = (accent.blue * shadowFactor).coerceIn(0f, 1f)
-        )
-        val sColor = if (isDark) Color.White else Color.Black
-        androidx.compose.runtime.remember(accent, darkAccent, sColor) {
-            android.util.Log.d("BigButton", "Primary colors updated")
-            // Just return them as a tuple
-            kotlin.math.log2(1f) // dummy
+        if (monochrome) {
+            val fc = if (isDark) Color.White else Color.Black
+            val tc = if (isDark) Color.Black else Color.White
+            val sc = if (isDark) Color(0xFFD1D1D1) else Color(0xFF333333)
+            val stc = if (isDark) Color.White else Color.Black
+            listOf(fc, sc, tc, stc)
+        } else {
+            val accent = com.hexcorp.futoshiki.ui.theme.accentColor()
+            val shadowFactor = if (isDark) 0.85f else 0.7f
+            val darkAccent = accent.copy(
+                red = (accent.red * shadowFactor).coerceIn(0f, 1f),
+                green = (accent.green * shadowFactor).coerceIn(0f, 1f),
+                blue = (accent.blue * shadowFactor).coerceIn(0f, 1f)
+            )
+            val fc = accent
+            val sc = darkAccent
+            val tc = Color.White
+            val borderAccent = accent.copy(
+                red = (accent.red * 0.5f).coerceIn(0f, 1f),
+                green = (accent.green * 0.5f).coerceIn(0f, 1f),
+                blue = (accent.blue * 0.5f).coerceIn(0f, 1f)
+            )
+            val stc = if (isDark) borderAccent else Color.Black
+            listOf(fc, sc, tc, stc)
         }
-        // Actually just calculate them directly to avoid Triple/Quad issues if not defined
-        val fc = accent
-        val sc = darkAccent
-        val tc = if (isDark) Color.White else Color.White
-        val borderAccent = accent.copy(
-            red = (accent.red * 0.5f).coerceIn(0f, 1f),
-            green = (accent.green * 0.5f).coerceIn(0f, 1f),
-            blue = (accent.blue * 0.5f).coerceIn(0f, 1f)
-        )
-        val stc = if (isDark) borderAccent else Color.Black
-        listOf(fc, sc, tc, stc)
     } else {
         if (!isDark) {
             // Light Mode
             if (inverted) {
-                listOf(Color(0xFF1C1C1C), Color(0xFF000000), Color.White, Color.White)
+                // Secondary action (e.g. YES): Black fill, white text
+                listOf(Color.Black, Color(0xFF333333), Color.White, Color.Black)
             } else {
                 listOf(Color.White, Color(0xFFB6B6B6), Color.Black, Color.Black)
             }
         } else {
             // Dark Mode
             if (inverted) {
-                listOf(Color(0xFFEAEAEA), Color(0xFF999999), Color.Black, Color.Black)
+                // Secondary action (e.g. YES): White fill, black text
+                listOf(Color.White, Color(0xFFD1D1D1), Color.Black, Color.White)
             } else {
                 // Non-accented, totally dark inside
                 listOf(Color.Black, Color.Black, Color.White, Color.White)
@@ -129,7 +134,7 @@ fun BigButton(
     Box(
         modifier = modifier
             .fillMaxWidth(0.9f)
-            .height(64.dp)
+            .height(height)
             .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
             .drawBehind {
                 drawRect(oldFaceColor)

@@ -1,5 +1,7 @@
 package com.hexcorp.futoshiki.ui.screens.landing
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -106,18 +108,26 @@ fun LandingMenuContent(
                     isDark = isDark
                 )
                 
-                Spacer(Modifier.height(35.dp))
-                BigButton(
-                    label = "HELP",
-                    onClick = onShowHelp,
-                    isDark = isDark
-                )
-                Spacer(Modifier.height(35.dp))
-                BigButton(
-                    label = "THEMES",
-                    onClick = onTheming,
-                    isDark = isDark
-                )
+                AnimatedVisibility(
+                    visible = !startExpanded,
+                    enter = fadeIn() + slideInVertically { it / 2 },
+                    exit = fadeOut(tween(400)) + slideOutVertically(tween(600)) { it }
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Spacer(Modifier.height(35.dp))
+                        BigButton(
+                            label = "HELP",
+                            onClick = onShowHelp,
+                            isDark = isDark
+                        )
+                        Spacer(Modifier.height(35.dp))
+                        BigButton(
+                            label = "THEMES",
+                            onClick = onTheming,
+                            isDark = isDark
+                        )
+                    }
+                }
             }
         }
     }

@@ -21,6 +21,9 @@ import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
 import com.hexcorp.futoshiki.ui.components.shared.TimerPill
 
+import androidx.compose.runtime.*
+import androidx.compose.animation.core.animateFloatAsState
+
 @Composable
 fun GameHeader(
     size: Int,
@@ -36,12 +39,21 @@ fun GameHeader(
     headerH: Dp,
     containerCoordinates: LayoutCoordinates?,
     onPillPositioned: (Offset, Offset) -> Unit,
-    hideGameContent: Boolean
+    hideGameContent: Boolean,
+    isSmallScreen: Boolean = false,
+    isExpanded: Boolean = false
 ) {
+    val headerAlpha by animateFloatAsState(
+        targetValue = if (isExpanded && won) 0f else 1f,
+        animationSpec = tween(400),
+        label = "headerAlpha"
+    )
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 20.dp)
+            .graphicsLayer { this.alpha = headerAlpha }
+            .padding(horizontal = 20.dp, vertical = if (isSmallScreen) 10.dp else 20.dp)
     ) {
         Row(
             modifier = Modifier
@@ -56,7 +68,8 @@ fun GameHeader(
                 isSolved = false,
                 onClick = if (showCountdown) null else onTitleClick,
                 onLongClick = if (showCountdown) null else onTitleLongClick,
-                showUnderline = false
+                showUnderline = false,
+                isSmallScreen = isSmallScreen
             )
 
             TimerPill(

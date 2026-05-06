@@ -13,5 +13,5 @@ val themes = listOf(
     ThemeItem("F I R E", R.drawable.fire, AppTheme.FIRE),
     ThemeItem("W A T E R", R.drawable.water, AppTheme.WATER),
     ThemeItem("E A R T H", R.drawable.earth, AppTheme.EARTH),
-    ThemeItem("W O O D", R.drawable.wood, AppTheme.WOOD)
+    ThemeItem("S A N D", R.drawable.wood, AppTheme.WOOD)
 )

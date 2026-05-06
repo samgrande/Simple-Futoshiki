@@ -147,6 +147,14 @@ val PixelF = FontFamily(
     Font(R.font.pixel_f, FontWeight.Normal)
 )
 
+val Yuji = FontFamily(
+    Font(R.font.yuji, FontWeight.Normal)
+)
+
+val Rocknroll = FontFamily(
+    Font(R.font.rocknroll, FontWeight.Normal)
+)
+
 // ── Material theme wrapper ────────────────────────────────────────────────────
 
 @Composable

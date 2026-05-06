@@ -275,7 +275,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun solve() {
         val puzzle = _state.value.puzzle ?: return
-        stopTimer()
+        korgeManager.gameWorld?.runSolveSequence()
         _state.update { st ->
             st.copy(
                 previousScreen = st.screen,
@@ -288,6 +288,8 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
                 screen = Screen.GAME
             )
         }
+        // Trigger the KorGE solve animation: dragon flies away, ninja stands immediately
+        korgeManager.gameWorld?.runWinSequence(immediate = true)
     }
 
     // ── Size change ──────────────────────────────────────────────────────────

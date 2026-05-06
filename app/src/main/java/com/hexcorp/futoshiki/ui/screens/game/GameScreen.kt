@@ -10,9 +10,12 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.Text
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -32,7 +35,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.hexcorp.futoshiki.game.FutoshikiViewModel
 import com.hexcorp.futoshiki.game.Screen
 import com.hexcorp.futoshiki.ui.screens.pause.PauseOverlay
-import com.hexcorp.futoshiki.ui.components.game.SolutionBanner
 import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
@@ -111,7 +113,8 @@ fun GameScreen(
             forceQuitInPause = false
             viewModel.resume()
         } else if (state.isSolved || won) {
-            viewModel.newGame(size)
+            forceQuitInPause = true
+            viewModel.pause()
         } else {
             viewModel.pause()
         }
@@ -144,17 +147,30 @@ fun GameScreen(
         val vh = maxHeight - navBarBottom
 
         val hPad = 20.dp
-        val usableW = (vw - hPad * 2).coerceAtMost(380.dp)
+        val usableW = (vw - hPad * 2).coerceAtMost(450.dp)
 
-        val headerH = vh * 0.11f
-        val tabH = vh * 0.065f
-        val numpadH = vh * 0.095f
-        val refreshH = vh * 0.075f
-        val gapTotal = vh * 0.18f
-        val boardBudgetH = vh - headerH - tabH - numpadH - refreshH - gapTotal
+        val isSmallScreen = vh < 720.dp
+        val headerH = if (isSmallScreen) vh * 0.07f else vh * 0.09f
+        val ninjaH = if (isSmallScreen) 80.dp else 120.dp
+        val footerBtnH = 64.dp
+        val numpadBtnMaxH = if (isSmallScreen) vh * 0.06f else vh * 0.075f
+        
+        val gridTopSpaceTarget = if (isSmallScreen) 12.dp else 24.dp
+        val gridTopSpace by animateDpAsState(
+            targetValue = gridTopSpaceTarget,
+            animationSpec = tween(400),
+            label = "gridTopSpace"
+        )
+
+        val commonSpacing = if (isSmallScreen) 16.dp else 50.dp
+        val footerTotalH = footerBtnH + 20.dp // 12dp row bottom + 8dp button bottom
+        
+        // Maximize board budget:
+        // Subtract only the components that are actually above/below it
+        val boardBudgetH = vh - headerH - ninjaH - gridTopSpaceTarget - numpadBtnMaxH - footerTotalH - 24.dp
         val totalTopSpace = vh * 0.26f
 
-        val korgeHeight = headerH + 16.dp + 150.dp
+        val korgeHeight = headerH + 16.dp + ninjaH
 
         // Cover alpha: 1 until scene is loaded, then fades to 0. Hides the green flash from
         // KorGE's uninitialized background color before assets are ready.
@@ -164,49 +180,67 @@ fun GameScreen(
             label = "sceneCover"
         )
 
-        if (!state.isSolved) {
-            key(state.gameKey) {
-                Box(
+        key(state.gameKey) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(korgeHeight)
+                    .zIndex(2f)
+            ) {
+                val isSkyboxDark = if (state.themeMode == com.hexcorp.futoshiki.ui.theme.ThemeMode.CUSTOM) state.customMonoAccent else state.isDark
+                // KorGE is now always visible, even in solve mode
+                KorGEView(
+                    manager = viewModel.korgeManager,
+                    isSkyboxDark = isSkyboxDark,
+                    isPaused = isPaused,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(korgeHeight)
-                        .zIndex(2f)
-                ) {
-                    val isSkyboxDark = if (state.themeMode == com.hexcorp.futoshiki.ui.theme.ThemeMode.CUSTOM) state.customMonoAccent else state.isDark
-                    // KorGE is always visible at full alpha
-                    KorGEView(
-                        manager = viewModel.korgeManager,
-                        isSkyboxDark = isSkyboxDark,
-                        isPaused = isPaused,
+                )
+                // Cover fades away once the scene signals it's loaded
+                if (sceneCoverAlpha > 0f) {
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(korgeHeight)
+                            .background(bgColor.copy(alpha = sceneCoverAlpha))
                     )
-                    // Cover fades away once the scene signals it's loaded
-                    if (sceneCoverAlpha > 0f) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(korgeHeight)
-                                .background(bgColor.copy(alpha = sceneCoverAlpha))
+                }
+
+                // Solution overlay for the Ninja area
+                AnimatedVisibility(
+                    visible = state.isSolved && !state.showCongrats,
+                    enter = fadeIn(tween(600)),
+                    exit = fadeOut(tween(400))
+                ) {
+                    val overlayBg = if (state.isDark) Color.Black.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.7f)
+                    val overlayText = if (state.isDark) Color.White else Color.Black
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(overlayBg),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "S O L U T I O N",
+                            color = overlayText,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
+                            letterSpacing = 4.sp
                         )
                     }
                 }
             }
+        }
 
-            Column(Modifier.fillMaxSize()) {
-                Spacer(Modifier.height(korgeHeight))
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .background(bgColor)
-                )
-            }
-        } else {
+        // Fill background for the rest of the screen
+        Column(Modifier.fillMaxSize()) {
+            Spacer(Modifier.height(korgeHeight))
             Box(
                 Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    .weight(1f)
                     .background(bgColor)
             )
         }
@@ -216,14 +250,17 @@ fun GameScreen(
         val cellSizeDp = minOf(boardBudgetH / boardUnits, usableW / boardUnits)
         val arrowSlotDp = cellSizeDp * arrowRatio
 
-        val numpadSpacing = 8.dp
-        val numpadBtnDp = minOf((usableW - numpadSpacing * (size - 1)) / size, vh * 0.08f)
+        val numpadSpacing = (usableW * 0.025f).coerceAtMost(8.dp)
+        val numpadBtnDp = minOf((usableW - numpadSpacing * (size - 1)) / size, numpadBtnMaxH)
 
         val isDark = LocalIsDark.current
 
         val gridAlpha by animateFloatAsState(
-            targetValue = if (hideGameContent || showCountdown) 0f else 1f,
-            animationSpec = tween(300),
+            targetValue = if (hideGameContent || showCountdown || newGameExpanded) 0f else 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessLow
+            ),
             label = "gridAlpha"
         )
         val gridScale by animateFloatAsState(
@@ -238,11 +275,11 @@ fun GameScreen(
                 .widthIn(max = 420.dp)
                 .align(Alignment.TopCenter)
                 .graphicsLayer {
-                    alpha = gridAlpha
                     scaleX = gridScale
                     scaleY = gridScale
                 }
         ) {
+            val gridBoxScope = this
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -254,59 +291,16 @@ fun GameScreen(
                     },
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (state.isSolved) {
-                    val topPadding by animateDpAsState(
-                        targetValue = if (newGameExpanded) 0.dp else (vh * 0.1f),
-                        animationSpec = tween(400),
-                        label = "topPadding"
-                    )
-                    Spacer(Modifier.height(topPadding))
-                    
-                    val accentColor = com.hexcorp.futoshiki.ui.theme.accentColor()
-                    // Dynamic space that collapses when new game is expanded
-                    val targetHeaderSpace by animateDpAsState(
-                        targetValue = if (newGameExpanded) headerH else (headerH + 16.dp + 150.dp),
-                        animationSpec = tween(400),
-                        label = "headerSpace"
-                    )
-                    
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(targetHeaderSpace),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = !newGameExpanded,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut(tween(300)) + shrinkVertically(tween(300)) + slideOutVertically { -it / 2 }
-                        ) {
-                            SolutionBanner(
-                                isDark = LocalIsDark.current,
-                                accentColor = accentColor,
-                                modifier = Modifier
-                                    .padding(horizontal = hPad)
-                                    .offset(y = 20.dp) // Move a bit down as requested
-                            )
-                        }
-                    }
-                } else {
-                    Spacer(Modifier.height(headerH + 16.dp))
-                    Spacer(Modifier.height(150.dp))
-                }
+                // Keep grid position consistent by always using the same spacers
+                Spacer(Modifier.height(headerH + 16.dp))
+                Spacer(Modifier.height(ninjaH))
 
                 DisposableEffect(Unit) {
                     onDispose { /* bounds are cleared by FutoshikiApp when leaving GAME */ }
                 }
 
-                val gridTopSpacerHeight by animateDpAsState(
-                    targetValue = if (state.isSolved) {
-                        if (newGameExpanded) (vh * 0.12f) else 60.dp
-                    } else 40.dp,
-                    animationSpec = tween(400),
-                    label = "gridTopSpacer"
-                )
-                Spacer(Modifier.height(gridTopSpacerHeight)) // Lowered the grid
+                Spacer(Modifier.height(gridTopSpace)) // Lowered the grid
+                Spacer(Modifier.weight(1f))
 
                 val boardKey = remember(state.isSolved, gameKey, showCountdown) {
                     // Changing the key when countdown ends triggers the staggered pop animations in PuzzleBoard
@@ -315,58 +309,72 @@ fun GameScreen(
                     else gameKey
                 }
 
-                if (state.showCongrats) {
-                    CongratsView(
-                        timerSeconds = state.timerSeconds,
-                        onPlayAgain = { viewModel.newGame(size) },
-                        modifier = Modifier.padding(horizontal = hPad)
+                val boardH = cellSizeDp * (size + 0.32f * (size - 1))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(boardH)
+                        .graphicsLayer { alpha = gridAlpha },
+                    contentAlignment = Alignment.Center
+                ) {
+                    PuzzleBoard(
+                        puzzle       = puzzle,
+                        grid         = grid,
+                        size         = size,
+                        selected     = selected,
+                        errors       = errors,
+                        cellSizeDp   = cellSizeDp,
+                        arrowSlotDp  = arrowSlotDp,
+                        gameKey      = boardKey,
+                        isSolved     = state.isSolved || state.won,
+                        onCellTap    = { r, c -> if (!state.isSolved && !state.won) viewModel.selectCell(r, c) },
+                        onCellClear  = { r, c -> if (!state.isSolved && !state.won) viewModel.clearCell(r, c) },
+                        modifier     = Modifier.padding(horizontal = hPad)
                     )
-                } else {
-                    val boardH = cellSizeDp * (size + 0.32f * (size - 1))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(boardH),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        PuzzleBoard(
-                            puzzle       = puzzle,
-                            grid         = grid,
-                            size         = size,
-                            selected     = selected,
-                            errors       = errors,
-                            cellSizeDp   = cellSizeDp,
-                            arrowSlotDp  = arrowSlotDp,
-                            gameKey      = boardKey,
-                            isSolved     = state.isSolved,
-                            onCellTap    = { r, c -> if (!state.isSolved) viewModel.selectCell(r, c) },
-                            onCellClear  = { r, c -> if (!state.isSolved) viewModel.clearCell(r, c) },
-                            modifier     = Modifier.padding(horizontal = hPad)
-                        )
-                    }
+                }
 
-                    if (!state.isSolved) {
-                        Spacer(Modifier.height(vh * 0.025f))
-                        AnimatedVisibility(
-                            visible = !showCountdown,
-                            enter = fadeIn(tween(600, delayMillis = 300)) + 
-                                    slideInVertically(tween(600, delayMillis = 300)) { it / 2 },
-                            label = "numpadEntrance"
-                        ) {
-                            NumberPad(
-                                size         = size,
-                                buttonSizeDp = numpadBtnDp,
-                                spacingDp    = numpadSpacing,
-                                onNumber     = { viewModel.inputNumber(it) },
-                                modifier     = Modifier.padding(horizontal = hPad)
+                Spacer(Modifier.height(commonSpacing))
+
+                // Preserve space and show attempt info when solved via cheat
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(numpadBtnDp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (state.isSolved && !state.showCongrats) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "You tried for ${state.timerSeconds} seconds before giving up",
+                                color = FutoshikiColors.onSurface().copy(alpha = 0.7f),
+                                fontSize = 12.sp,
+                                fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Want to try again ?",
+                                color = FutoshikiColors.onSurface(),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
+                                textAlign = TextAlign.Center
                             )
                         }
+                    } else if (!state.isSolved && !state.won && !state.showCongrats) {
+                        NumberPad(
+                            size         = size,
+                            buttonSizeDp = numpadBtnDp,
+                            spacingDp    = numpadSpacing,
+                            onNumber     = { viewModel.inputNumber(it) },
+                            modifier     = Modifier.padding(horizontal = hPad).graphicsLayer { alpha = gridAlpha }
+                        )
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
-                Spacer(Modifier.weight(1f))
-
+                // Reserved space for footer to keep padding consistent
+                Spacer(Modifier.height(commonSpacing))
+                Spacer(Modifier.height(footerTotalH))
             } // End Column
 
             // Invisible scrim to dismiss solve mode when clicking outside the button
@@ -391,10 +399,12 @@ fun GameScreen(
                 enter = fadeIn(tween(600, delayMillis = 500)) + 
                         slideInVertically(tween(600, delayMillis = 500)) { it / 2 },
                 label = "footerEntrance",
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .zIndex(30f)
-                    .navigationBarsPadding()
+                modifier = with(gridBoxScope) { 
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .zIndex(30f)
+                        .navigationBarsPadding()
+                }
             ) {
                 GameFooter(
                     isSolved      = state.isSolved || state.won || state.showCongrats,
@@ -411,9 +421,12 @@ fun GameScreen(
                     onSizeSelected = { selectedSize = it },
                     selectedDifficulty = selectedDifficulty,
                     onDifficultyChange = { selectedDifficulty = it },
-                    onNewGame = { s, d -> viewModel.newGame(s, d) }
+                    onNewGame = { s, d -> viewModel.newGame(s, d) },
+                    buttonHeight = footerBtnH,
+                    isDark = isDark
                 )
             }
+
 
 
 
@@ -473,7 +486,9 @@ fun GameScreen(
                             onPillPositioned = { offset, center ->
                                 viewModel.updatePillPosition(offset, center)
                             },
-                            hideGameContent = hideGameContent
+                            hideGameContent = hideGameContent,
+                            isSmallScreen = isSmallScreen,
+                            isExpanded = newGameExpanded
                         )
                     }
                 } else {
@@ -488,13 +503,7 @@ fun GameScreen(
                                 .height(headerH),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            FutoshikiTitle(
-                                size = size,
-                                fontSize = 28.sp,
-                                isSolved = true,
-                                onClick = null,
-                                showUnderline = false
-                            )
+                            // Logo removed in solution screen as requested
                         }
                     }
                 }
@@ -529,7 +538,31 @@ fun GameScreen(
                 startWithQuitConfirm = forceQuitInPause
             )
         }
-
-        /* WinModal removed, now using inline CongratsView */
+        // Win / Solution overlay
+        AnimatedVisibility(
+            visible = state.showCongrats,
+            enter = fadeIn(tween(600)),
+            exit = fadeOut(tween(500)),
+            modifier = Modifier.fillMaxSize().zIndex(15f)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(FutoshikiColors.background().copy(alpha = 0.82f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { /* Intercept clicks */ }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                CongratsView(
+                    timerSeconds = state.timerSeconds,
+                    onPlayAgain = { viewModel.newGame(size) },
+                    isExpanded = newGameExpanded,
+                    modifier = Modifier.padding(horizontal = 20.dp)
+                )
+            }
+        }
     }
 }

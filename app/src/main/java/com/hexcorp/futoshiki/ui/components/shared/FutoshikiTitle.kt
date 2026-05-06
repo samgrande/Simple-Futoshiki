@@ -30,7 +30,8 @@ fun FutoshikiTitle(
     onLongClick: (() -> Unit)? = null,
     fontSize: TextUnit = 36.sp,
     isSolved: Boolean = false,
-    showUnderline: Boolean = true
+    showUnderline: Boolean = true,
+    isSmallScreen: Boolean = false
 ) {
     val accent = accentColor()
     Box(
@@ -69,7 +70,7 @@ fun FutoshikiTitle(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = 45.dp, y = (-4).dp)
+                    .offset(x = if (isSmallScreen) 35.dp else 45.dp, y = (-4).dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color.Transparent)
                     .padding(horizontal = 10.dp, vertical = 2.dp),

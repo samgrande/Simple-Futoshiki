@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
+import com.hexcorp.futoshiki.ui.theme.Yuji
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -93,19 +94,25 @@ fun ThemeCarousel(
                 label = "themeLogoTransition"
             ) { index ->
                 Box(modifier = Modifier.size(200.dp), contentAlignment = Alignment.Center) {
-                    // Blurred shadow: 0 offset, dark mode gets darker shadow
-                    Image(
-                        painter = painterResource(id = themes[index].iconResId),
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(FutoshikiColors.shadowColor()),
-                        modifier = Modifier
-                            .size(200.dp)
-                            .blur(12.dp)
-                    )
-                    Image(
-                        painter = painterResource(id = themes[index].iconResId),
-                        contentDescription = themes[index].name,
-                        modifier = Modifier.size(200.dp)
+                    // Japanese kanji logo using Yuji font
+                    val kanji = when (themes[index].theme) {
+                        com.hexcorp.futoshiki.ui.theme.AppTheme.FIRE -> "火"
+                        com.hexcorp.futoshiki.ui.theme.AppTheme.WATER -> "水"
+                        com.hexcorp.futoshiki.ui.theme.AppTheme.EARTH -> "土"
+                        else -> "砂" // sand (wood theme)
+                    }
+                    Text(
+                        text = kanji,
+                        fontSize = 160.sp,
+                        fontFamily = Yuji,
+                        color = FutoshikiColors.onSurface(),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.size(200.dp),
+                        style = androidx.compose.ui.text.TextStyle(
+                            platformStyle = androidx.compose.ui.text.PlatformTextStyle(
+                                includeFontPadding = false
+                            )
+                        )
                     )
                 }
             }

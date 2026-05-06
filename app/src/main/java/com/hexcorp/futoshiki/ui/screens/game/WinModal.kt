@@ -62,6 +62,7 @@ private fun shareScreenshot(context: Context, view: android.view.View) {
 fun CongratsView(
     timerSeconds: Int,
     onPlayAgain: () -> Unit,
+    isExpanded: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
@@ -105,10 +106,17 @@ fun CongratsView(
         label = "shake"
     )
 
+    val alpha by animateFloatAsState(
+        targetValue = if (isExpanded) 0f else 1f,
+        animationSpec = tween(400),
+        label = "congratsAlpha"
+    )
+
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp), // Reduced vertical padding
+            .padding(vertical = 12.dp)
+            .graphicsLayer { this.alpha = alpha },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(

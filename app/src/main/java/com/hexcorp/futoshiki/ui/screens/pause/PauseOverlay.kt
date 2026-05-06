@@ -107,11 +107,8 @@ fun PauseOverlay(
             ) {
                 Spacer(Modifier.weight(0.8f))
 
-                if (!newGameExpanded) {
-                    LogoMark(size = 80.dp)
-                    Spacer(Modifier.height(16.dp))
-                }
-                
+                LogoMark(size = 80.dp)
+                Spacer(Modifier.height(16.dp))
                 FutoshikiTitle(fontSize = 38.sp)
 
                 AnimatedContent(
@@ -264,33 +261,41 @@ fun PauseOverlay(
                                     isDark = isDark
                                 )
                                 
-                                Spacer(Modifier.height(20.dp))
-                                
-                                // HELP
-                                BigButton(
-                                    label = "HELP",
-                                    onClick = { showHelp = true },
-                                    isDark = isDark
-                                )
-                                
-                                Spacer(Modifier.height(20.dp))
-                                
-                                // THEMES
-                                BigButton(
-                                    label = "THEMES",
-                                    onClick = onTheming,
-                                    isDark = isDark
-                                )
-                                
-                                Spacer(Modifier.height(20.dp))
-                                
-                                // MAIN MENU
-                                BigButton(
-                                    label = "MAIN MENU",
-                                    onClick = { showConfirmQuit = true },
-                                    inverted = false,
-                                    isDark = isDark
-                                )
+                                AnimatedVisibility(
+                                    visible = !newGameExpanded,
+                                    enter = fadeIn() + slideInVertically { it / 2 },
+                                    exit = fadeOut(tween(400)) + slideOutVertically(tween(600)) { it }
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Spacer(Modifier.height(20.dp))
+                                        
+                                        // HELP
+                                        BigButton(
+                                            label = "HELP",
+                                            onClick = { showHelp = true },
+                                            isDark = isDark
+                                        )
+                                        
+                                        Spacer(Modifier.height(20.dp))
+                                        
+                                        // THEMES
+                                        BigButton(
+                                            label = "THEMES",
+                                            onClick = onTheming,
+                                            isDark = isDark
+                                        )
+                                        
+                                        Spacer(Modifier.height(20.dp))
+                                        
+                                        // MAIN MENU
+                                        BigButton(
+                                            label = "MAIN MENU",
+                                            onClick = { showConfirmQuit = true },
+                                            inverted = false,
+                                            isDark = isDark
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

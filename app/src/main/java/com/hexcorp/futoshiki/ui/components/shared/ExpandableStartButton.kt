@@ -5,17 +5,23 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -27,7 +33,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.game.Difficulty
+import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
+import com.hexcorp.futoshiki.ui.theme.Yuji
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -43,41 +51,79 @@ fun ExpandableStartButton(
     isDark: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val bgColor = if (isDark) Color(0xFFEAEAEA) else Color.Black
-    val textColor = if (isDark) Color.Black else Color.White
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val normalBg = if (isDark) Color.White else Color.Black
+    val expandedBg = if (isDark) Color(0xFF0B0B0B) else Color(0xFFF5F2F2)
+    
+    val normalText = if (isDark) Color.Black else Color.White
+    val expandedText = if (isDark) Color.White else Color.Black
+
+    val rippleProgress by animateFloatAsState(
+        targetValue = if (isPressed || isExpanded) 1f else 0f,
+        animationSpec = if (isPressed || isExpanded) {
+            tween(durationMillis = 600, easing = FastOutSlowInEasing)
+        } else {
+            tween(durationMillis = 300)
+        },
+        label = "rippleProgress"
+    )
+
+    val currentTextColor = lerp(normalText, expandedText, rippleProgress)
+    val currentStrokeColor = lerp(normalBg, if (isDark) Color.White else Color.Black, rippleProgress)
+
     val haptics = LocalHapticFeedback.current
     
-    Column(
-        modifier = modifier
-            .fillMaxWidth(0.9f)
-            .animateContentSize(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioLowBouncy,
-                    stiffness = Spring.StiffnessLow
-                )
+    val baseModifier = modifier
+        .fillMaxWidth(0.9f)
+        .animateContentSize(
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessLow
             )
-            .clip(RoundedCornerShape(14.dp))
-            .background(bgColor)
-            .let {
-                if (!isExpanded) {
-                    it.combinedClickable(
-                        onClick = {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onStart()
-                        },
-                        onLongClick = {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onExpandToggle()
-                        }
-                    )
-                } else {
-                    it.clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { /* Block scrim clicks */ }
-                    )
-                }
+        )
+        .clip(RoundedCornerShape(14.dp))
+        .border(
+            width = 2.dp,
+            color = currentStrokeColor,
+            shape = RoundedCornerShape(14.dp)
+        )
+        .drawBehind {
+            drawRect(normalBg)
+            if (rippleProgress > 0f) {
+                val maxRadius = size.width * 1.2f
+                drawCircle(
+                    color = expandedBg,
+                    radius = maxRadius * rippleProgress,
+                    center = center
+                )
+            }
+        }
+
+    val finalModifier = if (!isExpanded) {
+        baseModifier.combinedClickable(
+            interactionSource = interactionSource,
+            indication = null,
+            onClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                onStart()
             },
+            onLongClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                onExpandToggle()
+            }
+        )
+    } else {
+        baseModifier.clickable(
+            interactionSource = interactionSource,
+            indication = null,
+            onClick = { /* Block scrim clicks */ }
+        )
+    }
+
+    Column(
+        modifier = finalModifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (!isExpanded) {
@@ -89,7 +135,7 @@ fun ExpandableStartButton(
             ) {
                 Text(
                     text = label,
-                    color = textColor,
+                    color = currentTextColor,
                     fontSize = 18.sp,
                     fontFamily = PixelF,
                     letterSpacing = 1.sp
@@ -98,43 +144,83 @@ fun ExpandableStartButton(
         } else {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 20.dp),
+                    .fillMaxWidth(0.95f)
+                    .widthIn(max = 380.dp)
+                    .padding(top = 40.dp, bottom = 32.dp)
+                    .pointerInput(Unit) {
+                        var verticalDragSum = 0f
+                        detectVerticalDragGestures(
+                            onDragEnd = { verticalDragSum = 0f },
+                            onDragCancel = { verticalDragSum = 0f },
+                            onVerticalDrag = { change, dragAmount ->
+                                change.consume()
+                                verticalDragSum += dragAmount
+                                if (kotlin.math.abs(verticalDragSum) > 50f) {
+                                    onExpandToggle()
+                                    verticalDragSum = 0f
+                                }
+                            }
+                        )
+                    },
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Size Slider (4x4, 5x5, 6x6)
+                // Section Title: Grid Size
+                Text(
+                    text = "GRID SIZE",
+                    color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.7f),
+                    fontSize = 12.5.sp,
+                    fontFamily = PixelF,
+                    letterSpacing = 3.sp,
+                    modifier = Modifier.padding(bottom = 14.dp),
+                    textAlign = TextAlign.Center
+                )
+
+                // Size Slider
                 SizeSlider(
                     selectedSize = selectedSize,
                     onSizeSelected = onSizeSelected,
                     isDark = isDark
                 )
                 
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(40.dp))
+
+                // Section Title: Difficulty
+                Text(
+                    text = "DIFFICULTY",
+                    color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.7f),
+                    fontSize = 12.5.sp,
+                    fontFamily = PixelF,
+                    letterSpacing = 3.sp,
+                    modifier = Modifier.padding(bottom = 14.dp),
+                    textAlign = TextAlign.Center
+                )
                 
                 // Difficulty Selector Cards (易, 普, 難)
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier.fillMaxWidth(0.9f),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Difficulty.values().forEach { difficulty ->
-                        DifficultyCard(
-                            difficulty = difficulty,
-                            isSelected = selectedDifficulty == difficulty,
-                            onClick = { onDifficultyChange(difficulty) },
-                            isDark = isDark
-                        )
+                    Difficulty.entries.forEach { difficulty ->
+                        Box(modifier = Modifier.weight(1f)) {
+                            DifficultyCard(
+                                difficulty = difficulty,
+                                isSelected = selectedDifficulty == difficulty,
+                                onClick = { onDifficultyChange(difficulty) },
+                                isDark = isDark
+                            )
+                        }
                     }
                 }
                 
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(48.dp))
 
                 // START Button
                 Box(
                     modifier = Modifier
-                        .width(120.dp)
-                        .height(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (isDark) Color.Black.copy(alpha = 0.1f) else Color.White.copy(alpha = 0.08f))
+                        .fillMaxWidth(0.9f)
+                        .height(52.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isDark) Color(0xFF141414) else Color(0xFFD6D6D6))
                         .clickable(onClick = {
                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                             onStart()
@@ -143,16 +229,14 @@ fun ExpandableStartButton(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "START",
-                        color = textColor,
+                        text = "START GAME",
+                        color = currentTextColor,
                         fontSize = 16.sp,
                         fontFamily = PixelF,
                         fontWeight = FontWeight.Medium,
-                        letterSpacing = 0.5.sp
+                        letterSpacing = 2.sp
                     )
                 }
-                
-                Spacer(Modifier.height(8.dp))
             }
         }
     }
@@ -164,26 +248,31 @@ fun SizeSlider(
     onSizeSelected: (Int) -> Unit,
     isDark: Boolean
 ) {
-    val containerBg = if (isDark) Color(0xFFD0D0D0) else Color(0xFF111111)
+    val containerBg = if (isDark) Color(0xFF141414) else Color(0xFFD6D6D6)
     val accent = com.hexcorp.futoshiki.ui.theme.accentColor()
     val options = listOf(4, 5, 6)
-    val textColor = if (isDark) Color.Black else Color.White
+    val textColor by animateColorAsState(
+        targetValue = if (isDark) Color.White else Color.Black,
+        animationSpec = tween(durationMillis = 300),
+        label = "textColor"
+    )
     
     BoxWithConstraints(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(36.dp)
+            .fillMaxWidth(0.9f)
+            .height(48.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(containerBg)
             .padding(4.dp)
     ) {
         val width = maxWidth
-        val segmentWidth = width / options.size
+        val optionsCount = options.size
+        val thumbWidth = width / optionsCount
         val selectedIndex = options.indexOf(selectedSize)
         
-        // Animated background thumb
+        // Dynamic thumb offset based on selection
         val thumbOffset by animateDpAsState(
-            targetValue = segmentWidth * selectedIndex,
+            targetValue = thumbWidth * selectedIndex,
             animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
             label = "thumbOffset"
         )
@@ -191,7 +280,7 @@ fun SizeSlider(
         Box(
             modifier = Modifier
                 .offset(x = thumbOffset)
-                .width(segmentWidth)
+                .width(thumbWidth)
                 .fillMaxHeight()
                 .clip(RoundedCornerShape(8.dp))
                 .background(accent)
@@ -240,7 +329,7 @@ fun SizeSlider(
                     Text(
                         text = "$size x $size",
                         color = textColor,
-                        fontSize = 11.sp,
+                        fontSize = 15.sp,
                         fontFamily = PixelF,
                         fontWeight = if (selectedSize == size) FontWeight.Bold else FontWeight.Normal
                     )
@@ -258,7 +347,7 @@ fun DifficultyCard(
     isDark: Boolean
 ) {
     val accent = com.hexcorp.futoshiki.ui.theme.accentColor()
-    val unselectedBg = if (isDark) Color(0xFFD0D0D0) else Color(0xFF111111)
+    val unselectedBg = if (isDark) Color(0xFF141414) else Color(0xFFD6D6D6)
     val targetBg = if (isSelected) accent else unselectedBg
     
     // Animated states
@@ -275,7 +364,7 @@ fun DifficultyCard(
     )
     
     val textColor by animateColorAsState(
-        targetValue = if (isDark) Color.Black else Color.White,
+        targetValue = if (isDark) Color.White else Color.Black,
         animationSpec = tween(durationMillis = 300),
         label = "textColor"
     )
@@ -288,11 +377,12 @@ fun DifficultyCard(
     
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(84.dp)
+        modifier = Modifier.fillMaxWidth()
     ) {
         Box(
             modifier = Modifier
-                .size(80.dp)
+                .fillMaxWidth()
+                .aspectRatio(0.98f) // Maintain the slightly taller rectangular shape
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
@@ -309,8 +399,14 @@ fun DifficultyCard(
             Text(
                 text = kanji,
                 color = textColor,
-                fontSize = 36.sp,
-                textAlign = TextAlign.Center
+                fontSize = 32.sp,
+                textAlign = TextAlign.Center,
+                fontFamily = Yuji,
+                style = androidx.compose.ui.text.TextStyle(
+                    platformStyle = androidx.compose.ui.text.PlatformTextStyle(
+                        includeFontPadding = false
+                    )
+                )
             )
         }
         
@@ -318,10 +414,10 @@ fun DifficultyCard(
         
         Text(
             text = difficulty.name,
-            color = textColor,
-            fontSize = 11.sp,
+            color = textColor.copy(alpha = 0.7f),
+            fontSize = 10.sp,
             fontFamily = PixelF,
-            letterSpacing = 1.sp
+            letterSpacing = 2.sp
         )
     }
 }
