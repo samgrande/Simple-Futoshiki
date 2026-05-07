@@ -1,5 +1,6 @@
 package com.hexcorp.futoshiki.ui.screens.game
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -66,21 +67,26 @@ private fun NumberButton(label: String, sizeDp: Dp, enabled: Boolean, onClick: (
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-    val offset by animateDpAsState(
-        targetValue = if (isPressed && enabled) 2.dp else 0.dp,
-        animationSpec = tween(80), label = "numBtnOffset"
+    val accent = com.hexcorp.futoshiki.ui.theme.accentColor()
+    val baseBg = FutoshikiColors.numberPadBg()
+    val baseText = FutoshikiColors.onSurface()
+
+    val bgColor by animateColorAsState(
+        targetValue = if (isPressed && enabled) accent else baseBg,
+        animationSpec = tween(150),
+        label = "numBtnBg"
     )
 
-    val themeColor = if (LocalIsDark.current) Color(0xFF333333) else Color(0xFFE0E0E0)
+    val textColor by animateColorAsState(
+        targetValue = baseText,
+        animationSpec = tween(150),
+        label = "numBtnText"
+    )
     
     Box(
         modifier = Modifier
             .size(sizeDp)
-            .graphicsLayer {
-                translationX = offset.toPx()
-                translationY = offset.toPx()
-            }
-            .background(themeColor, CircleShape)
+            .background(bgColor, CircleShape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -96,7 +102,7 @@ private fun NumberButton(label: String, sizeDp: Dp, enabled: Boolean, onClick: (
             fontSize   = (sizeDp.value * 0.32f).sp,
             fontWeight = FontWeight.Normal,
             fontFamily = Midorima,
-            color      = if (enabled) FutoshikiColors.onSurface() else FutoshikiColors.onSurface().copy(alpha = 0.3f),
+            color      = if (enabled) textColor else textColor.copy(alpha = 0.3f),
             textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
             style      = androidx.compose.ui.text.TextStyle(
                 platformStyle = androidx.compose.ui.text.PlatformTextStyle(

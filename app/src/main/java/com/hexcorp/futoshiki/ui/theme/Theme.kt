@@ -71,6 +71,9 @@ object FutoshikiColors {
     val LogoCellBg      = Color(0xFFF1F0F0)
     val LogoCellBgDark  = Color(0xFF1A1A1A)
 
+    val NumberPadBg      = Color(0xFFC8C8C8) // Darker than CellDefault (DCDCDC)
+    val NumberPadBgDark  = Color(0xFF2A2A2A) // Lighter than CellDefaultDark (222222)
+    
     @Composable
     fun background(): Color = if (LocalIsDark.current) BackgroundDark else Background
 
@@ -82,6 +85,9 @@ object FutoshikiColors {
 
     @Composable
     fun cellDefault(): Color = if (LocalIsDark.current) CellDefaultDark else CellDefault
+    
+    @Composable
+    fun numberPadBg(): Color = if (LocalIsDark.current) NumberPadBgDark else NumberPadBg
 
     @Composable
     fun cellRelated(): Color = if (LocalIsDark.current) CellRelatedDark else CellRelated

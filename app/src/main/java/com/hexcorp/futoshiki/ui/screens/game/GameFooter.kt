@@ -23,6 +23,13 @@ import com.hexcorp.futoshiki.ui.components.shared.BigButton
 import com.hexcorp.futoshiki.ui.components.shared.ExpandableStartButton
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
 import com.hexcorp.futoshiki.ui.theme.PixelF
 
 @Composable
@@ -102,7 +109,6 @@ fun GameFooter(
                 onStart = { onNewGame(selectedSize, selectedDifficulty) },
                 isDark = isDark,
                 modifier = Modifier
-                    .fillMaxWidth(0.9f)
                     .padding(bottom = 8.dp)
             )
         }
@@ -119,32 +125,71 @@ fun ResetButton(
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
+    val accent = com.hexcorp.futoshiki.ui.theme.accentColor()
     val bgColor = FutoshikiColors.cellDefault()
-    val textColor = FutoshikiColors.onSurface()
+    val textColorBase = FutoshikiColors.onSurface()
+    val rippleColor = FutoshikiColors.onSurface()
+    val invertedTextColor = FutoshikiColors.background()
     
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val holdProgress = remember { Animatable(0f) }
+
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            delay(500) // Initial hold delay before ripple starts
+            if (isPressed) {
+                // Fill over 400ms (faster)
+                holdProgress.animateTo(1f, animationSpec = tween(400, easing = LinearEasing))
+                if (holdProgress.value >= 1f) {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongClick?.invoke()
+                    holdProgress.snapTo(0f) // Reset after trigger
+                }
+            }
+        } else {
+            // Quick fade out if released early
+            holdProgress.animateTo(0f, animationSpec = tween(250))
+        }
+    }
+
+    val animatedTextColor by animateColorAsState(
+        targetValue = if (holdProgress.value > 0.5f) invertedTextColor else textColorBase,
+        animationSpec = tween(10), // Faster color swap
+        label = "resetTextInvert"
+    )
+
+    val displayText = if (holdProgress.value > 0.5f) "SOLVE" else label
+
     Box(
         modifier = modifier
             .height(height)
             .clip(RoundedCornerShape(12.dp))
             .background(bgColor)
+            .drawBehind {
+                if (holdProgress.value > 0f) {
+                    val maxRadius = size.width.coerceAtLeast(size.height) * 1.2f
+                    drawCircle(
+                        color = rippleColor,
+                        radius = maxRadius * holdProgress.value,
+                        center = center
+                    )
+                }
+            }
             .testTag("reset_button")
             .combinedClickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = androidx.compose.material3.ripple(),
+                interactionSource = interactionSource,
+                indication = null, // Disable default ripple
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onClick()
-                },
-                onLongClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onLongClick?.invoke()
                 }
             ),
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = label,
-            color = textColor,
+            text = displayText,
+            color = animatedTextColor,
             fontSize = 18.sp,
             fontFamily = PixelF,
             letterSpacing = 1.sp

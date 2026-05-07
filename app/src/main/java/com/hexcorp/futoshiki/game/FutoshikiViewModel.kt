@@ -276,6 +276,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     fun solve() {
         val puzzle = _state.value.puzzle ?: return
         korgeManager.gameWorld?.runSolveSequence()
+        stopTimer()
         _state.update { st ->
             st.copy(
                 previousScreen = st.screen,

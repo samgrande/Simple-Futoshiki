@@ -48,7 +48,7 @@ fun LandingMenuContent(
                 HelpPanel(
                     modifier = Modifier
                         .fillMaxWidth(0.9f)
-                        .fillMaxHeight(0.7f),
+                        .fillMaxHeight(0.8f),
                     scrollable = true
                 )
                 Spacer(Modifier.height(20.dp))
@@ -110,8 +110,8 @@ fun LandingMenuContent(
                 
                 AnimatedVisibility(
                     visible = !startExpanded,
-                    enter = fadeIn() + slideInVertically { it / 2 },
-                    exit = fadeOut(tween(400)) + slideOutVertically(tween(600)) { it }
+                    enter = fadeIn(tween(400)) + expandVertically(tween(400)),
+                    exit = fadeOut(tween(300)) + shrinkVertically(tween(500))
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Spacer(Modifier.height(35.dp))

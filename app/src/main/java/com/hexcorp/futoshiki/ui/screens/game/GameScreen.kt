@@ -250,8 +250,9 @@ fun GameScreen(
         val cellSizeDp = minOf(boardBudgetH / boardUnits, usableW / boardUnits)
         val arrowSlotDp = cellSizeDp * arrowRatio
 
-        val numpadSpacing = (usableW * 0.025f).coerceAtMost(8.dp)
-        val numpadBtnDp = minOf((usableW - numpadSpacing * (size - 1)) / size, numpadBtnMaxH)
+        val numpadHPad = hPad * 0.9f
+        val numpadSpacing = arrowSlotDp * 0.8f
+        val numpadBtnDp = cellSizeDp
 
         val isDark = LocalIsDark.current
 
@@ -295,85 +296,98 @@ fun GameScreen(
                 Spacer(Modifier.height(headerH + 16.dp))
                 Spacer(Modifier.height(ninjaH))
 
-                DisposableEffect(Unit) {
-                    onDispose { /* bounds are cleared by FutoshikiApp when leaving GAME */ }
-                }
-
                 Spacer(Modifier.height(gridTopSpace)) // Lowered the grid
-                Spacer(Modifier.weight(1f))
 
-                val boardKey = remember(state.isSolved, gameKey, showCountdown) {
-                    // Changing the key when countdown ends triggers the staggered pop animations in PuzzleBoard
-                    if (state.isSolved) 9999 + gameKey 
-                    else if (showCountdown) -1 
-                    else gameKey
-                }
-
-                val boardH = cellSizeDp * (size + 0.32f * (size - 1))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(boardH)
-                        .graphicsLayer { alpha = gridAlpha },
-                    contentAlignment = Alignment.Center
-                ) {
-                    PuzzleBoard(
-                        puzzle       = puzzle,
-                        grid         = grid,
-                        size         = size,
-                        selected     = selected,
-                        errors       = errors,
-                        cellSizeDp   = cellSizeDp,
-                        arrowSlotDp  = arrowSlotDp,
-                        gameKey      = boardKey,
-                        isSolved     = state.isSolved || state.won,
-                        onCellTap    = { r, c -> if (!state.isSolved && !state.won) viewModel.selectCell(r, c) },
-                        onCellClear  = { r, c -> if (!state.isSolved && !state.won) viewModel.clearCell(r, c) },
-                        modifier     = Modifier.padding(horizontal = hPad)
-                    )
-                }
-
-                Spacer(Modifier.height(commonSpacing))
-
-                // Preserve space and show attempt info when solved via cheat
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(numpadBtnDp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (state.isSolved && !state.showCongrats) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "You tried for ${state.timerSeconds} seconds before giving up",
-                                color = FutoshikiColors.onSurface().copy(alpha = 0.7f),
-                                fontSize = 12.sp,
-                                fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                text = "Want to try again ?",
-                                color = FutoshikiColors.onSurface(),
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    } else if (!state.isSolved && !state.won && !state.showCongrats) {
-                        NumberPad(
-                            size         = size,
-                            buttonSizeDp = numpadBtnDp,
-                            spacingDp    = numpadSpacing,
-                            onNumber     = { viewModel.inputNumber(it) },
-                            modifier     = Modifier.padding(horizontal = hPad).graphicsLayer { alpha = gridAlpha }
+                if (state.showCongrats) {
+                    // Win state: replaces the grid and numpad with CongratsView
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CongratsView(
+                            timerSeconds = state.timerSeconds,
+                            onPlayAgain = { viewModel.newGame(size) },
+                            isExpanded = newGameExpanded,
+                            modifier = Modifier.padding(horizontal = hPad)
                         )
                     }
-                }
+                } else {
+                    // Playing state: shows the grid and numpad (or attempt info if solved via menu)
+                    Spacer(Modifier.weight(1f))
 
-                // Reserved space for footer to keep padding consistent
-                Spacer(Modifier.height(commonSpacing))
+                    val boardKey = remember(state.isSolved, gameKey, showCountdown) {
+                        // Changing the key when countdown ends triggers the staggered pop animations in PuzzleBoard
+                        if (state.isSolved) 9999 + gameKey 
+                        else if (showCountdown) -1 
+                        else gameKey
+                    }
+
+                    val boardH = cellSizeDp * (size + 0.32f * (size - 1))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(boardH)
+                            .graphicsLayer { alpha = gridAlpha },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        PuzzleBoard(
+                            puzzle       = puzzle,
+                            grid         = grid,
+                            size         = size,
+                            selected     = selected,
+                            errors       = errors,
+                            cellSizeDp   = cellSizeDp,
+                            arrowSlotDp  = arrowSlotDp,
+                            gameKey      = boardKey,
+                            isSolved     = state.isSolved || state.won,
+                            onCellTap    = { r, c -> if (!state.isSolved && !state.won) viewModel.selectCell(r, c) },
+                            onCellClear  = { r, c -> if (!state.isSolved && !state.won) viewModel.clearCell(r, c) },
+                            modifier     = Modifier.padding(horizontal = hPad)
+                        )
+                    }
+
+                    Spacer(Modifier.height(commonSpacing))
+
+                    // Preserve space and show attempt info when solved via cheat
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(numpadBtnDp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (state.isSolved) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "You tried for ${state.timerSeconds} seconds before giving up",
+                                    color = FutoshikiColors.onSurface().copy(alpha = 0.7f),
+                                    fontSize = 12.sp,
+                                    fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = "Want to try again ?",
+                                    color = FutoshikiColors.onSurface(),
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        } else if (!showCountdown) {
+                            NumberPad(
+                                size         = size,
+                                buttonSizeDp = numpadBtnDp,
+                                spacingDp    = numpadSpacing,
+                                onNumber     = { viewModel.inputNumber(it) },
+                                modifier     = Modifier.padding(horizontal = numpadHPad).graphicsLayer { alpha = gridAlpha }
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(commonSpacing))
+                }
                 Spacer(Modifier.height(footerTotalH))
             } // End Column
 
@@ -538,31 +552,6 @@ fun GameScreen(
                 startWithQuitConfirm = forceQuitInPause
             )
         }
-        // Win / Solution overlay
-        AnimatedVisibility(
-            visible = state.showCongrats,
-            enter = fadeIn(tween(600)),
-            exit = fadeOut(tween(500)),
-            modifier = Modifier.fillMaxSize().zIndex(15f)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(FutoshikiColors.background().copy(alpha = 0.82f))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { /* Intercept clicks */ }
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                CongratsView(
-                    timerSeconds = state.timerSeconds,
-                    onPlayAgain = { viewModel.newGame(size) },
-                    isExpanded = newGameExpanded,
-                    modifier = Modifier.padding(horizontal = 20.dp)
-                )
-            }
-        }
+
     }
 }

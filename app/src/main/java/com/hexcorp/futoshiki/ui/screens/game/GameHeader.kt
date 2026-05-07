@@ -76,7 +76,7 @@ fun GameHeader(
                 seconds = timerSeconds,
                 won = won,
                 isPaused = isPaused,
-                enabled = !showCountdown,
+                enabled = !showCountdown && !won,
                 onClick = onTimerClick,
                 onLongClick = onTimerLongClick,
                 label = if (won) "HOME" else null,
@@ -94,7 +94,7 @@ fun GameHeader(
                             }
                         }
                     }
-                    .graphicsLayer { alpha = if (hideGameContent) 0f else 1f }
+                    .graphicsLayer { alpha = if (hideGameContent || won) 0f else 1f }
             )
         }
     }

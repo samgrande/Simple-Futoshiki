@@ -132,9 +132,7 @@ fun FutoshikiApp(
                 modifier = Modifier.fillMaxSize(),
                 label = "screenTransition",
                 contentKey = { screen ->
-                    val fromGame = state.previousScreen == Screen.PAUSE
-                    if (screen == Screen.GAME || screen == Screen.PAUSE ||
-                        (screen == Screen.THEMING && fromGame)) "GAME_GROUP" else screen
+                    if (screen == Screen.GAME || screen == Screen.PAUSE) "GAME_GROUP" else screen
                 }
             ) { screen ->
                 val isGameReveal = screen == Screen.GAME && state.previousScreen == Screen.LANDING

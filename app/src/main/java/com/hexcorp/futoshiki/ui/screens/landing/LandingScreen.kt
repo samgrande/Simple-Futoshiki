@@ -83,7 +83,7 @@ fun LandingScreen(
                 .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.weight(1.2f))
+            Spacer(Modifier.height(80.dp))
 
             Box(
                 modifier = Modifier.fillMaxWidth(),
@@ -104,6 +104,8 @@ fun LandingScreen(
             ) {
                 FutoshikiTitle(fontSize = 46.sp)
             }
+
+            Spacer(Modifier.height(20.dp))
 
             Box(
                 modifier = Modifier

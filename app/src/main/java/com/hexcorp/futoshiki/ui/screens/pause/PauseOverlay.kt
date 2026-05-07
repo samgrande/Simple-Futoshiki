@@ -105,11 +105,12 @@ fun PauseOverlay(
                     .padding(horizontal = 20.dp, vertical = 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(Modifier.weight(0.8f))
+                Spacer(Modifier.height(60.dp))
 
                 LogoMark(size = 80.dp)
                 Spacer(Modifier.height(16.dp))
                 FutoshikiTitle(fontSize = 38.sp)
+                Spacer(Modifier.height(12.dp))
 
                 AnimatedContent(
                     targetState = when {
@@ -139,13 +140,20 @@ fun PauseOverlay(
                         "help" -> {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 20.dp)
                             ) {
                                 Spacer(Modifier.height(24.dp))
-                                HelpPanel()
-                                Spacer(Modifier.height(24.dp))
+                                HelpPanel(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.9f)
+                                        .fillMaxHeight(0.8f),
+                                    scrollable = true
+                                )
+                                Spacer(Modifier.height(20.dp))
                                 BigButton(
-                                    label = "← BACK",
+                                    label = "BACK",
                                     onClick = { showHelp = false },
                                     inverted = true,
                                     isDark = isDark
@@ -263,8 +271,8 @@ fun PauseOverlay(
                                 
                                 AnimatedVisibility(
                                     visible = !newGameExpanded,
-                                    enter = fadeIn() + slideInVertically { it / 2 },
-                                    exit = fadeOut(tween(400)) + slideOutVertically(tween(600)) { it }
+                                    enter = fadeIn(tween(400)) + expandVertically(tween(400)),
+                                    exit = fadeOut(tween(300)) + shrinkVertically(tween(500))
                                 ) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Spacer(Modifier.height(20.dp))

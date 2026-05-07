@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.lerp
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +54,7 @@ fun ExpandableStartButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val haptics = LocalHapticFeedback.current
     
     val normalBg = if (isDark) Color.White else Color.Black
     val expandedBg = if (isDark) Color(0xFF0B0B0B) else Color(0xFFF5F2F2)
@@ -63,25 +65,28 @@ fun ExpandableStartButton(
     val rippleProgress by animateFloatAsState(
         targetValue = if (isPressed || isExpanded) 1f else 0f,
         animationSpec = if (isPressed || isExpanded) {
-            tween(durationMillis = 600, easing = FastOutSlowInEasing)
+            tween(durationMillis = 500, delayMillis = 400, easing = androidx.compose.animation.core.EaseOutCubic)
         } else {
-            tween(durationMillis = 300)
+            tween(durationMillis = 400, easing = androidx.compose.animation.core.EaseInCubic)
         },
         label = "rippleProgress"
     )
 
     val currentTextColor = lerp(normalText, expandedText, rippleProgress)
-    val currentStrokeColor = lerp(normalBg, if (isDark) Color.White else Color.Black, rippleProgress)
+    val currentStrokeColor = lerp(
+        normalBg.copy(alpha = 0.5f), 
+        if (isDark) Color.White else Color.Black, 
+        rippleProgress
+    )
 
-    val haptics = LocalHapticFeedback.current
-    
     val baseModifier = modifier
-        .fillMaxWidth(0.9f)
+        .fillMaxWidth(if (isExpanded) 1.08f else 0.9f)
         .animateContentSize(
             animationSpec = spring(
-                dampingRatio = Spring.DampingRatioLowBouncy,
-                stiffness = Spring.StiffnessLow
-            )
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = 300f // Slightly softer than MediumLow (400f)
+            ),
+            alignment = Alignment.TopCenter
         )
         .clip(RoundedCornerShape(14.dp))
         .border(
@@ -122,11 +127,17 @@ fun ExpandableStartButton(
         )
     }
 
-    Column(
-        modifier = finalModifier,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        if (!isExpanded) {
+    AnimatedContent(
+        targetState = isExpanded,
+        transitionSpec = {
+            fadeIn(tween(450, delayMillis = 150))
+                .togetherWith(fadeOut(tween(250)))
+                .using(SizeTransform(clip = false))
+        },
+        label = "buttonContentTransition",
+        modifier = finalModifier
+    ) { expanded ->
+        if (!expanded) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -144,9 +155,9 @@ fun ExpandableStartButton(
         } else {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth(0.95f)
-                    .widthIn(max = 380.dp)
-                    .padding(top = 40.dp, bottom = 32.dp)
+                    .fillMaxWidth(0.98f)
+                    .widthIn(max = 420.dp)
+                    .padding(top = 32.dp, bottom = 28.dp)
                     .pointerInput(Unit) {
                         var verticalDragSum = 0f
                         detectVerticalDragGestures(
@@ -171,7 +182,7 @@ fun ExpandableStartButton(
                     fontSize = 12.5.sp,
                     fontFamily = PixelF,
                     letterSpacing = 3.sp,
-                    modifier = Modifier.padding(bottom = 14.dp),
+                    modifier = Modifier.padding(bottom = 12.dp),
                     textAlign = TextAlign.Center
                 )
 
@@ -182,7 +193,7 @@ fun ExpandableStartButton(
                     isDark = isDark
                 )
                 
-                Spacer(Modifier.height(40.dp))
+                Spacer(Modifier.height(32.dp))
 
                 // Section Title: Difficulty
                 Text(
@@ -191,7 +202,7 @@ fun ExpandableStartButton(
                     fontSize = 12.5.sp,
                     fontFamily = PixelF,
                     letterSpacing = 3.sp,
-                    modifier = Modifier.padding(bottom = 14.dp),
+                    modifier = Modifier.padding(bottom = 12.dp),
                     textAlign = TextAlign.Center
                 )
                 
@@ -212,24 +223,23 @@ fun ExpandableStartButton(
                     }
                 }
                 
-                Spacer(Modifier.height(48.dp))
+                Spacer(Modifier.height(36.dp))
 
-                // START Button
+                // SAVE Button
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(0.9f)
-                        .height(52.dp)
+                        .height(48.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(if (isDark) Color(0xFF141414) else Color(0xFFD6D6D6))
                         .clickable(onClick = {
                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onStart()
-                            onExpandToggle()
+                            onExpandToggle() // Just collapse, don't start
                         }),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "START GAME",
+                        text = "SAVE",
                         color = currentTextColor,
                         fontSize = 16.sp,
                         fontFamily = PixelF,
