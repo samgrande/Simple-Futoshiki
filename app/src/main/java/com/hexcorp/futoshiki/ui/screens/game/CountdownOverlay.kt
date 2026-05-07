@@ -23,24 +23,9 @@ import com.hexcorp.futoshiki.ui.theme.accentColor
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import kotlinx.coroutines.delay
 
-// Ninja intro timing breakdown (in ms):
-//   Stand still        : 500
-//   Dragon flies over  : 1200
-//   Ninja turns left   : 1300
-//   Ninja reacts right : 300
-//   TOTAL              : 3300  →  3 × 1100ms per digit
+private const val DIGIT_DURATION_MS = 1500L
+private const val GO_HOLD_MS        = 300L
 
-private const val DIGIT_DURATION_MS = 1500L  // each digit lasts this long
-private const val GO_HOLD_MS        = 300L   // how long "GO!" stays visible before grid fades in
-
-/**
- * Full-screen countdown that replaces the puzzle grid during the KorGE intro.
- *
- * - Counts 3 → 2 → 1 at [DIGIT_DURATION_MS] intervals.
- * - Holds on "1" if [ninjaRunning] hasn't fired yet (safety for slow devices).
- * - Shows "GO!" the **instant** [ninjaRunning] becomes true.
- * - Calls [onDone] after [GO_HOLD_MS] so the parent can fade the grid in.
- */
 @Composable
 fun CountdownOverlay(
     ninjaRunning: Boolean,
@@ -50,11 +35,9 @@ fun CountdownOverlay(
     val accent  = accentColor()
     val isDark  = LocalIsDark.current
 
-    // ── State ────────────────────────────────────────────────────────────────
     var label by remember { mutableStateOf("3") }
     var goneDone by remember { mutableStateOf(false) }
 
-    // ── Digit ticker: counts 3 → 2 → 1 ───────────────────────────────────────
     LaunchedEffect(Unit) {
         label = "3"
         delay(DIGIT_DURATION_MS)
@@ -63,7 +46,6 @@ fun CountdownOverlay(
         if (!goneDone) label = "1"
     }
 
-    // As soon as ninjaRunning flips true, switch to GO! then call onDone
     LaunchedEffect(ninjaRunning) {
         if (ninjaRunning && !goneDone) {
             goneDone = true
@@ -73,7 +55,6 @@ fun CountdownOverlay(
         }
     }
 
-    // ── Pulse on digits ──────────────────────────────────────────────────────
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulse by infiniteTransition.animateFloat(
         initialValue  = 1f,
@@ -92,16 +73,14 @@ fun CountdownOverlay(
         else   -> Color(0xFF1A1A1A)
     }
 
-    // ── Layout ───────────────────────────────────────────────────────────────
     Box(
         modifier         = modifier.background(FutoshikiColors.background().copy(alpha = 0.70f)),
-        contentAlignment = androidx.compose.ui.BiasAlignment(0f, 0.2f)
+        contentAlignment = Alignment.Center
     ) {
         AnimatedContent(
             targetState  = label,
             transitionSpec = {
-                (scaleIn(tween(200)) + fadeIn(tween(160))) togetherWith
-                (scaleOut(tween(160)) + fadeOut(tween(120)))
+                scaleIn(tween(200)) togetherWith scaleOut(tween(200))
             },
             label = "countdownLabel"
         ) { lbl ->
@@ -109,7 +88,7 @@ fun CountdownOverlay(
                 text       = lbl,
                 fontFamily = Midorima,
                 fontSize   = if (lbl == "GO!") 84.sp else 110.sp,
-                fontWeight = FontWeight.Normal,   // PixelF is single-weight
+                fontWeight = FontWeight.Normal,
                 color      = textColor,
                 modifier   = Modifier.scale(if (isGo) 1f else pulse)
             )

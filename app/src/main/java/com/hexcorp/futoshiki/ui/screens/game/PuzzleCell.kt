@@ -16,13 +16,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -33,8 +28,8 @@ import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.Midorima
 import com.hexcorp.futoshiki.ui.theme.accentColor
+import com.hexcorp.futoshiki.ui.theme.AnimationConstants
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -94,28 +89,10 @@ fun PuzzleCell(
         ),
         label = "shakeRot"
     )
-    val shakeOffsetX by shakeTransition.animateFloat(
-        initialValue = -1.2f,
-        targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(50, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "shakeX"
-    )
-    val shakeOffsetY by shakeTransition.animateFloat(
-        initialValue = -1.2f,
-        targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(60, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "shakeY"
-    )
 
     val currentRotation = if (isShaking) shakeRotation else 0f
-    val currentOffsetX  = if (isShaking) shakeOffsetX  else 0f
-    val currentOffsetY  = if (isShaking) shakeOffsetY  else 0f
+    val currentOffsetX = if (isShaking) shakeRotation * 0.48f else 0f
+    val currentOffsetY = if (isShaking) shakeRotation * 0.48f else 0f
 
     var triggered by remember(gameKey) { mutableStateOf(false) }
     val scale by animateFloatAsState(

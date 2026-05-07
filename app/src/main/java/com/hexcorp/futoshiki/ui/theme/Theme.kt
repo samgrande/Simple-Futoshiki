@@ -157,10 +157,6 @@ val Yuji = FontFamily(
     Font(R.font.yuji, FontWeight.Normal)
 )
 
-val Rocknroll = FontFamily(
-    Font(R.font.rocknroll, FontWeight.Normal)
-)
-
 // ── Material theme wrapper ────────────────────────────────────────────────────
 
 @Composable

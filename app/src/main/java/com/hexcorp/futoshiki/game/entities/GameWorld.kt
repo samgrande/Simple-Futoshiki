@@ -57,7 +57,7 @@ class GameWorld(
         // 1. Setup Parallax Layers
         // Layer 3: Mountains (Slowest)
         layers.add(ParallaxLayer(
-            assets.loadImage("sprites/mountains back.png"),
+            assets.loadImage("sprites/mountains back.webp"),
             0.1, - 0.0
         ).apply {
             scale = 1.0
@@ -65,7 +65,7 @@ class GameWorld(
         })
         // Layer 2: Midground (Clouds/Trees) - Simplified to one image for now
         layers.add(ParallaxLayer(
-            assets.loadImage("sprites/cloud1.png"),
+            assets.loadImage("sprites/cloud1.webp"),
             0.4, 250.0, 3000.0
         ).apply {
             scale = 0.2
@@ -73,7 +73,7 @@ class GameWorld(
         })
 
         layers.add(ParallaxLayer(
-            assets.loadImage("sprites/cloud2.png"),
+            assets.loadImage("sprites/cloud2.webp"),
             0.4, 300.0, 3000.0, 1500.0
         ).apply {
             scale = 0.2
@@ -81,7 +81,7 @@ class GameWorld(
         })
 
         layers.add(ParallaxLayer(
-            assets.loadImage("sprites/gate.png"),
+            assets.loadImage("sprites/gate.webp"),
             0.8, floorY, 8000.0, 1000.0
         ).apply {
             scale = 0.35
@@ -90,7 +90,7 @@ class GameWorld(
         })
 
         layers.add(ParallaxLayer(
-            assets.loadImage("sprites/statue.png"),
+            assets.loadImage("sprites/statue.webp"),
             0.8, floorY, 10000.0, 2200.0
         ).apply {
             scale = 0.1
@@ -99,7 +99,7 @@ class GameWorld(
         })
 
         layers.add(ParallaxLayer(
-            assets.loadImage("sprites/Tree.png"),
+            assets.loadImage("sprites/Tree.webp"),
             0.8, floorY, 12000.0, 1500.0
         ).apply {
             scale = 0.5
@@ -109,7 +109,7 @@ class GameWorld(
 
         // Layer 1: Ground (Fastest)
         layers.add(ParallaxLayer(
-            assets.loadImage("sprites/ground.png"),
+            assets.loadImage("sprites/ground.webp"),
             0.8, floorY
         ).apply {
             zIndex = 2.0
@@ -121,9 +121,9 @@ class GameWorld(
 
         // 2. Setup Ninja
         ninja = NinjaEntity(
-            assets.loadImage("sprites/stand.png"),
-            assets.loadImage("sprites/ninja.png"),
-            assets.loadImage("sprites/jump.png"),
+            assets.loadImage("sprites/stand.webp"),
+            assets.loadImage("sprites/ninja.webp"),
+            assets.loadImage("sprites/jump.webp"),
             400, 400,
             manager
         ).apply {
@@ -135,7 +135,7 @@ class GameWorld(
         addChild(ninja)
 
         // 3. Setup Dragon
-        val dragonSheet = assets.loadImage("sprites/dragon.png")
+        val dragonSheet = assets.loadImage("sprites/dragon.webp")
         dragon = DragonEntity(dragonSheet, 400, 400, manager).apply {
             setTarget(ninja)
             zIndex = 10.0
