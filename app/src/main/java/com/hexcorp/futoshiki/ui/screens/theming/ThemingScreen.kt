@@ -104,6 +104,7 @@ fun ThemingScreen(
                 currentIndex = currentIndex,
                 direction = direction,
                 onNavigate = { next -> navigate(next) },
+                useAccentColor = themeMode == ThemeMode.CUSTOM && customMonoAccent,
                 scope = scope
             )
 

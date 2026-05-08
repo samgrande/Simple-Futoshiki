@@ -25,6 +25,8 @@ import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.ThemeMode
 import com.hexcorp.futoshiki.ui.korge.KorGEView
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -47,6 +49,24 @@ fun LandingScreen(
     var selectedSize by remember { mutableIntStateOf(currentSize) }
     var selectedDifficulty by remember { mutableStateOf(Difficulty.EASY) }
     val isDark = LocalIsDark.current
+
+    var entranceActive by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        delay(900)
+        entranceActive = false
+    }
+
+    val entranceProgress by animateFloatAsState(
+        targetValue = if (entranceActive) 0f else 1f,
+        animationSpec = tween(400),
+        label = "entranceProgress"
+    )
+
+    val entranceOffset by animateDpAsState(
+        targetValue = if (entranceActive) 30.dp else 0.dp,
+        animationSpec = tween(400),
+        label = "entranceOffset"
+    )
 
     BackHandler(enabled = true) {
         when {
@@ -116,6 +136,8 @@ fun LandingScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .offset(y = entranceOffset)
+                    .graphicsLayer { alpha = entranceProgress }
                     .then(if (scope != null) {
                         with(scope) {
                             Modifier.animateEnterExit(
@@ -124,97 +146,45 @@ fun LandingScreen(
                         }
                     } else Modifier)
             ) {
-                if (showConfirmQuit || showHelp) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        if (showConfirmQuit) {
-                            Text(
-                                text = "Q U I T   T H E   G A M E  ?",
-                                fontSize = 13.sp,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
-                                fontFamily = PixelF,
-                                color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
-                                letterSpacing = 2.sp
-                            )
-                            Spacer(Modifier.height(32.dp))
-                            com.hexcorp.futoshiki.ui.components.shared.BigButton(
-                                label = "Y E S",
-                                onClick = onQuit,
-                                inverted = true,
-                                isDark = isDark
-                            )
-                            Spacer(Modifier.height(35.dp))
-                            com.hexcorp.futoshiki.ui.components.shared.BigButton(
-                                label = "N O",
-                                onClick = { showConfirmQuit = false },
-                                isDark = isDark
-                            )
-                        } else if (showHelp) {
-                            Spacer(Modifier.height(24.dp))
-                            com.hexcorp.futoshiki.ui.components.shared.HelpPanel(
-                                modifier = Modifier
-                                    .fillMaxWidth(0.9f)
-                                    .fillMaxHeight(0.8f),
-                                scrollable = true
-                            )
-                            Spacer(Modifier.height(20.dp))
-                            com.hexcorp.futoshiki.ui.components.shared.BigButton(
-                                label = "BACK",
-                                onClick = { showHelp = false },
-                                inverted = true,
-                                isDark = isDark
-                            )
-                        }
-                    }
-                } else {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        com.hexcorp.futoshiki.ui.components.shared.ExpandableStartButton(
-                            label = "START",
-                            isExpanded = startExpanded,
-                            onExpandToggle = { startExpanded = !startExpanded },
-                            selectedSize = selectedSize,
-                            onSizeSelected = { 
-                                selectedSize = it
-                                onSizeSave(it)
-                            },
-                            selectedDifficulty = selectedDifficulty,
-                            onDifficultyChange = { selectedDifficulty = it },
-                            onStart = { 
-                                korgeManager.gameWorld?.startGame(skipIntro = false)
-                                onStart(selectedSize, selectedDifficulty) 
-                            },
-                            isDark = isDark
-                        )
-                        
-                        AnimatedVisibility(
-                            visible = !startExpanded,
-                            enter = fadeIn(tween(200)),
-                            exit = fadeOut(tween(150))
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Spacer(Modifier.height(35.dp))
-                                com.hexcorp.futoshiki.ui.components.shared.BigButton(
-                                    label = "HELP",
-                                    onClick = { showHelp = true },
-                                    isDark = isDark
-                                )
-                                Spacer(Modifier.height(35.dp))
-                                com.hexcorp.futoshiki.ui.components.shared.BigButton(
-                                    label = "THEMES",
-                                    onClick = onTheming,
-                                    isDark = isDark
-                                )
-                            }
-                        }
-                    }
+                AnimatedContent(
+                    targetState = when {
+                        showConfirmQuit -> "confirm"
+                        showHelp -> "help"
+                        else -> "menu"
+                    },
+                    transitionSpec = {
+                        val duration = 300
+                        if (targetState != "menu") {
+                            (fadeIn(tween(duration)) + slideInVertically { it / 4 })
+                                .togetherWith(fadeOut(tween(250)) + slideOutVertically { -it / 4 })
+                        } else {
+                            (fadeIn(tween(duration)) + slideInVertically { -it / 4 })
+                                .togetherWith(fadeOut(tween(250)) + slideOutVertically { it / 4 })
+                        }.using(SizeTransform(clip = false))
+                    },
+                    label = "landingContentTransition",
+                    modifier = Modifier.fillMaxWidth()
+                ) { state ->
+                    val isDark = LocalIsDark.current
+                    LandingMenuContent(
+                        state = state,
+                        isDark = isDark,
+                        selectedSize = selectedSize,
+                        onSizeSelected = { selectedSize = it; onSizeSave(it) },
+                        selectedDifficulty = selectedDifficulty,
+                        onDifficultyChange = { selectedDifficulty = it },
+                        startExpanded = startExpanded,
+                        onStartToggle = { startExpanded = !startExpanded },
+                        onStart = {
+                            korgeManager.gameWorld?.startGame(skipIntro = false)
+                            onStart(selectedSize, selectedDifficulty)
+                        },
+                        onTheming = onTheming,
+                        onQuit = onQuit,
+                        onShowHelp = { showHelp = true },
+                        onHideHelp = { showHelp = false },
+                        onHideConfirmQuit = { showConfirmQuit = false }
+                    )
                 }
             }
 
@@ -225,6 +195,7 @@ fun LandingScreen(
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier
                     .padding(bottom = 20.dp)
+                    .graphicsLayer { alpha = entranceProgress }
                     .then(if (scope != null) {
                         with(scope) {
                             Modifier.animateEnterExit(

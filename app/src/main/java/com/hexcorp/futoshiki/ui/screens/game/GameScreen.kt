@@ -253,6 +253,8 @@ fun GameScreen(
                         )
                     }
                 }
+
+                // Pause overlay is now handled in MainActivity for proper z-index
             }
         }
 

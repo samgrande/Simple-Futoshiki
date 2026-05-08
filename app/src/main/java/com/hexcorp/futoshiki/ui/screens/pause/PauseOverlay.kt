@@ -252,16 +252,8 @@ fun PauseOverlay(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Spacer(Modifier.height(12.dp))
-                                Text(
-                                    text = "PAUSED",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontFamily = PixelF,
-                                    color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
-                                    letterSpacing = 2.sp
-                                )
-                                Spacer(Modifier.height(48.dp))
+                                FutoshikiTitle(fontSize = 32.sp)
+                                Spacer(Modifier.height(36.dp))
                                 
                                 ExpandableStartButton(
                                     label = "NEW GAME",

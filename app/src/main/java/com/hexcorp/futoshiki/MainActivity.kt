@@ -11,13 +11,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.ripple
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
@@ -31,6 +34,7 @@ import com.hexcorp.futoshiki.ui.screens.theming.ThemingScreen
 import com.hexcorp.futoshiki.ui.theme.FutoshikiTheme
 import com.hexcorp.futoshiki.ui.theme.ThemeMode
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
+import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.animations.CircularRevealShape
 import com.hexcorp.futoshiki.ui.korge.KorGEView
 import androidx.compose.ui.graphics.graphicsLayer
@@ -104,8 +108,25 @@ fun FutoshikiApp(
         ThemeMode.CUSTOM -> state.customMonoAccent
         ThemeMode.AUTO -> isDark
         ThemeMode.DAY -> false
-        ThemeMode.NIGHT -> true
+        ThemeMode.NIGHT -> false
     }
+
+    var landingEntrancePlayed by remember { mutableStateOf(false) }
+    var landingEntranceDone by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.screen) {
+        if (state.screen == Screen.LANDING && !landingEntrancePlayed) {
+            landingEntrancePlayed = true
+            delay(1000)
+            landingEntranceDone = true
+        }
+    }
+
+    val landingKorgeAlpha by animateFloatAsState(
+        targetValue = if (state.screen == Screen.LANDING && !landingEntranceDone) 0f else 1f,
+        animationSpec = tween(800),
+        label = "landingKorgeAlpha"
+    )
 
     var blackRevealProgress by remember { mutableFloatStateOf(0f) }
     val animatedBlackReveal by animateFloatAsState(
@@ -139,6 +160,7 @@ fun FutoshikiApp(
                     .fillMaxWidth()
                     .height(if (state.screen == Screen.THEMING) 0.dp else korgeHeight)
                     .zIndex(5f)
+                    .graphicsLayer { alpha = landingKorgeAlpha }
                     .then(
                         if (state.screen == Screen.THEMING)
                             Modifier.clickable(enabled = false) { }
@@ -152,6 +174,50 @@ fun FutoshikiApp(
                     isMenuScreen = isLanding,
                     modifier = Modifier.fillMaxSize()
                 )
+
+                // Pause overlay - dim + PAUSED text on top of korge
+                if (state.screen == Screen.PAUSE) {
+                    val dimColor = if (isDark) Color.Black.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.5f)
+                    val textColor = if (isDark) Color.White else Color.Black
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(dimColor)
+                            .zIndex(10f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "P A U S E D",
+                            color = textColor,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = PixelF,
+                            letterSpacing = 4.sp
+                        )
+                    }
+                }
+
+                // Solution overlay - dim + SOLUTION text on top of korge
+                if (state.screen == Screen.GAME && state.isSolved && !state.showCongrats) {
+                    val dimColor = if (isDark) Color.Black.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.7f)
+                    val textColor = if (isDark) Color.White else Color.Black
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(dimColor)
+                            .zIndex(10f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "S O L U T I O N",
+                            color = textColor,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = PixelF,
+                            letterSpacing = 4.sp
+                        )
+                    }
+                }
             }
 
             // 2. Screen Content

@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.Yuji
+import com.hexcorp.futoshiki.ui.theme.accentColor
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -30,6 +31,7 @@ fun ThemeCarousel(
     currentIndex: Int,
     direction: Int,
     onNavigate: (Boolean) -> Unit,
+    useAccentColor: Boolean = false,
     modifier: Modifier = Modifier,
     scope: AnimatedVisibilityScope? = null
 ) {
@@ -105,7 +107,7 @@ fun ThemeCarousel(
                         text = kanji,
                         fontSize = 160.sp,
                         fontFamily = Yuji,
-                        color = FutoshikiColors.onSurface(),
+                        color = if (useAccentColor) accentColor() else FutoshikiColors.onSurface(),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.size(200.dp),
                         style = androidx.compose.ui.text.TextStyle(
