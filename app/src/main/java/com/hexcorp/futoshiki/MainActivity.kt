@@ -1,6 +1,5 @@
 package com.hexcorp.futoshiki
 
-import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.KeyEvent
@@ -10,11 +9,15 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -25,15 +28,16 @@ import com.hexcorp.futoshiki.ui.screens.game.GameScreen
 import com.hexcorp.futoshiki.ui.screens.landing.LandingScreen
 import com.hexcorp.futoshiki.ui.screens.theming.ThemingScreen
 import com.hexcorp.futoshiki.ui.theme.FutoshikiTheme
-import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.ThemeMode
+import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.animations.CircularRevealShape
-import androidx.compose.ui.geometry.Offset
+import com.hexcorp.futoshiki.ui.korge.KorGEView
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.zIndex
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.*
 
 class MainActivity : FragmentActivity() {
 
@@ -41,16 +45,16 @@ class MainActivity : FragmentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        window.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
         enableEdgeToEdge()
 
         val root = FrameLayout(this).apply {
-            setBackgroundColor(Color.TRANSPARENT)
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
         }
 
         root.addView(
             ComposeView(this).apply {
-                setBackgroundColor(Color.TRANSPARENT)
+                setBackgroundColor(android.graphics.Color.TRANSPARENT)
                 setContent {
                     FutoshikiApp(onQuit = { finish() })
                 }
@@ -91,7 +95,17 @@ fun FutoshikiApp(
         ThemeMode.CUSTOM -> state.customDayNight
     }
 
-    // Intermediate transition states
+    val isLanding = state.screen == Screen.LANDING
+    val isGame = state.screen == Screen.GAME
+    val isPaused = state.screen == Screen.PAUSE
+
+    val isSkyboxDark = when (state.themeMode) {
+        ThemeMode.CUSTOM -> state.customMonoAccent
+        ThemeMode.AUTO -> isDark
+        ThemeMode.DAY -> false
+        ThemeMode.NIGHT -> true
+    }
+
     var blackRevealProgress by remember { mutableFloatStateOf(0f) }
     val animatedBlackReveal by animateFloatAsState(
         targetValue = blackRevealProgress,
@@ -99,14 +113,8 @@ fun FutoshikiApp(
         label = "blackReveal"
     )
 
-    // Safety cleanup: Ensure the overlay doesn't get stuck if state changes unexpectedly
     LaunchedEffect(state.screen) {
         if (state.screen != Screen.GAME && state.screen != Screen.LANDING && blackRevealProgress > 0f) {
-            blackRevealProgress = 0f
-        }
-        if (state.screen == Screen.GAME && blackRevealProgress > 0f) {
-            // Safety timeout to clear overlay if reveal doesn't complete
-            delay(2000)
             blackRevealProgress = 0f
         }
     }
@@ -115,11 +123,37 @@ fun FutoshikiApp(
         theme = state.theme,
         isDark = isDark
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+            val vh = maxHeight - navBarBottom
+            
+            val isSmallScreen = vh < 720.dp
+            val headerH = if (isSmallScreen) vh * 0.07f else vh * 0.09f
+            val ninjaH = if (isSmallScreen) 80.dp else 120.dp
+            val korgeHeight = headerH + 16.dp + ninjaH
+
+            // 1. Shared KorGE rendered once at the top
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(korgeHeight)
+                    .zIndex(5f) // Increased zIndex to be above screen backgrounds
+            ) {
+                KorGEView(
+                    manager = vm.korgeManager,
+                    isSkyboxDark = isSkyboxDark,
+                    isPaused = isPaused,
+                    isMenuScreen = isLanding,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
+            // 2. Screen Content
             AnimatedContent(
                 targetState = state.screen,
                 transitionSpec = {
                     if (targetState == Screen.GAME && initialState == Screen.LANDING) {
+                        // Instant switch for seamless korge, content handles its own entrance
                         fadeIn(tween(0)) togetherWith fadeOut(tween(0))
                     } else if (targetState == Screen.THEMING || initialState == Screen.THEMING) {
                         fadeIn(tween(500, easing = EaseInOutQuart)) togetherWith 
@@ -131,61 +165,24 @@ fun FutoshikiApp(
                 },
                 modifier = Modifier.fillMaxSize(),
                 label = "screenTransition",
-                contentKey = { screen ->
-                    if (screen == Screen.GAME || screen == Screen.PAUSE) "GAME_GROUP" else screen
-                }
+                contentKey = { screen -> screen }
             ) { screen ->
-                val isGameReveal = screen == Screen.GAME && state.previousScreen == Screen.LANDING
-                
-                var gameRevealTarget by remember(screen) { 
-                    mutableFloatStateOf(if (isGameReveal) 0f else 1f) 
-                }
-                
-                LaunchedEffect(isGameReveal) {
-                    if (isGameReveal) {
-                        // Start game reveal immediately (we already waited for black in onStart)
-                        gameRevealTarget = 1f
-                        // Keep black overlay active until game reveal is finished (400ms + buffer)
-                        delay(500)
-                        blackRevealProgress = 0f
-                    }
-                }
-
-                val gameRevealProgress by animateFloatAsState(
-                    targetValue = gameRevealTarget,
-                    animationSpec = if (isGameReveal) {
-                        tween(400, easing = FastOutSlowInEasing)
-                    } else {
-                        snap()
-                    },
-                    label = "gameRevealProgress"
-                )
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .then(if (isGameReveal) {
-                            Modifier
-                                .zIndex(5f)
-                                .graphicsLayer {
-                                    clip = true
-                                    shape = CircularRevealShape(gameRevealProgress)
-                                }
-                        } else Modifier)
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .background(FutoshikiColors.background())
                 ) {
                     when (screen) {
                         Screen.LANDING -> {
                             LandingScreen(
                                 currentSize = state.size,
                                 onStart = { size, difficulty -> 
-                                    scope.launch {
-                                        blackRevealProgress = 1f
-                                        delay(650) 
-                                        vm.newGame(size, difficulty)
-                                    }
+                                    vm.newGame(size, difficulty)
                                 },
                                 onTheming = { vm.goToTheming() },
                                 onQuit = onQuit,
+                                showKorge = false, // Managed by MainActivity
+                                korgeManager = vm.korgeManager,
+                                isSkyboxDark = isSkyboxDark,
                                 modifier = Modifier.fillMaxSize(),
                                 scope = this@AnimatedContent
                             )
@@ -194,7 +191,8 @@ fun FutoshikiApp(
                         Screen.GAME, Screen.PAUSE -> {
                             GameScreen(
                                 viewModel = vm,
-                                state = state.copy(isDark = isDark)
+                                state = state.copy(isDark = isDark),
+                                showKorge = false // Managed by MainActivity
                             )
                         }
 
@@ -219,21 +217,7 @@ fun FutoshikiApp(
                     }
                 }
             }
-
-            // Global Transition Overlay
-            if (animatedBlackReveal > 0f) {
-                val overlayColor = if (isDark) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Black
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .zIndex(2f)
-                        .graphicsLayer {
-                            clip = true
-                            shape = CircularRevealShape(animatedBlackReveal)
-                        }
-                        .background(overlayColor)
-                )
-            }
         }
     }
+
 }

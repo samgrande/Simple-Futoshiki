@@ -190,6 +190,18 @@ class GameWorld(
         }
     }
 
+    fun startMenuIdle() {
+        cameraStiffness = 1.0 // Immediate snap to position
+        targetNinjaScreenX = 500.0
+        currentNinjaScreenX = 500.0
+        if (::ninja.isInitialized) {
+            ninja.triggerWin() // Stand still
+        }
+        if (::dragon.isInitialized) {
+            dragon.setIdle()
+        }
+    }
+
     fun runWinSequence(immediate: Boolean = false) {
         if (::dragon.isInitialized) {
             GlobalScope.launch {

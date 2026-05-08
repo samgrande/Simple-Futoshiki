@@ -12,7 +12,8 @@ import kotlin.math.hypot
 
 class CircularRevealShape(
     private val progress: Float,
-    private val center: Offset = Offset.Unspecified
+    private val center: Offset = Offset.Unspecified,
+    private val staticTop: Float = 0f
 ) : Shape {
     override fun createOutline(
         size: Size,
@@ -34,6 +35,9 @@ class CircularRevealShape(
         val radius = maxRadius * progress
 
         return Outline.Generic(Path().apply {
+            if (staticTop > 0f) {
+                addRect(Rect(0f, 0f, size.width, staticTop))
+            }
             addOval(Rect(actualCenter, radius))
         })
     }

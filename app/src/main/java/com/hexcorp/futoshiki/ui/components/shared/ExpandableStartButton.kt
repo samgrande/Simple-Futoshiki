@@ -96,14 +96,7 @@ fun ExpandableStartButton(
         )
         .drawBehind {
             drawRect(normalBg)
-            if (rippleProgress > 0f) {
-                val maxRadius = size.width * 1.2f
-                drawCircle(
-                    color = expandedBg,
-                    radius = maxRadius * rippleProgress,
-                    center = center
-                )
-            }
+            // No ripple - avoids covering KorGE view
         }
 
     val finalModifier = if (!isExpanded) {

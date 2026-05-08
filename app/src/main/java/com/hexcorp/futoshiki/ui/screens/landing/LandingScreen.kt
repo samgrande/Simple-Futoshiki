@@ -8,6 +8,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,12 +18,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
-import com.hexcorp.futoshiki.ui.components.shared.LogoMark
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
-import com.hexcorp.futoshiki.ui.theme.Midorima
 import com.hexcorp.futoshiki.ui.theme.PixelF
+import com.hexcorp.futoshiki.ui.theme.ThemeMode
+import com.hexcorp.futoshiki.ui.korge.KorGEView
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -29,6 +33,9 @@ fun LandingScreen(
     onStart: (Int, Difficulty) -> Unit,
     onTheming: () -> Unit,
     onQuit: () -> Unit,
+    showKorge: Boolean = true,
+    korgeManager: com.hexcorp.futoshiki.ui.korge.KorGEGameManager,
+    isSkyboxDark: Boolean = false,
     modifier: Modifier = Modifier,
     scope: AnimatedVisibilityScope? = null
 ) {
@@ -38,6 +45,7 @@ fun LandingScreen(
     
     var selectedSize by remember { mutableIntStateOf(currentSize) }
     var selectedDifficulty by remember { mutableStateOf(Difficulty.EASY) }
+    val isDark = LocalIsDark.current
 
     BackHandler(enabled = true) {
         when {
@@ -52,13 +60,21 @@ fun LandingScreen(
         }
     }
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
-            .fillMaxSize()
-            .background(FutoshikiColors.background()),
-        contentAlignment = Alignment.Center
+            .fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
     ) {
-        // Dismissal Scrim
+        val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val vh = maxHeight - navBarBottom
+
+        val isSmallScreen = vh < 720.dp
+        val headerH = if (isSmallScreen) vh * 0.07f else vh * 0.09f
+        val ninjaH = if (isSmallScreen) 80.dp else 120.dp
+        val korgeHeight = headerH + 16.dp + ninjaH
+
+        // KorGEView removed - managed by MainActivity
+
         if (startExpanded) {
             Box(
                 modifier = Modifier
@@ -80,23 +96,12 @@ fun LandingScreen(
                 .widthIn(max = 420.dp)
                 .fillMaxHeight()
                 .systemBarsPadding()
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = 20.dp)
+                .zIndex(1f),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(80.dp))
-
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.wrapContentSize()
-                ) {
-                    LogoMark(size = 96.dp)
-                    Spacer(Modifier.height(18.dp))
-                }
-            }
+            // Match game screen layout - same height as korge + 16dp
+            Spacer(Modifier.height(korgeHeight + 8.dp))
 
             Box(
                 modifier = Modifier.fillMaxWidth(),
@@ -105,7 +110,7 @@ fun LandingScreen(
                 FutoshikiTitle(fontSize = 46.sp)
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(40.dp))
 
             Box(
                 modifier = Modifier
@@ -118,42 +123,94 @@ fun LandingScreen(
                         }
                     } else Modifier)
             ) {
-                AnimatedContent(
-                    targetState = when {
-                        showConfirmQuit -> "confirm"
-                        showHelp -> "help"
-                        else -> "menu"
-                    },
-                    transitionSpec = {
-                        val duration = 300
-                        if (targetState != "menu") {
-                            (fadeIn(tween(duration)) + slideInVertically { it / 4 })
-                                .togetherWith(fadeOut(tween(250)) + slideOutVertically { -it / 4 })
-                        } else {
-                            (fadeIn(tween(duration)) + slideInVertically { -it / 4 })
-                                .togetherWith(fadeOut(tween(250)) + slideOutVertically { it / 4 })
-                        }.using(SizeTransform(clip = false))
-                    },
-                    label = "landingContentTransition",
-                    modifier = Modifier.fillMaxWidth()
-                ) { state ->
-                    val isDark = LocalIsDark.current
-                    LandingMenuContent(
-                        state = state,
-                        isDark = isDark,
-                        selectedSize = selectedSize,
-                        onSizeSelected = { selectedSize = it },
-                        selectedDifficulty = selectedDifficulty,
-                        onDifficultyChange = { selectedDifficulty = it },
-                        startExpanded = startExpanded,
-                        onStartToggle = { startExpanded = !startExpanded },
-                        onStart = { onStart(selectedSize, selectedDifficulty) },
-                        onTheming = onTheming,
-                        onQuit = onQuit,
-                        onShowHelp = { showHelp = true },
-                        onHideHelp = { showHelp = false },
-                        onHideConfirmQuit = { showConfirmQuit = false }
-                    )
+                if (showConfirmQuit || showHelp) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (showConfirmQuit) {
+                            Text(
+                                text = "Q U I T   T H E   G A M E  ?",
+                                fontSize = 13.sp,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                                fontFamily = PixelF,
+                                color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
+                                letterSpacing = 2.sp
+                            )
+                            Spacer(Modifier.height(32.dp))
+                            com.hexcorp.futoshiki.ui.components.shared.BigButton(
+                                label = "Y E S",
+                                onClick = onQuit,
+                                inverted = true,
+                                isDark = isDark
+                            )
+                            Spacer(Modifier.height(35.dp))
+                            com.hexcorp.futoshiki.ui.components.shared.BigButton(
+                                label = "N O",
+                                onClick = { showConfirmQuit = false },
+                                isDark = isDark
+                            )
+                        } else if (showHelp) {
+                            Spacer(Modifier.height(24.dp))
+                            com.hexcorp.futoshiki.ui.components.shared.HelpPanel(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.9f)
+                                    .fillMaxHeight(0.8f),
+                                scrollable = true
+                            )
+                            Spacer(Modifier.height(20.dp))
+                            com.hexcorp.futoshiki.ui.components.shared.BigButton(
+                                label = "BACK",
+                                onClick = { showHelp = false },
+                                inverted = true,
+                                isDark = isDark
+                            )
+                        }
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        com.hexcorp.futoshiki.ui.components.shared.ExpandableStartButton(
+                            label = "START",
+                            isExpanded = startExpanded,
+                            onExpandToggle = { startExpanded = !startExpanded },
+                            selectedSize = selectedSize,
+                            onSizeSelected = { selectedSize = it },
+                            selectedDifficulty = selectedDifficulty,
+                            onDifficultyChange = { selectedDifficulty = it },
+                            onStart = { 
+                                korgeManager.gameWorld?.startGame(skipIntro = false)
+                                onStart(selectedSize, selectedDifficulty) 
+                            },
+                            isDark = isDark
+                        )
+                        
+                        AnimatedVisibility(
+                            visible = !startExpanded,
+                            enter = fadeIn(tween(400)) + expandVertically(tween(400)),
+                            exit = fadeOut(tween(300)) + shrinkVertically(tween(500))
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Spacer(Modifier.height(35.dp))
+                                com.hexcorp.futoshiki.ui.components.shared.BigButton(
+                                    label = "HELP",
+                                    onClick = { showHelp = true },
+                                    isDark = isDark
+                                )
+                                Spacer(Modifier.height(35.dp))
+                                com.hexcorp.futoshiki.ui.components.shared.BigButton(
+                                    label = "THEMES",
+                                    onClick = onTheming,
+                                    isDark = isDark
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -173,7 +230,7 @@ fun LandingScreen(
                     } else Modifier)
             ) {
                 Text(
-                    text = "Made with ♡ by @HeX",
+                    text = "Made with love by @HeX",
                     fontSize = 12.sp,
                     color = Color(0xFF888888),
                     fontFamily = PixelF

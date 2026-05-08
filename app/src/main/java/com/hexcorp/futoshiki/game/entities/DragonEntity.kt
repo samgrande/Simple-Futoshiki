@@ -107,6 +107,11 @@ class DragonEntity(
         velocityX = 250.0f
     }
 
+    fun setIdle() {
+        isChasing = false
+        visible = false
+    }
+
     suspend fun runWinFlyAway() {
         isChasing = false
         // Fly away to the left quickly

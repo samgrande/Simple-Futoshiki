@@ -78,9 +78,12 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         stopTimer()
         korgeManager.updateAggression(0f)
         korgeManager.resetBoost()
-        korgeManager.introFinished = false
-        korgeManager.resetRunningStarted()
-        korgeManager.resetSceneLoaded()
+        // Don't reset introFinished - keeps scene alive
+        // Only reset running state if coming from a previous game
+        if (_state.value.screen == Screen.GAME) {
+            korgeManager.resetRunningStarted()
+            korgeManager.resetSceneLoaded()
+        }
         _state.update { st ->
             st.copy(
                 previousScreen = st.screen,
@@ -224,6 +227,9 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun goToMainMenu() {
         stopTimer()
+        korgeManager.resetSceneLoaded()
+        korgeManager.resetRunningStarted()
+        korgeManager.introFinished = false
         _state.update { it.copy(previousScreen = it.screen, screen = Screen.LANDING) }
     }
 

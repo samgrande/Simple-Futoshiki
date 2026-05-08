@@ -3,26 +3,20 @@ package com.hexcorp.futoshiki.ui.screens.pause
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -32,6 +26,8 @@ import com.hexcorp.futoshiki.ui.components.shared.*
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import com.hexcorp.futoshiki.ui.theme.PixelF
+import com.hexcorp.futoshiki.ui.theme.ThemeMode
+import com.hexcorp.futoshiki.ui.korge.KorGEView
 import kotlin.math.roundToInt
 
 @Composable
@@ -46,6 +42,11 @@ fun PauseOverlay(
     onMainMenu: () -> Unit,
     onNewGame: (Int, Difficulty) -> Unit,
     onTheming: () -> Unit,
+    korgeManager: com.hexcorp.futoshiki.ui.korge.KorGEGameManager,
+    isDark: Boolean,
+    themeMode: ThemeMode,
+    customMonoAccent: Boolean,
+    customDayNight: Boolean,
     modifier: Modifier = Modifier,
     startWithQuitConfirm: Boolean = false
 ) {
@@ -71,16 +72,23 @@ fun PauseOverlay(
         }
     }
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier.fillMaxSize()
     ) {
+        val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val vh = maxHeight - navBarBottom
+
+        val isSmallScreen = vh < 720.dp
+        val headerH = if (isSmallScreen) vh * 0.07f else vh * 0.09f
+        val ninjaH = if (isSmallScreen) 80.dp else 120.dp
+        val korgeHeight = headerH + 16.dp + ninjaH
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(FutoshikiColors.background()),
             contentAlignment = Alignment.Center
         ) {
-            // Dismissal Scrim
             if (newGameExpanded) {
                 Box(
                     modifier = Modifier
@@ -97,6 +105,17 @@ fun PauseOverlay(
                 )
             }
             
+            val isSkyboxDark = if (themeMode == ThemeMode.CUSTOM) customMonoAccent else isDark
+            
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(korgeHeight)
+                    .align(Alignment.TopCenter)
+            ) {
+                // KorGEView removed - managed by MainActivity
+            }
+            
             Column(
                 modifier = Modifier
                     .widthIn(max = 420.dp)
@@ -105,12 +124,7 @@ fun PauseOverlay(
                     .padding(horizontal = 20.dp, vertical = 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(Modifier.height(60.dp))
-
-                LogoMark(size = 80.dp)
-                Spacer(Modifier.height(16.dp))
-                FutoshikiTitle(fontSize = 38.sp)
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(korgeHeight + 8.dp))
 
                 AnimatedContent(
                     targetState = when {
@@ -250,7 +264,6 @@ fun PauseOverlay(
                                 )
                                 Spacer(Modifier.height(48.dp))
                                 
-                                // NEW GAME (Expandable)
                                 ExpandableStartButton(
                                     label = "NEW GAME",
                                     isExpanded = newGameExpanded,
@@ -277,7 +290,6 @@ fun PauseOverlay(
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Spacer(Modifier.height(20.dp))
                                         
-                                        // HELP
                                         BigButton(
                                             label = "HELP",
                                             onClick = { showHelp = true },
@@ -286,7 +298,6 @@ fun PauseOverlay(
                                         
                                         Spacer(Modifier.height(20.dp))
                                         
-                                        // THEMES
                                         BigButton(
                                             label = "THEMES",
                                             onClick = onTheming,
@@ -295,7 +306,6 @@ fun PauseOverlay(
                                         
                                         Spacer(Modifier.height(20.dp))
                                         
-                                        // MAIN MENU
                                         BigButton(
                                             label = "MAIN MENU",
                                             onClick = { showConfirmQuit = true },

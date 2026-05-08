@@ -138,12 +138,7 @@ fun BigButton(
             .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
             .drawBehind {
                 drawRect(oldFaceColor)
-                val radius = size.width * 1.5f * revealAnim.value
-                drawCircle(
-                    color = currentFaceColor,
-                    radius = radius,
-                    center = Offset(size.width / 2f, size.height / 2f)
-                )
+                // No ripple on KorGE - just solid color
             }
             .then(
                 if (bordered) Modifier.border(2.dp, stColor, androidx.compose.foundation.shape.RoundedCornerShape(12.dp))

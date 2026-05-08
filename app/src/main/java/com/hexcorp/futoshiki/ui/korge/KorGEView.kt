@@ -23,6 +23,7 @@ fun KorGEView(
     manager: KorGEGameManager,
     isSkyboxDark: Boolean,
     isPaused: Boolean = false,
+    isMenuScreen: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val isAppDark = LocalIsDark.current
@@ -42,14 +43,15 @@ fun KorGEView(
                         manager.gameWorld = world
                         
                         world.setupWorld()
-                        world.startGame(skipIntro = manager.introFinished)
-
-                        // Mark as finished so future re-compositions (theme changes) skip the intro
-                        manager.introFinished = true
+                        if (!isMenuScreen) {
+                            world.startGame(skipIntro = manager.introFinished)
+                            manager.introFinished = true
+                        } else {
+                            world.startMenuIdle()
+                        }
 
                         addChild(world)
 
-                        // Scene is ready — signal AFTER addChild so the cover fades only once rendered
                         manager.signalSceneLoaded()
 
                         addUpdater { dt ->
@@ -67,6 +69,10 @@ fun KorGEView(
         update = { _ ->
             manager.gameWorld?.updateTheme(isSkyboxDark, isAppDark, accentHex)
             manager.isPaused = isPaused
+            
+            if (isMenuScreen) {
+                manager.gameWorld?.startMenuIdle()
+            }
         },
         modifier = modifier
     )

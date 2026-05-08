@@ -45,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun GameScreen(
     viewModel: FutoshikiViewModel,
     state: com.hexcorp.futoshiki.game.GameState,
+    showKorge: Boolean = true,
 ) {
     val puzzle    = state.puzzle ?: return
     val size      = state.size
@@ -139,7 +140,6 @@ fun GameScreen(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(bgColor)
             .onGloballyPositioned { containerCoordinates = it }
     ) {
         val vw = maxWidth
@@ -187,18 +187,10 @@ fun GameScreen(
                     .height(korgeHeight)
                     .zIndex(2f)
             ) {
-                val isSkyboxDark = if (state.themeMode == com.hexcorp.futoshiki.ui.theme.ThemeMode.CUSTOM) state.customMonoAccent else state.isDark
-                // KorGE is now always visible, even in solve mode
-                KorGEView(
-                    manager = viewModel.korgeManager,
-                    isSkyboxDark = isSkyboxDark,
-                    isPaused = isPaused,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(korgeHeight)
-                )
+                // KorGEView removed - managed by MainActivity
+                
                 // Cover fades away once the scene signals it's loaded
-                if (sceneCoverAlpha > 0f) {
+                if (sceneCoverAlpha > 0f && showKorge) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -527,7 +519,9 @@ fun GameScreen(
         if (showScreenShield) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    .height(vh - korgeHeight)
+                    .align(Alignment.BottomCenter)
                     .background(FutoshikiColors.background())
                     .zIndex(9f)
             )
@@ -548,6 +542,11 @@ fun GameScreen(
                 onMainMenu = { viewModel.goToMainMenu() },
                 onNewGame = { s, d -> viewModel.newGame(s, d) },
                 onTheming = { viewModel.goToThemingFromGame() },
+                korgeManager = viewModel.korgeManager,
+                isDark = isDark,
+                themeMode = state.themeMode,
+                customMonoAccent = state.customMonoAccent,
+                customDayNight = state.customDayNight,
                 modifier = Modifier.zIndex(10f),
                 startWithQuitConfirm = forceQuitInPause
             )
