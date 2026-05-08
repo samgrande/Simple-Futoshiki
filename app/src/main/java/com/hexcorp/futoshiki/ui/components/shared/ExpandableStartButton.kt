@@ -56,7 +56,8 @@ fun ExpandableStartButton(
     onDifficultyChange: (Difficulty) -> Unit,
     onStart: () -> Unit,
     isDark: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onDifficultySave: ((Difficulty) -> Unit)? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -298,7 +299,8 @@ fun ExpandableStartButton(
                         .background(if (isDark) Color(0xFF141414) else Color(0xFFD6D6D6))
                         .clickable(onClick = {
                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onExpandToggle() // Just collapse, don't start
+                            onDifficultySave?.invoke(selectedDifficulty)
+                            onExpandToggle()
                         }),
                     contentAlignment = Alignment.Center
                 ) {
@@ -331,6 +333,8 @@ fun SizeSlider(
         label = "textColor"
     )
     
+    var totalDrag by remember { mutableFloatStateOf(0f) }
+    val selectedIndex = options.indexOf(selectedSize)
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth(0.9f)
@@ -338,6 +342,27 @@ fun SizeSlider(
             .clip(RoundedCornerShape(10.dp))
             .background(containerBg)
             .padding(4.dp)
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(
+                    onDragEnd = { },
+                    onDragCancel = { },
+                    onHorizontalDrag = { _, dragAmount ->
+                        totalDrag += dragAmount
+                        val threshold = 50f
+                        if (totalDrag > threshold) {
+                            if (selectedIndex < options.size - 1) {
+                                onSizeSelected(options[selectedIndex + 1])
+                                totalDrag = 0f
+                            }
+                        } else if (totalDrag < -threshold) {
+                            if (selectedIndex > 0) {
+                                onSizeSelected(options[selectedIndex - 1])
+                                totalDrag = 0f
+                            }
+                        }
+                    }
+                )
+            }
     ) {
         val width = maxWidth
         val optionsCount = options.size
@@ -360,33 +385,8 @@ fun SizeSlider(
                 .background(accent)
         )
         
-        // Interaction Layer
-        var totalDrag by remember { mutableFloatStateOf(0f) }
-        
         Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = { totalDrag = 0f },
-                        onDragCancel = { totalDrag = 0f },
-                        onHorizontalDrag = { change, dragAmount ->
-                            totalDrag += dragAmount
-                            val threshold = 50f
-                            if (totalDrag > threshold) {
-                                if (selectedIndex < options.size - 1) {
-                                    onSizeSelected(options[selectedIndex + 1])
-                                    totalDrag = 0f
-                                }
-                            } else if (totalDrag < -threshold) {
-                                if (selectedIndex > 0) {
-                                    onSizeSelected(options[selectedIndex - 1])
-                                    totalDrag = 0f
-                                }
-                            }
-                        }
-                    )
-                }
+            modifier = Modifier.fillMaxSize()
         ) {
             options.forEach { size ->
                 Box(

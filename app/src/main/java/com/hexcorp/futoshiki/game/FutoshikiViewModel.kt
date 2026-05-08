@@ -27,7 +27,8 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         isDark = loadIsDark(),
         customMonoAccent = loadCustomMonoAccent(),
         customDayNight = loadCustomDayNight(),
-        size = loadSize()
+        size = loadSize(),
+        difficulty = loadDifficulty()
     ))
     val state: StateFlow<GameState> = _state.asStateFlow()
 
@@ -59,6 +60,15 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun loadSize(): Int {
         return prefs.getInt("game_size", 4)
+    }
+
+    private fun loadDifficulty(): Difficulty {
+        val name = prefs.getString("difficulty", Difficulty.EASY.name)
+        return try {
+            Difficulty.valueOf(name ?: Difficulty.EASY.name)
+        } catch (e: Exception) {
+            Difficulty.EASY
+        }
     }
 
     private fun loadCustomMonoAccent(): Boolean {
@@ -212,6 +222,14 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         ) }
     }
 
+    fun setShowConfirmQuit(show: Boolean) {
+        _state.update { it.copy(showConfirmQuit = show) }
+    }
+
+    fun setShowConfirmNewGame(show: Boolean) {
+        _state.update { it.copy(showConfirmNewGame = show) }
+    }
+
     // ── Countdown timer hold ─────────────────────────────────────────────────
 
     fun pauseTimer() { stopTimer() }
@@ -321,6 +339,11 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     fun saveSizePreference(newSize: Int) {
         prefs.edit().putInt("game_size", newSize).apply()
         _state.update { it.copy(size = newSize) }
+    }
+
+    fun saveDifficultyPreference(difficulty: Difficulty) {
+        prefs.edit().putString("difficulty", difficulty.name).apply()
+        _state.update { it.copy(difficulty = difficulty) }
     }
 
     // ── Timer internals ──────────────────────────────────────────────────────

@@ -117,7 +117,7 @@ fun FutoshikiApp(
     LaunchedEffect(state.screen) {
         if (state.screen == Screen.LANDING && !landingEntrancePlayed) {
             landingEntrancePlayed = true
-            delay(1000)
+            delay(1100)
             landingEntranceDone = true
         }
     }
@@ -177,12 +177,14 @@ fun FutoshikiApp(
 
                 // Pause overlay - dim + PAUSED text on top of korge
                 if (state.screen == Screen.PAUSE) {
-                    val dimColor = if (isDark) Color.Black.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.5f)
+                    // Use dim overlay normally, solid background for confirm quit/new game screens
+                    val useSolidBg = state.showConfirmQuit || state.showConfirmNewGame
+                    val bgColor = if (useSolidBg) FutoshikiColors.background() else if (isDark) Color.Black.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.5f)
                     val textColor = if (isDark) Color.White else Color.Black
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(dimColor)
+                            .background(bgColor)
                             .zIndex(10f),
                         contentAlignment = Alignment.Center
                     ) {
@@ -247,17 +249,19 @@ fun FutoshikiApp(
                         Screen.LANDING -> {
                             LandingScreen(
                                 currentSize = state.size,
+                                currentDifficulty = state.difficulty,
                                 onStart = { size, difficulty -> 
                                     vm.newGame(size, difficulty)
                                 },
                                 onTheming = { vm.goToTheming() },
                                 onQuit = onQuit,
-                                showKorge = false, // Managed by MainActivity
+                                showKorge = false,
                                 korgeManager = vm.korgeManager,
                                 isSkyboxDark = isSkyboxDark,
                                 modifier = Modifier.fillMaxSize(),
                                 scope = this@AnimatedContent,
-                                onSizeSave = { vm.saveSizePreference(it) }
+                                onSizeSave = { vm.saveSizePreference(it) },
+                                onDifficultySave = { vm.saveDifficultyPreference(it) }
                             )
                         }
 

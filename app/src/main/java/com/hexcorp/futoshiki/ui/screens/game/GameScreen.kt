@@ -452,6 +452,18 @@ fun GameScreen(
                     isSolveMode   = isSolveMode,
                     onSolveModeChange = { isSolveMode = it },
                     hPad          = hPad,
+                    // Timer parameters
+                    timerSeconds  = state.timerSeconds,
+                    isPaused      = isPaused,
+                    onTimerClick  = { 
+                        if (!isPaused) viewModel.pause() else viewModel.resume()
+                    },
+                    onTimerLongClick = {
+                        if (!won) {
+                            forceQuitInPause = true
+                            viewModel.pause()
+                        }
+                    },
                     // New parameters for solution screen new game
                     newGameExpanded = newGameExpanded,
                     onNewGameExpandedChange = { newGameExpanded = it },
@@ -570,19 +582,22 @@ fun GameScreen(
                 currentDifficulty = state.difficulty,
                 onResume = {
                     forceQuitInPause = false
+                    viewModel.setShowConfirmQuit(false)
                     viewModel.resume()
                 },
                 onMainMenu = { viewModel.goToMainMenu() },
                 onNewGame = { s, d -> viewModel.newGame(s, d) },
                 onTheming = { viewModel.goToThemingFromGame() },
-                onSizeSave = { viewModel.saveSizePreference(it) },
+                onDifficultySave = { viewModel.saveDifficultyPreference(it) },
                 korgeManager = viewModel.korgeManager,
                 isDark = isDark,
                 themeMode = state.themeMode,
                 customMonoAccent = state.customMonoAccent,
                 customDayNight = state.customDayNight,
                 modifier = Modifier.zIndex(10f),
-                startWithQuitConfirm = forceQuitInPause
+                startWithQuitConfirm = forceQuitInPause,
+                onConfirmQuitChange = { show -> viewModel.setShowConfirmQuit(show) },
+                onConfirmNewGameChange = { show -> viewModel.setShowConfirmNewGame(show) }
             )
         }
 

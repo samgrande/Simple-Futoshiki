@@ -67,9 +67,10 @@ class GameWorld(
             zIndex = 0.0
         })
         // Layer 2: Midground (Clouds/Trees) - Simplified to one image for now
+        // Time drift speed of 15.0 gives a medium-slow noticeable movement
         layers.add(ParallaxLayer(
             assets.loadImage("sprites/cloud1.webp"),
-            0.4, 250.0, 3000.0
+            0.4, 250.0, 3000.0, timeDriftSpeed = 15.0
         ).apply {
             scale = 0.2
             zIndex = 1.0
@@ -77,7 +78,7 @@ class GameWorld(
 
         layers.add(ParallaxLayer(
             assets.loadImage("sprites/cloud2.webp"),
-            0.4, 300.0, 3000.0, 1500.0
+            0.4, 300.0, 3000.0, 1500.0, timeDriftSpeed = 12.0
         ).apply {
             scale = 0.2
             zIndex = 1.0
@@ -284,7 +285,7 @@ class GameWorld(
         }
     }
 
-    fun update(dt: Double, aggression: Float) {
+    fun update(dt: Double, aggression: Float, enableCloudDrift: Boolean = true) {
         if (!::ninja.isInitialized || !::dragon.isInitialized) return
         
         // Smoothly move currentNinjaScreenX toward targetNinjaScreenX
@@ -304,7 +305,7 @@ class GameWorld(
         this.x = currentNinjaScreenX - ninja.x
 
         // Update Parallax based on Ninja's world position
-        layers.forEach { it.update(ninja.x) }
+        layers.forEach { it.update(ninja.x, dt, enableCloudDrift) }
         
         // Keep sky background roughly centered on ninja
         children.firstOrNull { it is SolidRect }?.let { 

@@ -32,6 +32,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun LandingScreen(
     currentSize: Int,
+    currentDifficulty: Difficulty,
     onStart: (Int, Difficulty) -> Unit,
     onTheming: () -> Unit,
     onQuit: () -> Unit,
@@ -40,14 +41,15 @@ fun LandingScreen(
     isSkyboxDark: Boolean = false,
     modifier: Modifier = Modifier,
     scope: AnimatedVisibilityScope? = null,
-    onSizeSave: (Int) -> Unit = {}
+    onSizeSave: (Int) -> Unit = {},
+    onDifficultySave: (Difficulty) -> Unit = {}
 ) {
     var showHelp by remember { mutableStateOf(false) }
     var showConfirmQuit by remember { mutableStateOf(false) }
     var startExpanded by remember { mutableStateOf(false) }
     
     var selectedSize by remember { mutableIntStateOf(currentSize) }
-    var selectedDifficulty by remember { mutableStateOf(Difficulty.EASY) }
+    var selectedDifficulty by remember { mutableStateOf(currentDifficulty) }
     val isDark = LocalIsDark.current
 
     var entranceActive by remember { mutableStateOf(true) }
@@ -74,7 +76,7 @@ fun LandingScreen(
             showConfirmQuit -> showConfirmQuit = false
             startExpanded -> {
                 selectedSize = currentSize
-                selectedDifficulty = Difficulty.EASY
+                selectedDifficulty = currentDifficulty
                 startExpanded = false
             }
             else -> showConfirmQuit = true
@@ -105,7 +107,7 @@ fun LandingScreen(
                         indication = null,
                         onClick = { 
                             selectedSize = currentSize
-                            selectedDifficulty = Difficulty.EASY
+                            selectedDifficulty = currentDifficulty
                             startExpanded = false 
                         }
                     )
@@ -173,6 +175,8 @@ fun LandingScreen(
                         onSizeSelected = { selectedSize = it; onSizeSave(it) },
                         selectedDifficulty = selectedDifficulty,
                         onDifficultyChange = { selectedDifficulty = it },
+                        currentDifficulty = currentDifficulty,
+                        onDifficultySave = onDifficultySave,
                         startExpanded = startExpanded,
                         onStartToggle = { startExpanded = !startExpanded },
                         onStart = {

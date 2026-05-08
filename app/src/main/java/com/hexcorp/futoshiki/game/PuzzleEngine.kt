@@ -114,58 +114,78 @@ fun generateConstraints(solution: List<List<Int>>, size: Int, count: Int): List<
 
 // ── Full puzzle builder ───────────────────────────────────────────────────────
 
-fun generatePuzzle(size: Int, difficulty: Difficulty = Difficulty.EASY): Puzzle {
-    var solution: List<List<Int>>
-    var constraints: List<Constraint>
-    var initialGrid: List<List<Int>>
+private fun fillPercent(difficulty: Difficulty): Double = when (difficulty) {
+    Difficulty.EASY   -> 0.70
+    Difficulty.MEDIUM -> 0.50
+    Difficulty.HARD   -> 0.20
+}
 
-    // Retry until we get a puzzle with a unique solution
-    while (true) {
-        solution = generateSolution(size)
-        // Adjust constraint count based on difficulty and size
-        val baseConstraints = when (size) {
-            3 -> 2
-            4 -> 4
-            5 -> 6
-            else -> 8
+private fun hasEmptyCellsInAllRowsAndCols(grid: Array<IntArray>, size: Int): Boolean {
+    for (r in 0 until size) if (grid[r].all { it != 0 }) return false
+    for (c in 0 until size) if ((0 until size).all { grid[it][c] != 0 }) return false
+    return true
+}
+
+private fun makeRowColSatisfied(grid: Array<IntArray>, size: Int, rng: Random) {
+    val totalCells = size * size
+    val maxAttempts = totalCells * 2
+    repeat(maxAttempts) {
+        if (hasEmptyCellsInAllRowsAndCols(grid, size)) return
+        val filledRows = (0 until size).filter { r -> grid[r].all { it != 0 } }
+        val filledCols = (0 until size).filter { c -> (0 until size).all { grid[it][c] != 0 } }
+        if (filledRows.isEmpty() && filledCols.isEmpty()) return
+        val r = filledRows.randomOrNull() ?: filledCols.randomOrNull()!!
+        val prefilled = (0 until size).filter { grid[r][it] != 0 }
+        if (prefilled.isNotEmpty()) {
+            val c = prefilled.random()
+            grid[r][c] = 0
         }
-        val constraintCount = when (difficulty) {
-            Difficulty.EASY -> baseConstraints + 2
-            Difficulty.MEDIUM -> baseConstraints
-            Difficulty.HARD -> baseConstraints - 1
-        }.coerceAtLeast(1)
+    }
+}
 
-        constraints = generateConstraints(solution, size, constraintCount)
+fun generatePuzzle(size: Int, difficulty: Difficulty = Difficulty.EASY): Puzzle {
+    val rng = Random.Default
+    val totalCells = size * size
+    val targetFill = (totalCells * fillPercent(difficulty)).toInt().coerceAtLeast(1)
 
-        val allCells = (0 until size).flatMap { r -> (0 until size).map { c -> r to c } }.shuffled()
+    val baseConstraints = when (size) {
+        3 -> 2; 4 -> 4; 5 -> 6; else -> 8
+    }
+    val constraintCount = when (difficulty) {
+        Difficulty.EASY   -> baseConstraints + 2
+        Difficulty.MEDIUM -> baseConstraints
+        Difficulty.HARD   -> baseConstraints - 1
+    }.coerceAtLeast(1)
+
+    while (true) {
+        val solution = generateSolution(size)
+        val constraints = generateConstraints(solution, size, constraintCount)
+        val allCells = (0 until size).flatMap { r -> (0 until size).map { c -> r to c } }.shuffled(rng)
+
         val grid = Array(size) { IntArray(size) }
-        
-        // Reveal cells one by one until there's exactly one solution
-        var revealedCount = 0
-        for ((r, c) in allCells) {
-            grid[r][c] = solution[r][c]
-            revealedCount++
-            if (countSolutions(grid.map { it.toList() }, constraints, size) == 1) {
-                // For easier difficulties, reveal even more cells
-                val extraToReveal = when (difficulty) {
-                    Difficulty.EASY -> (size * size / 4)
-                    Difficulty.MEDIUM -> (size * size / 8)
-                    Difficulty.HARD -> 0
+        val fillCount = targetFill.coerceAtMost(totalCells - size)
+        allCells.take(fillCount).forEach { (r, c) -> grid[r][c] = solution[r][c] }
+
+        makeRowColSatisfied(grid, size, rng)
+
+        if (!hasEmptyCellsInAllRowsAndCols(grid, size)) {
+            continue
+        }
+
+        val initialGrid = grid.map { it.toList() }
+        if (countSolutions(initialGrid, constraints, size) == 1) {
+            return Puzzle(solution, constraints, initialGrid)
+        }
+
+        for ((r, c) in allCells.drop(fillCount)) {
+            if (grid[r][c] == 0) {
+                grid[r][c] = solution[r][c]
+                if (countSolutions(grid.map { it.toList() }, constraints, size) == 1) {
+                    return Puzzle(solution, constraints, grid.map { it.toList() })
                 }
-                
-                val remainingCells = allCells.drop(revealedCount).take(extraToReveal)
-                for ((rr, cc) in remainingCells) {
-                    grid[rr][cc] = solution[rr][cc]
-                }
-                break
             }
         }
-        
-        initialGrid = grid.map { it.toList() }
-        if (countSolutions(initialGrid, constraints, size) == 1) break
     }
-
-    return Puzzle(solution, constraints, initialGrid)
 }
 
 // ── Validation ────────────────────────────────────────────────────────────────

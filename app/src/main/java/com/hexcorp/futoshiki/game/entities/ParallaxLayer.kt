@@ -10,11 +10,13 @@ class ParallaxLayer(
     private val scrollSpeed: Double,
     initialY: Double = 0.0,
     private val spacing: Double = 0.0,
-    private val offsetX: Double = 0.0
+    private val offsetX: Double = 0.0,
+    private val timeDriftSpeed: Double = 0.0
 ) : Container() {
 
     private val backgrounds = mutableListOf<View>()
     private val repeatSize = image.width.toDouble() + spacing
+    private var timeAccumulator = 0.0
 
     init {
         y = initialY
@@ -28,7 +30,10 @@ class ParallaxLayer(
         }
     }
 
-    fun update(cameraX: Double) {
+    fun update(cameraX: Double, deltaTime: Double = 0.0, enableDrift: Boolean = true) {
+        if (enableDrift && timeDriftSpeed > 0.0) {
+            timeAccumulator += deltaTime * timeDriftSpeed
+        }
         // The effective width of one background tile in world coordinates
         val r = repeatSize * scaleX
         if (r <= 0.0) return
@@ -36,7 +41,7 @@ class ParallaxLayer(
         // To create parallax, the layer should ideally be at:
         // xIdeal = cameraX * (1.0 - scrollSpeed)
         // This ensures that: ScreenPos = GameWorld.x + xIdeal = (100 - cameraX) + xIdeal = 100 - cameraX * scrollSpeed
-        val xIdeal = cameraX * (1.0 - scrollSpeed)
+        val xIdeal = cameraX * (1.0 - scrollSpeed) + timeAccumulator
 
         // However, we must keep the layer's container near the cameraX so that its
         // tiled children (spanning -2r to 2r) are actually visible on screen.

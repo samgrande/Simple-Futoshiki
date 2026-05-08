@@ -36,5 +36,7 @@ data class GameState(
     val pillOffsetX: Float = 0f,
     val pillOffsetY: Float = 0f,
     val pillCenterX: Float = 0f,
-    val pillCenterY: Float = 0f
+    val pillCenterY: Float = 0f,
+    val showConfirmQuit: Boolean = false,
+    val showConfirmNewGame: Boolean = false
 )

@@ -14,6 +14,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.gestures.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
@@ -25,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
@@ -133,6 +135,13 @@ fun CongratsView(
                     interactionSource = interactionSource,
                     indication = null
                 ) { /* Just for shaking effect */ }
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onLongPress = {
+                            shareScreenshot(context, view)
+                        }
+                    )
+                }
         )
 
         Spacer(modifier = Modifier.height(20.dp)) // Reduced spacer
@@ -174,23 +183,5 @@ fun CongratsView(
         )
 
         Spacer(modifier = Modifier.height(16.dp))
-
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(FutoshikiColors.timerBg())
-                .clickable { shareScreenshot(context, view) },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Share,
-                contentDescription = "Share",
-                tint = FutoshikiColors.timerText(),
-                modifier = Modifier.size(20.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
     }
 }

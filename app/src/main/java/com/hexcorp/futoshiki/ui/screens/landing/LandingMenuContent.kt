@@ -26,6 +26,8 @@ fun LandingMenuContent(
     onSizeSelected: (Int) -> Unit,
     selectedDifficulty: Difficulty,
     onDifficultyChange: (Difficulty) -> Unit,
+    currentDifficulty: Difficulty,
+    onDifficultySave: (Difficulty) -> Unit,
     startExpanded: Boolean,
     onStartToggle: () -> Unit,
     onStart: () -> Unit,
@@ -105,7 +107,8 @@ fun LandingMenuContent(
                     selectedDifficulty = selectedDifficulty,
                     onDifficultyChange = onDifficultyChange,
                     onStart = onStart,
-                    isDark = isDark
+                    isDark = isDark,
+                    onDifficultySave = onDifficultySave
                 )
                 
                 AnimatedVisibility(

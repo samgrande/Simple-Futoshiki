@@ -42,14 +42,16 @@ fun PauseOverlay(
     onMainMenu: () -> Unit,
     onNewGame: (Int, Difficulty) -> Unit,
     onTheming: () -> Unit,
-    onSizeSave: (Int) -> Unit = {},
+    onDifficultySave: (Difficulty) -> Unit = {},
     korgeManager: com.hexcorp.futoshiki.ui.korge.KorGEGameManager,
     isDark: Boolean,
     themeMode: ThemeMode,
     customMonoAccent: Boolean,
     customDayNight: Boolean,
     modifier: Modifier = Modifier,
-    startWithQuitConfirm: Boolean = false
+    startWithQuitConfirm: Boolean = false,
+    onConfirmQuitChange: (Boolean) -> Unit = {},
+    onConfirmNewGameChange: (Boolean) -> Unit = {}
 ) {
     var showHelp by rememberSaveable { mutableStateOf(false) }
     var showConfirmQuit by rememberSaveable { mutableStateOf(startWithQuitConfirm) }
@@ -58,6 +60,16 @@ fun PauseOverlay(
     
     var selectedSize by remember { mutableIntStateOf(currentSize) }
     var selectedDifficulty by remember { mutableStateOf(currentDifficulty) }
+
+    // Notify parent when entering/exiting confirm quit screen
+    LaunchedEffect(showConfirmQuit) {
+        onConfirmQuitChange(showConfirmQuit)
+    }
+
+    // Notify parent when entering/exiting confirm new game screen
+    LaunchedEffect(showConfirmNewGame) {
+        onConfirmNewGameChange(showConfirmNewGame)
+    }
 
     BackHandler(enabled = true) {
         when {
@@ -260,10 +272,7 @@ fun PauseOverlay(
                                     isExpanded = newGameExpanded,
                                     onExpandToggle = { newGameExpanded = !newGameExpanded },
                                     selectedSize = selectedSize,
-                                    onSizeSelected = { 
-                                        selectedSize = it
-                                        onSizeSave(it)
-                                    },
+                                    onSizeSelected = { selectedSize = it },
                                     selectedDifficulty = selectedDifficulty,
                                     onDifficultyChange = { selectedDifficulty = it },
                                     onStart = { 
@@ -273,7 +282,8 @@ fun PauseOverlay(
                                             showConfirmNewGame = true
                                         }
                                     },
-                                    isDark = isDark
+                                    isDark = isDark,
+                                    onDifficultySave = onDifficultySave
                                 )
                                 
                                 AnimatedVisibility(

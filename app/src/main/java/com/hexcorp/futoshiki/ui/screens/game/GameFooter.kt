@@ -31,6 +31,11 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import com.hexcorp.futoshiki.ui.theme.PixelF
+import com.hexcorp.futoshiki.ui.components.shared.formatTimer
+import com.hexcorp.futoshiki.ui.theme.accentColor
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.Path
 
 @Composable
 fun GameFooter(
@@ -41,6 +46,11 @@ fun GameFooter(
     isSolveMode: Boolean,
     onSolveModeChange: (Boolean) -> Unit,
     hPad: Dp,
+    // Timer parameters
+    timerSeconds: Int = 0,
+    isPaused: Boolean = false,
+    onTimerClick: () -> Unit = {},
+    onTimerLongClick: (() -> Unit)? = null,
     // New parameters for solution screen new game
     newGameExpanded: Boolean = false,
     onNewGameExpandedChange: (Boolean) -> Unit = {},
@@ -71,30 +81,45 @@ fun GameFooter(
         horizontalArrangement = Arrangement.Center
     ) {
         if (!isSolved) {
-            if (isSolveMode) {
-                BigButton(
-                    label = "SOLVE",
-                    onClick = {
-                        onSolve()
-                        onSolveModeChange(false)
-                    },
-                    primary = true,
-                    monochrome = true,
+            // Two-button layout: Timer on left, Reset/Solve on right
+            val timerButtonWidth = 140.dp
+            val resetButtonWidth = 196.dp
+            val spacing = 10.dp
+
+            Row(
+                modifier = Modifier.fillMaxWidth(0.9f),
+                horizontalArrangement = Arrangement.spacedBy(spacing),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Left button: Timer
+                TimerButton(
+                    seconds = timerSeconds,
+                    isPaused = isPaused,
+                    onClick = onTimerClick,
+                    onLongClick = onTimerLongClick,
                     height = buttonHeight,
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .padding(bottom = 8.dp)
+                    modifier = Modifier.width(timerButtonWidth)
                 )
-            } else {
-                ResetButton(
-                    label = "RESET",
-                    onClick = onClearAll,
-                    onLongClick = { onSolveModeChange(true) },
-                    height = buttonHeight,
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .padding(bottom = 8.dp)
-                )
+
+                // Right button: Reset or SOLVE
+                if (isSolveMode) {
+                    SolveButton(
+                        onClick = {
+                            onSolve()
+                            onSolveModeChange(false)
+                        },
+                        height = buttonHeight,
+                        modifier = Modifier.width(resetButtonWidth)
+                    )
+                } else {
+                    ResetButton(
+                        label = "RESET",
+                        onClick = onClearAll,
+                        onLongClick = { onSolveModeChange(true) },
+                        height = buttonHeight,
+                        modifier = Modifier.width(resetButtonWidth)
+                    )
+                }
             }
         } else {
             // Expandable NEW GAME button on Solution screen
@@ -190,6 +215,125 @@ fun ResetButton(
         Text(
             text = displayText,
             color = animatedTextColor,
+            fontSize = 18.sp,
+            fontFamily = PixelF,
+            letterSpacing = 1.sp
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun TimerButton(
+    seconds: Int,
+    isPaused: Boolean = false,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
+    height: Dp = 64.dp,
+    modifier: Modifier = Modifier
+) {
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val accent = accentColor()
+    val textColor = FutoshikiColors.onSurface()
+
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Box(
+        modifier = modifier
+            .height(height)
+            .clip(RoundedCornerShape(12.dp))
+            .background(accent)
+            .combinedClickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {
+                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                    onClick()
+                },
+                onLongClick = {
+                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    onLongClick?.invoke()
+                }
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Pause icon (two vertical bars) or Play icon (triangle)
+            Canvas(modifier = Modifier.size(16.dp, 18.dp)) {
+                if (isPaused) {
+                    // Play icon - triangle pointing right
+                    val path = Path().apply {
+                        moveTo(2f.dp.toPx(), 0f)
+                        lineTo(size.width, size.height / 2f)
+                        moveTo(2f.dp.toPx(), size.height)
+                        lineTo(size.width, size.height / 2f)
+                        close()
+                    }
+                    drawPath(path, color = textColor)
+                } else {
+                    // Pause icon - two vertical bars
+                    val barWidth = 4.dp.toPx()
+                    val barHeight = size.height
+                    val gap = 4.dp.toPx()
+                    
+                    // Left bar
+                    drawRect(
+                        color = textColor,
+                        topLeft = androidx.compose.ui.geometry.Offset(0f, 0f),
+                        size = androidx.compose.ui.geometry.Size(barWidth, barHeight)
+                    )
+                    // Right bar
+                    drawRect(
+                        color = textColor,
+                        topLeft = androidx.compose.ui.geometry.Offset(barWidth + gap, 0f),
+                        size = androidx.compose.ui.geometry.Size(barWidth, barHeight)
+                    )
+                }
+            }
+            Text(
+                text = formatTimer(seconds),
+                color = textColor,
+                fontSize = 20.sp,
+                fontFamily = PixelF,
+                letterSpacing = 1.sp
+            )
+        }
+    }
+}
+
+@Composable
+fun SolveButton(
+    onClick: () -> Unit,
+    height: Dp = 64.dp,
+    modifier: Modifier = Modifier
+) {
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val accent = accentColor()
+    val textColor = FutoshikiColors.onSurface()
+
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Box(
+        modifier = modifier
+            .height(height)
+            .clip(RoundedCornerShape(12.dp))
+            .background(accent)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {
+                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                    onClick()
+                }
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "SOLVE",
+            color = textColor,
             fontSize = 18.sp,
             fontFamily = PixelF,
             letterSpacing = 1.sp
