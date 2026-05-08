@@ -110,8 +110,8 @@ fun LandingMenuContent(
                 
                 AnimatedVisibility(
                     visible = !startExpanded,
-                    enter = fadeIn(tween(400)) + expandVertically(tween(400)),
-                    exit = fadeOut(tween(300)) + shrinkVertically(tween(500))
+                    enter = fadeIn(tween(300)),
+                    exit = fadeOut(tween(200))
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Spacer(Modifier.height(35.dp))

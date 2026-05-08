@@ -28,6 +28,8 @@ import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.ThemeMode
 import com.hexcorp.futoshiki.ui.theme.AppTheme
+import com.hexcorp.futoshiki.ui.theme.accentColor
+import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -165,12 +167,14 @@ fun ThemingScreen(
                     }
                 } else Modifier
             ) {
-                BigButton(
-                    label = "BACK",
-                    onClick = onBack,
-                    primary = true,
-                    isDark = isDark
-                )
+                val currentAccent = accentColor()
+            BigButton(
+                label = "BACK",
+                onClick = onBack,
+                primary = true,
+                isDark = isDark,
+                rippleColor = currentAccent
+            )
             }
 
             Spacer(Modifier.height(48.dp))

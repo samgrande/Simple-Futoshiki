@@ -37,7 +37,8 @@ fun LandingScreen(
     korgeManager: com.hexcorp.futoshiki.ui.korge.KorGEGameManager,
     isSkyboxDark: Boolean = false,
     modifier: Modifier = Modifier,
-    scope: AnimatedVisibilityScope? = null
+    scope: AnimatedVisibilityScope? = null,
+    onSizeSave: (Int) -> Unit = {}
 ) {
     var showHelp by remember { mutableStateOf(false) }
     var showConfirmQuit by remember { mutableStateOf(false) }
@@ -118,7 +119,7 @@ fun LandingScreen(
                     .then(if (scope != null) {
                         with(scope) {
                             Modifier.animateEnterExit(
-                                exit = slideOutVertically(tween(600)) { it * 2 } + fadeOut(tween(400))
+                                exit = fadeOut(tween(200))
                             )
                         }
                     } else Modifier)
@@ -177,7 +178,10 @@ fun LandingScreen(
                             isExpanded = startExpanded,
                             onExpandToggle = { startExpanded = !startExpanded },
                             selectedSize = selectedSize,
-                            onSizeSelected = { selectedSize = it },
+                            onSizeSelected = { 
+                                selectedSize = it
+                                onSizeSave(it)
+                            },
                             selectedDifficulty = selectedDifficulty,
                             onDifficultyChange = { selectedDifficulty = it },
                             onStart = { 
@@ -189,8 +193,8 @@ fun LandingScreen(
                         
                         AnimatedVisibility(
                             visible = !startExpanded,
-                            enter = fadeIn(tween(400)) + expandVertically(tween(400)),
-                            exit = fadeOut(tween(300)) + shrinkVertically(tween(500))
+                            enter = fadeIn(tween(200)),
+                            exit = fadeOut(tween(150))
                         ) {
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
@@ -224,7 +228,7 @@ fun LandingScreen(
                     .then(if (scope != null) {
                         with(scope) {
                             Modifier.animateEnterExit(
-                                exit = slideOutVertically(tween(600)) { it * 4 } + fadeOut(tween(400))
+                                exit = fadeOut(tween(200))
                             )
                         }
                     } else Modifier)

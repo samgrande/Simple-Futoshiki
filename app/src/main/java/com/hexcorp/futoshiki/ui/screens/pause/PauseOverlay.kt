@@ -42,6 +42,7 @@ fun PauseOverlay(
     onMainMenu: () -> Unit,
     onNewGame: (Int, Difficulty) -> Unit,
     onTheming: () -> Unit,
+    onSizeSave: (Int) -> Unit = {},
     korgeManager: com.hexcorp.futoshiki.ui.korge.KorGEGameManager,
     isDark: Boolean,
     themeMode: ThemeMode,
@@ -141,10 +142,8 @@ fun PauseOverlay(
                                     slideOutVertically(tween(duration)) { -it / 4 } + fadeOut(tween(400))
                                 )
                         } else {
-                            (slideInVertically(tween(duration)) { -it / 4 } + fadeIn(tween(duration)))
-                                .togetherWith(
-                                    slideOutVertically(tween(duration)) { it / 4 } + fadeOut(tween(400))
-                                )
+                            fadeIn(tween(duration))
+                                .togetherWith(fadeOut(tween(200)))
                         }.using(SizeTransform(clip = false))
                     },
                     label = "pauseContentTransition"
@@ -269,7 +268,10 @@ fun PauseOverlay(
                                     isExpanded = newGameExpanded,
                                     onExpandToggle = { newGameExpanded = !newGameExpanded },
                                     selectedSize = selectedSize,
-                                    onSizeSelected = { selectedSize = it },
+                                    onSizeSelected = { 
+                                        selectedSize = it
+                                        onSizeSave(it)
+                                    },
                                     selectedDifficulty = selectedDifficulty,
                                     onDifficultyChange = { selectedDifficulty = it },
                                     onStart = { 
@@ -284,8 +286,8 @@ fun PauseOverlay(
                                 
                                 AnimatedVisibility(
                                     visible = !newGameExpanded,
-                                    enter = fadeIn(tween(400)) + expandVertically(tween(400)),
-                                    exit = fadeOut(tween(300)) + shrinkVertically(tween(500))
+                                    enter = fadeIn(tween(300)),
+                                    exit = fadeOut(tween(200))
                                 ) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Spacer(Modifier.height(20.dp))

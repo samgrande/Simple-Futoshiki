@@ -78,11 +78,22 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         stopTimer()
         korgeManager.updateAggression(0f)
         korgeManager.resetBoost()
-        // Don't reset introFinished - keeps scene alive
-        // Only reset running state if coming from a previous game
-        if (_state.value.screen == Screen.GAME) {
+        
+        val wasInGame = _state.value.screen == Screen.GAME || _state.value.screen == Screen.PAUSE
+        
+        // Always restart animation when pressing New Game from game/pause/solve
+        // This shows the countdown and restarts the dragon chase
+        if (wasInGame || _state.value.isSolved) {
             korgeManager.resetRunningStarted()
             korgeManager.resetSceneLoaded()
+            korgeManager.introFinished = false
+            korgeManager.resetNinjaPosition()
+            korgeManager.cancelCurrentScene()
+            korgeManager.playRestart()
+            korgeManager.signalGameRestart()
+        } else {
+            // Starting from main menu - signal fresh game start for full countdown
+            korgeManager.signalFreshGameStart()
         }
         _state.update { st ->
             st.copy(
@@ -227,9 +238,9 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun goToMainMenu() {
         stopTimer()
-        korgeManager.resetSceneLoaded()
-        korgeManager.resetRunningStarted()
+        korgeManager.cancelCurrentScene()
         korgeManager.introFinished = false
+        korgeManager.playMenuIdle()
         _state.update { it.copy(previousScreen = it.screen, screen = Screen.LANDING) }
     }
 
@@ -305,6 +316,11 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         prefs.edit().putInt("game_size", newSize).apply()
         _state.update { it.copy(size = newSize) }
         newGame(newSize)
+    }
+
+    fun saveSizePreference(newSize: Int) {
+        prefs.edit().putInt("game_size", newSize).apply()
+        _state.update { it.copy(size = newSize) }
     }
 
     // ── Timer internals ──────────────────────────────────────────────────────

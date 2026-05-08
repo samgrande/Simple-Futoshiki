@@ -23,13 +23,15 @@ import com.hexcorp.futoshiki.ui.theme.accentColor
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import kotlinx.coroutines.delay
 
-private const val DIGIT_DURATION_MS = 1500L
+private const val DIGIT_DURATION_MS = 1000L
 private const val GO_HOLD_MS        = 300L
+private const val MIN_COUNTDOWN_MS  = 2500L // 3 * 700ms
 
 @Composable
 fun CountdownOverlay(
     ninjaRunning: Boolean,
     onDone: () -> Unit,
+    forceFullCountdown: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val accent  = accentColor()
@@ -37,9 +39,11 @@ fun CountdownOverlay(
 
     var label by remember { mutableStateOf("3") }
     var goneDone by remember { mutableStateOf(false) }
+    var countdownStartedTime by remember { mutableLongStateOf(0L) }
 
     LaunchedEffect(Unit) {
         label = "3"
+        countdownStartedTime = System.currentTimeMillis()
         delay(DIGIT_DURATION_MS)
         if (!goneDone) label = "2"
         delay(DIGIT_DURATION_MS)
@@ -48,10 +52,19 @@ fun CountdownOverlay(
 
     LaunchedEffect(ninjaRunning) {
         if (ninjaRunning && !goneDone) {
-            goneDone = true
-            label    = "GO!"
-            delay(GO_HOLD_MS)
-            onDone()
+            // If forceFullCountdown is true, only show GO after minimum countdown time
+            if (forceFullCountdown) {
+                val elapsed = System.currentTimeMillis() - countdownStartedTime
+                if (elapsed < MIN_COUNTDOWN_MS) {
+                    delay(MIN_COUNTDOWN_MS - elapsed)
+                }
+            }
+            if (!goneDone) {
+                goneDone = true
+                label    = "GO!"
+                delay(GO_HOLD_MS)
+                onDone()
+            }
         }
     }
 

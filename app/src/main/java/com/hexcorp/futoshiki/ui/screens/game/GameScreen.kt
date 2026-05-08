@@ -63,14 +63,44 @@ fun GameScreen(
     // Countdown: observe the ninja signal
     val ninjaRunning by viewModel.korgeManager.runningStarted.collectAsStateWithLifecycle()
     val sceneLoaded by viewModel.korgeManager.sceneLoaded.collectAsStateWithLifecycle()
+    val showCountdownTrigger by viewModel.korgeManager.showCountdownOnResume.collectAsStateWithLifecycle()
+    val freshGameStart by viewModel.korgeManager.freshGameStart.collectAsStateWithLifecycle()
 
+    // Track previous gameKey to detect actual new games
+    var previousGameKey by remember { mutableIntStateOf(0) }
+    
     // showCountdown is a local var — true for the very first game intro, false for repeated games.
     // It only flips false via onDone (called after GO! + brief hold in CountdownOverlay).
-    var showCountdown by remember { mutableStateOf(!viewModel.korgeManager.introFinished) }
+    var showCountdown by remember { mutableStateOf(false) }
 
-    // When gameKey changes (newGame) and the intro is NOT being skipped, re-show the countdown
+    // Track if countdown has actually started (for fresh game to ensure 3-2-1 plays)
+    var countdownStarted by remember { mutableStateOf(false) }
+
+    // Track if this is a fresh game from main menu (for full countdown)
+    var isFreshGame by remember { mutableStateOf(false) }
+
+    // When gameKey changes (newGame), show countdown only for actual game starts
     LaunchedEffect(gameKey) {
-        showCountdown = !viewModel.korgeManager.introFinished
+        // Only show countdown if gameKey actually changed (new game started)
+        // This prevents countdown from showing on pause/resume
+        if (gameKey != previousGameKey) {
+            if (freshGameStart || showCountdownTrigger) {
+                countdownStarted = false
+                // Both fresh game from main menu and new game from pause get full countdown
+                isFreshGame = true
+                showCountdown = true
+                viewModel.korgeManager.clearFreshGameStart()
+                viewModel.korgeManager.clearShowCountdown()
+            }
+        }
+        previousGameKey = gameKey
+    }
+
+    // For fresh game starts, we need to track when countdown actually starts
+    LaunchedEffect(showCountdown) {
+        if (showCountdown && !countdownStarted) {
+            countdownStarted = true
+        }
     }
 
     // Hold the timer while the countdown overlay is active
@@ -450,6 +480,7 @@ fun GameScreen(
             CountdownOverlay(
                 ninjaRunning = ninjaRunning,
                 onDone       = { showCountdown = false },
+                forceFullCountdown = isFreshGame,
                 modifier     = Modifier.fillMaxSize()
             )
         }
@@ -542,6 +573,7 @@ fun GameScreen(
                 onMainMenu = { viewModel.goToMainMenu() },
                 onNewGame = { s, d -> viewModel.newGame(s, d) },
                 onTheming = { viewModel.goToThemingFromGame() },
+                onSizeSave = { viewModel.saveSizePreference(it) },
                 korgeManager = viewModel.korgeManager,
                 isDark = isDark,
                 themeMode = state.themeMode,

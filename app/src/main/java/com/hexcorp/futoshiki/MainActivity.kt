@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.ripple
@@ -132,12 +133,17 @@ fun FutoshikiApp(
             val ninjaH = if (isSmallScreen) 80.dp else 120.dp
             val korgeHeight = headerH + 16.dp + ninjaH
 
-            // 1. Shared KorGE rendered once at the top
+            // 1. Shared KorGE rendered once at the top (hidden but kept for fast theme exit)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(korgeHeight)
-                    .zIndex(5f) // Increased zIndex to be above screen backgrounds
+                    .height(if (state.screen == Screen.THEMING) 0.dp else korgeHeight)
+                    .zIndex(5f)
+                    .then(
+                        if (state.screen == Screen.THEMING)
+                            Modifier.clickable(enabled = false) { }
+                        else Modifier
+                    )
             ) {
                 KorGEView(
                     manager = vm.korgeManager,
@@ -184,7 +190,8 @@ fun FutoshikiApp(
                                 korgeManager = vm.korgeManager,
                                 isSkyboxDark = isSkyboxDark,
                                 modifier = Modifier.fillMaxSize(),
-                                scope = this@AnimatedContent
+                                scope = this@AnimatedContent,
+                                onSizeSave = { vm.saveSizePreference(it) }
                             )
                         }
 

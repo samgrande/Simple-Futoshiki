@@ -1,43 +1,33 @@
 package com.hexcorp.futoshiki.ui.components.shared
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
+import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
-import com.hexcorp.futoshiki.ui.theme.Midorima
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.ripple
+import androidx.compose.foundation.indication
 
 private val ShadowDepth = 4.dp
 
@@ -55,9 +45,9 @@ fun BigButton(
     isDark: Boolean = LocalIsDark.current,
     height: androidx.compose.ui.unit.Dp = 64.dp,
     monochrome: Boolean = false,
+    rippleColor: Color? = null,
     modifier: Modifier = Modifier
 ) {
-
     val haptic = LocalHapticFeedback.current
 
     // Determine colors based on design specifications
@@ -108,45 +98,31 @@ fun BigButton(
         }
     }
 
+    val fColor by androidx.compose.animation.animateColorAsState(faceColor as Color, tween(300), label = "fColor")
     val sColor by androidx.compose.animation.animateColorAsState(shadowColor as Color, tween(300), label = "sColor")
     val tColor by androidx.compose.animation.animateColorAsState(textColor as Color, tween(300), label = "tColor")
     val stColor by androidx.compose.animation.animateColorAsState(strokeColor as Color, tween(300), label = "stColor")
 
-    val targetFaceColor = faceColor as Color
-    var oldFaceColor by remember { mutableStateOf(targetFaceColor) }
-    var currentFaceColor by remember { mutableStateOf(targetFaceColor) }
-    val revealAnim = remember { androidx.compose.animation.core.Animatable(1f) }
-
-    androidx.compose.runtime.LaunchedEffect(targetFaceColor) {
-        if (currentFaceColor != targetFaceColor) {
-            oldFaceColor = currentFaceColor
-            currentFaceColor = targetFaceColor
-            revealAnim.snapTo(0f)
-            revealAnim.animateTo(1f, animationSpec = tween(400, easing = androidx.compose.animation.core.FastOutSlowInEasing))
-        }
+    // Use custom ripple color if provided, otherwise use default
+    val indication = if (rippleColor != null) {
+        ripple(bounded = true, color = rippleColor)
+    } else {
+        null
     }
-
-    @Suppress("DEPRECATION")
-    val customRipple = androidx.compose.material3.ripple(color = Color.White)
-    val currentIndication = androidx.compose.foundation.LocalIndication.current
-    val btnIndication = if ((isDark && !primary && !inverted) || (!isDark && inverted)) customRipple else currentIndication
 
     Box(
         modifier = modifier
             .fillMaxWidth(0.9f)
             .height(height)
-            .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-            .drawBehind {
-                drawRect(oldFaceColor)
-                // No ripple on KorGE - just solid color
-            }
+            .clip(RoundedCornerShape(12.dp))
+            .background(fColor)
             .then(
-                if (bordered) Modifier.border(2.dp, stColor, androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                if (bordered) Modifier.border(2.dp, stColor, RoundedCornerShape(12.dp))
                 else Modifier
             )
             .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = btnIndication,
+                indication = indication,
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onClick()
@@ -168,9 +144,9 @@ fun BigButton(
             Text(
                 text = text,
                 color = tColor,
-                fontSize = 18.sp, // Slightly increased for pixel font clarity
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Normal,
-                fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
+                fontFamily = PixelF,
                 letterSpacing = 1.sp
             )
         }

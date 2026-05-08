@@ -157,4 +157,19 @@ class NinjaEntity(
     }
 
     fun getSpeedMultiplier(): Float = speedMultiplier
+
+    fun resetForRestart() {
+        // Don't reset x/y - let the intro sequence handle positioning
+        isIntro = true
+        autoRun = false
+        velocityY = 0.0f
+        velocityX = 0.0f
+        currentState = NinjaAnimationState.STAND
+        currentFrame = 0
+        animationTimer = 0.0f
+        sprite.scaleX = 1.0
+        // Reset to stand sheet
+        val firstFrame = standSheet.slice(RectangleInt(0, 0, frameWidth, frameHeight))
+        sprite.bitmap = firstFrame
+    }
 }

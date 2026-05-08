@@ -197,4 +197,27 @@ class DragonEntity(
     fun setDistanceMultiplier(multiplier: Float) {
         distanceMultiplier = multiplier
     }
+
+    fun resetForRestart() {
+        timePassed = 0.0f
+        pulseSpeed = 0.5f
+        hoverBreadth = 150.0f
+        verticalSwing = 80.0f
+        velocityX = 0.0f
+        velocityY = 0.0f
+        isChasing = false
+        chaseTime = 0.0f
+        currentAggression = 0.0f
+        distanceMultiplier = 1.0f
+        stiffness = 18.0f
+        damping = 10.0f
+        currentFrame = 0
+        animationTimer = 0.0f
+        visible = false
+        x = 0.0
+        y = 0.0
+        // Reset animation to frame 0
+        val firstFrame = spriteSheet.slice(RectangleInt(0, 0, frameWidth, frameHeight))
+        sprite.bitmap = firstFrame
+    }
 }

@@ -24,6 +24,9 @@ class GameWorld(
     private var currentNinjaScreenX = 500.0
     private var cameraStiffness = 0.2
 
+    private var currentAnimationJob: Job? = null
+    private val animationScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
     suspend fun setupWorld() {
         // 0. Setup Sky Background Color based on theme
         val skyColor = if (isSkyboxDark) {
@@ -178,12 +181,13 @@ class GameWorld(
 
     fun startGame(skipIntro: Boolean = false) {
         cameraStiffness = 0.2
+        currentAnimationJob?.cancel()
         if (skipIntro) {
             if (::ninja.isInitialized) ninja.skipIntro()
             if (::dragon.isInitialized) dragon.skipIntro(ninja)
         } else {
             // Run intros in parallel
-            GlobalScope.launch {
+            currentAnimationJob = animationScope.launch {
                 if (::ninja.isInitialized) launch { ninja.runIntroSequence(manager) }
                 if (::dragon.isInitialized) launch { dragon.runCinematicIntro(manager) }
             }
@@ -202,15 +206,35 @@ class GameWorld(
         }
     }
 
-    fun runWinSequence(immediate: Boolean = false) {
+    fun restartGame() {
+        currentAnimationJob?.cancel()
+        cameraStiffness = 0.2
+        targetNinjaScreenX = 500.0
+        currentNinjaScreenX = 500.0
+        if (::ninja.isInitialized) {
+            ninja.x = 100.0
+            ninja.resetForRestart()
+        }
         if (::dragon.isInitialized) {
-            GlobalScope.launch {
+            dragon.resetForRestart()
+        }
+        // Run the full intro sequence
+        currentAnimationJob = animationScope.launch {
+            if (::ninja.isInitialized) launch { ninja.runIntroSequence(manager) }
+            if (::dragon.isInitialized) launch { dragon.runCinematicIntro(manager) }
+        }
+    }
+
+    fun runWinSequence(immediate: Boolean = false) {
+        currentAnimationJob?.cancel()
+        if (::dragon.isInitialized) {
+            currentAnimationJob = animationScope.launch {
                 dragon.runWinFlyAway()
             }
         }
         
         // Ninja keeps running for a bit while we center him slowly (unless immediate)
-        GlobalScope.launch {
+        animationScope.launch {
             // 1. Slow down the camera centering speed temporarily for a "cinematic" feel
             cameraStiffness = if (immediate) 0.4 else 0.05
             targetNinjaScreenX = 500.0
@@ -226,8 +250,9 @@ class GameWorld(
     }
 
     fun runSolveSequence() {
+        currentAnimationJob?.cancel()
         if (::dragon.isInitialized) {
-            GlobalScope.launch {
+            currentAnimationJob = animationScope.launch {
                 dragon.runWinFlyAway()
             }
         }

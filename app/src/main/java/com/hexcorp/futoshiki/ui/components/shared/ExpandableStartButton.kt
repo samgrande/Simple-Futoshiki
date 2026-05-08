@@ -17,13 +17,19 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.ClipOp
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.lerp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -55,6 +61,7 @@ fun ExpandableStartButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val haptics = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
     
     val normalBg = if (isDark) Color.White else Color.Black
     val expandedBg = if (isDark) Color(0xFF0B0B0B) else Color(0xFFF5F2F2)
@@ -62,29 +69,49 @@ fun ExpandableStartButton(
     val normalText = if (isDark) Color.Black else Color.White
     val expandedText = if (isDark) Color.White else Color.Black
 
+    // Use expanded background when expanded, normal when collapsed
+    val currentBg by animateColorAsState(
+        targetValue = if (isExpanded) expandedBg else normalBg,
+        animationSpec = tween(300),
+        label = "bgColor"
+    )
+
+    // Separate ripple for inside fill (excluding border)
+    var showRipple by remember { mutableStateOf(false) }
+    
     val rippleProgress by animateFloatAsState(
-        targetValue = if (isPressed || isExpanded) 1f else 0f,
-        animationSpec = if (isPressed || isExpanded) {
-            tween(durationMillis = 500, delayMillis = 400, easing = androidx.compose.animation.core.EaseOutCubic)
+        targetValue = if (showRipple && !isExpanded) 1f else 0f,
+        animationSpec = if (showRipple && !isExpanded) {
+            tween(durationMillis = 250)
         } else {
-            tween(durationMillis = 400, easing = androidx.compose.animation.core.EaseInCubic)
+            tween(durationMillis = 200)
         },
         label = "rippleProgress"
     )
 
-    val currentTextColor = lerp(normalText, expandedText, rippleProgress)
-    val currentStrokeColor = lerp(
-        normalBg.copy(alpha = 0.5f), 
-        if (isDark) Color.White else Color.Black, 
-        rippleProgress
+    // Text color inverts when ripple shows (matches inverted background)
+    val currentTextColor by animateColorAsState(
+        targetValue = when {
+            showRipple && !isExpanded -> if (isDark) Color.White else Color.Black
+            isDark -> Color.Black
+            else -> Color.White
+        },
+        animationSpec = tween(200),
+        label = "textColor"
     )
+
+    // Border color stays constant (no ripple on border)
+    val currentStrokeColor = if (isDark) Color.White else Color.Black
+    
+    val borderWidth = 2f
+    val cornerRadius = 14f
 
     val baseModifier = modifier
         .fillMaxWidth(if (isExpanded) 1.08f else 0.9f)
         .animateContentSize(
             animationSpec = spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = 300f // Slightly softer than MediumLow (400f)
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = 700f
             ),
             alignment = Alignment.TopCenter
         )
@@ -95,8 +122,45 @@ fun ExpandableStartButton(
             shape = RoundedCornerShape(14.dp)
         )
         .drawBehind {
-            drawRect(normalBg)
-            // No ripple - avoids covering KorGE view
+            val width = size.width
+            val height = size.height
+            
+            // Draw background
+            drawRect(currentBg)
+            
+            // Draw ripple inside (clip to inner area, excluding border)
+            if (rippleProgress > 0f) {
+                val innerPath = Path().apply {
+                    addRoundRect(
+                        androidx.compose.ui.geometry.RoundRect(
+                            left = borderWidth,
+                            top = borderWidth,
+                            right = width - borderWidth,
+                            bottom = height - borderWidth,
+                            radiusX = cornerRadius - borderWidth,
+                            radiusY = cornerRadius - borderWidth
+                        )
+                    )
+                }
+                
+                clipPath(innerPath, clipOp = ClipOp.Intersect) {
+                    val maxRadius = kotlin.math.sqrt(width * width + height * height)
+                    val currentRadius = maxRadius * rippleProgress
+                    
+                    // Ripple color matches menu background (pure dark/pure light)
+                    val rippleColor = if (isDark) Color(0xFF0B0B0B) else Color(0xFFF5F2F2)
+                    
+                    // Always start ripple from the middle of the button
+                    val rippleCenterX = width / 2
+                    val rippleCenterY = height / 2
+                    
+                    drawCircle(
+                        color = rippleColor.copy(alpha = 1f),
+                        radius = currentRadius,
+                        center = Offset(rippleCenterX, rippleCenterY)
+                    )
+                }
+            }
         }
 
     val finalModifier = if (!isExpanded) {
@@ -109,7 +173,14 @@ fun ExpandableStartButton(
             },
             onLongClick = {
                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                onExpandToggle()
+                // Ripple first, then expand after ripple fills
+                scope.launch {
+                    showRipple = true
+                    delay(250) // Wait for ripple to fill
+                    onExpandToggle()
+                    delay(300) // Wait for expansion to start
+                    showRipple = false
+                }
             }
         )
     } else {
@@ -233,7 +304,7 @@ fun ExpandableStartButton(
                 ) {
                     Text(
                         text = "SAVE",
-                        color = currentTextColor,
+                        color = if (isDark) Color.White else Color.Black,
                         fontSize = 16.sp,
                         fontFamily = PixelF,
                         fontWeight = FontWeight.Medium,
