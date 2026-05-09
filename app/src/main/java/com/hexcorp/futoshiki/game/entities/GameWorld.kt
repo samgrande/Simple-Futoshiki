@@ -19,6 +19,15 @@ class GameWorld(
     private lateinit var ninja: NinjaEntity
     private lateinit var dragon: DragonEntity
     private val layers = mutableListOf<ParallaxLayer>()
+
+    lateinit var sitSprite: Bitmap
+        private set
+    lateinit var s2sitSprite: Bitmap
+        private set
+    lateinit var s2readSprite: Bitmap
+        private set
+    lateinit var readSprite: Bitmap
+        private set
     private var floorY = 410.0
     private var targetNinjaScreenX = 500.0
     private var currentNinjaScreenX = 500.0
@@ -146,8 +155,12 @@ class GameWorld(
             scale = 1.6
         }
         addChild(dragon)
-        
 
+        // 4. Load additional character sprites
+        sitSprite = assets.loadImage("sprites/sit.webp")
+        s2sitSprite = assets.loadImage("sprites/s2sit.webp")
+        s2readSprite = assets.loadImage("sprites/s2read.webp")
+        readSprite = assets.loadImage("sprites/read.webp")
     }
 
     fun updateTheme(isSkyboxDark: Boolean, isAppDark: Boolean, skyColorHex: String) {
@@ -273,6 +286,13 @@ class GameWorld(
         }
         if (::ninja.isInitialized) {
             ninja.triggerWin() // Instantly go to stand
+            // After stopping, switch to sit sprite after a short delay
+            animationScope.launch {
+                delay(500)
+                if (::sitSprite.isInitialized) {
+                    ninja.swapToSitSprite(sitSprite)
+                }
+            }
         }
         cameraStiffness = 1.0 // Snap to center
         targetNinjaScreenX = 500.0
@@ -296,6 +316,30 @@ class GameWorld(
         // If we just jumped a large distance (e.g. initial setup), snap it
         if (kotlin.math.abs(targetNinjaScreenX - currentNinjaScreenX) > 200) {
             currentNinjaScreenX = targetNinjaScreenX
+        }
+    }
+
+    fun swapNinjaToReadSprite() {
+        if (::ninja.isInitialized && ::readSprite.isInitialized) {
+            ninja.swapToReadSprite(readSprite)
+        }
+    }
+
+    fun revertNinjaToStandSprite() {
+        if (::ninja.isInitialized) {
+            ninja.revertToStandSprite()
+        }
+    }
+
+    fun swapNinjaToSitSprite() {
+        if (::ninja.isInitialized && ::sitSprite.isInitialized) {
+            ninja.swapToSitSprite(sitSprite)
+        }
+    }
+
+    fun revertNinjaToRunSprite() {
+        if (::ninja.isInitialized) {
+            ninja.revertToRunSprite()
         }
     }
 

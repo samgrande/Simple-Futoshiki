@@ -23,6 +23,13 @@ class NinjaEntity(
     private var velocityX = 0.0f
     private var speedMultiplier = 1.0f
 
+    private var originalStandSheet: Bitmap = standSheet
+    private var originalRunSheet: Bitmap = runSheet
+    private var isStandSwapped = false
+    private var isRunSwapped = false
+    private var swappedStandSprite: Bitmap? = null
+    private var swappedRunSprite: Bitmap? = null
+
     private val GRAVITY = 0.5f
     private val BASE_SPEED = 250.0f
     private val JUMP_VELOCITY = -370.0f
@@ -125,8 +132,8 @@ class NinjaEntity(
             
             // Choose the correct sheet based on state
             val currentSheet = when (currentState) {
-                NinjaAnimationState.STAND -> standSheet
-                NinjaAnimationState.RUNNING -> runSheet
+                NinjaAnimationState.STAND -> if (isStandSwapped && swappedStandSprite != null) swappedStandSprite!! else standSheet
+                NinjaAnimationState.RUNNING -> if (isRunSwapped && swappedRunSprite != null) swappedRunSprite!! else runSheet
                 NinjaAnimationState.JUMPING -> jumpSheet
             }
 
@@ -172,5 +179,53 @@ class NinjaEntity(
         // Reset to stand sheet
         val firstFrame = standSheet.slice(RectangleInt(0, 0, frameWidth, frameHeight))
         sprite.bitmap = firstFrame
+        // Reset any sprite swaps
+        isStandSwapped = false
+        isRunSwapped = false
+        swappedStandSprite = null
+        swappedRunSprite = null
+    }
+
+    fun swapToReadSprite(readSprite: Bitmap) {
+        if (!isStandSwapped) {
+            originalStandSheet = standSheet
+            isStandSwapped = true
+            swappedStandSprite = readSprite
+        } else {
+            swappedStandSprite = readSprite
+        }
+        updateCurrentStandSheet(readSprite)
+    }
+
+    fun revertToStandSprite() {
+        if (isStandSwapped) {
+            updateCurrentStandSheet(originalStandSheet)
+            isStandSwapped = false
+            swappedStandSprite = null
+        }
+    }
+
+    fun swapToSitSprite(sitSprite: Bitmap) {
+        if (!isStandSwapped) {
+            originalStandSheet = standSheet
+            isStandSwapped = true
+            swappedStandSprite = sitSprite
+        } else {
+            swappedStandSprite = sitSprite
+        }
+        // Immediately update the sprite since we're in STAND state
+        updateCurrentStandSheet(sitSprite)
+    }
+
+    fun revertToRunSprite() {
+        isStandSwapped = false
+        swappedStandSprite = null
+    }
+
+    private fun updateCurrentStandSheet(newStand: Bitmap) {
+        if (currentState == NinjaAnimationState.STAND) {
+            val firstFrame = newStand.slice(RectangleInt(0, 0, frameWidth, frameHeight))
+            sprite.bitmap = firstFrame
+        }
     }
 }

@@ -72,7 +72,10 @@ fun LandingScreen(
 
     BackHandler(enabled = true) {
         when {
-            showHelp -> showHelp = false
+            showHelp -> {
+                korgeManager.gameWorld?.revertNinjaToStandSprite()
+                showHelp = false
+            }
             showConfirmQuit -> showConfirmQuit = false
             startExpanded -> {
                 selectedSize = currentSize
@@ -185,8 +188,14 @@ fun LandingScreen(
                         },
                         onTheming = onTheming,
                         onQuit = onQuit,
-                        onShowHelp = { showHelp = true },
-                        onHideHelp = { showHelp = false },
+                        onShowHelp = {
+                            korgeManager.gameWorld?.swapNinjaToReadSprite()
+                            showHelp = true
+                        },
+                        onHideHelp = {
+                            korgeManager.gameWorld?.revertNinjaToStandSprite()
+                            showHelp = false
+                        },
                         onHideConfirmQuit = { showConfirmQuit = false }
                     )
                 }

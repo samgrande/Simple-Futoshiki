@@ -141,6 +141,13 @@ fun GameScreen(
         }
     }
 
+    // Revert sit sprite when exiting solve mode
+    LaunchedEffect(isSolveMode) {
+        if (!isSolveMode && viewModel.korgeManager.gameWorld != null) {
+            viewModel.korgeManager.gameWorld?.revertNinjaToRunSprite()
+        }
+    }
+
     val showPauseOverlay = state.screen == Screen.PAUSE || keepPauseOverlayVisible
     val showScreenShield = state.screen != Screen.GAME || keepPauseOverlayVisible
 
