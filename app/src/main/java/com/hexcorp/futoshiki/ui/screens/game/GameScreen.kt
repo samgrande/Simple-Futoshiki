@@ -58,8 +58,6 @@ fun GameScreen(
     val pillCenter = Offset(state.pillCenterX, state.pillCenterY)
     val pillOffset = Offset(state.pillOffsetX, state.pillOffsetY)
     var containerCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
-    var forceQuitInPause by rememberSaveable { mutableStateOf(false) }
-
     // Countdown: observe the ninja signal
     val ninjaRunning by viewModel.korgeManager.runningStarted.collectAsStateWithLifecycle()
     val sceneLoaded by viewModel.korgeManager.sceneLoaded.collectAsStateWithLifecycle()
@@ -75,6 +73,7 @@ fun GameScreen(
 
     // Track if countdown has actually started (for fresh game to ensure 3-2-1 plays)
     var countdownStarted by remember { mutableStateOf(false) }
+    var countdownFinished by remember { mutableStateOf(false) }
 
     // Track if this is a fresh game from main menu (for full countdown)
     var isFreshGame by remember { mutableStateOf(false) }
@@ -113,6 +112,15 @@ fun GameScreen(
         }
     }
 
+    // Block back button for 1 second after countdown ends
+    LaunchedEffect(countdownFinished) {
+        if (countdownFinished) {
+            delay(1000)
+            showCountdown = false
+            countdownFinished = false
+        }
+    }
+
     val isPaused = state.screen == Screen.PAUSE
     val hideGameContent = state.screen != Screen.GAME
 
@@ -137,14 +145,14 @@ fun GameScreen(
     val showScreenShield = state.screen != Screen.GAME || keepPauseOverlayVisible
 
 
-    val canGoBack = !won || state.isSolved || won // Always true if won
+    val canGoBack = !won || state.isSolved || won || state.defeated
     BackHandler(enabled = canGoBack) {
         if (showCountdown) return@BackHandler
         if (isPaused) {
-            forceQuitInPause = false
+            viewModel.setForceQuitInPause(false)
             viewModel.resume()
-        } else if (state.isSolved || won) {
-            forceQuitInPause = true
+        } else if (state.isSolved || won || state.defeated) {
+            viewModel.setForceQuitInPause(true)
             viewModel.pause()
         } else {
             viewModel.pause()
@@ -152,15 +160,23 @@ fun GameScreen(
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
+    val wonRef = rememberUpdatedState(won)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_PAUSE) {
+            if (event == Lifecycle.Event.ON_PAUSE && !wonRef.value) {
                 viewModel.pause()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    // When won, ensure we're not stuck in pause
+    LaunchedEffect(won) {
+        if (won && state.screen == Screen.PAUSE) {
+            viewModel.resume()
         }
     }
 
@@ -281,7 +297,7 @@ fun GameScreen(
         val isDark = LocalIsDark.current
 
         val gridAlpha by animateFloatAsState(
-            targetValue = if (hideGameContent || showCountdown || newGameExpanded) 0f else 1f,
+            targetValue = if (hideGameContent || showCountdown || newGameExpanded || state.showDefeat) 0f else 1f,
             animationSpec = spring(
                 dampingRatio = Spring.DampingRatioLowBouncy,
                 stiffness = Spring.StiffnessLow
@@ -323,7 +339,6 @@ fun GameScreen(
                 Spacer(Modifier.height(gridTopSpace)) // Lowered the grid
 
                 if (state.showCongrats) {
-                    // Win state: replaces the grid and numpad with CongratsView
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -332,6 +347,20 @@ fun GameScreen(
                     ) {
                         CongratsView(
                             timerSeconds = state.timerSeconds,
+                            onPlayAgain = { viewModel.newGame(size) },
+                            isExpanded = newGameExpanded,
+                            korgeView = viewModel.korgeManager.korgeAndroidView,
+                            modifier = Modifier.padding(horizontal = hPad)
+                        )
+                    }
+                } else if (state.showDefeat) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        DefeatView(
                             onPlayAgain = { viewModel.newGame(size) },
                             isExpanded = newGameExpanded,
                             modifier = Modifier.padding(horizontal = hPad)
@@ -445,7 +474,7 @@ fun GameScreen(
                 }
             ) {
                 GameFooter(
-                    isSolved      = state.isSolved || state.won || state.showCongrats,
+                    isSolved      = state.isSolved || state.won || state.showCongrats || state.showDefeat,
                     showCountdown = showCountdown,
                     onClearAll    = { viewModel.clearAll() },
                     onSolve       = { viewModel.solve() },
@@ -460,7 +489,7 @@ fun GameScreen(
                     },
                     onTimerLongClick = {
                         if (!won) {
-                            forceQuitInPause = true
+                            viewModel.setForceQuitInPause(true)
                             viewModel.pause()
                         }
                     },
@@ -493,7 +522,7 @@ fun GameScreen(
         ) {
             CountdownOverlay(
                 ninjaRunning = ninjaRunning,
-                onDone       = { showCountdown = false },
+                onDone       = { countdownFinished = true },
                 forceFullCountdown = isFreshGame,
                 modifier     = Modifier.fillMaxSize()
             )
@@ -509,7 +538,7 @@ fun GameScreen(
                     .align(Alignment.TopCenter)
                     .zIndex(3f)
             ) {
-                if (!state.isSolved) {
+                if (!state.isSolved && !state.showDefeat) {
                     val isCustomMonoNight = state.themeMode == com.hexcorp.futoshiki.ui.theme.ThemeMode.CUSTOM && !state.customMonoAccent && state.customDayNight
                     CompositionLocalProvider(LocalIsDark provides if (isCustomMonoNight) false else LocalIsDark.current) {
                         GameHeader(
@@ -524,7 +553,7 @@ fun GameScreen(
                             },
                             onTimerLongClick = {
                                 if (!won) {
-                                    forceQuitInPause = true
+                                    viewModel.setForceQuitInPause(true)
                                     viewModel.pause()
                                 }
                             },
@@ -581,8 +610,10 @@ fun GameScreen(
                 currentSize = size,
                 currentDifficulty = state.difficulty,
                 onResume = {
-                    forceQuitInPause = false
+                    viewModel.setForceQuitInPause(false)
                     viewModel.setShowConfirmQuit(false)
+                    viewModel.setShowConfirmNewGame(false)
+                    viewModel.setShowHelp(false)
                     viewModel.resume()
                 },
                 onMainMenu = { viewModel.goToMainMenu() },
@@ -595,9 +626,10 @@ fun GameScreen(
                 customMonoAccent = state.customMonoAccent,
                 customDayNight = state.customDayNight,
                 modifier = Modifier.zIndex(10f),
-                startWithQuitConfirm = forceQuitInPause,
+                startWithQuitConfirm = state.forceQuitInPause,
                 onConfirmQuitChange = { show -> viewModel.setShowConfirmQuit(show) },
-                onConfirmNewGameChange = { show -> viewModel.setShowConfirmNewGame(show) }
+                onConfirmNewGameChange = { show -> viewModel.setShowConfirmNewGame(show) },
+                onShowHelpChange = { show -> viewModel.setShowHelp(show) }
             )
         }
 

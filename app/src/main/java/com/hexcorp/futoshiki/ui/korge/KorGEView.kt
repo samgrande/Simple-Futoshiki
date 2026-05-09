@@ -34,6 +34,7 @@ fun KorGEView(
     AndroidView(
         factory = { context ->
             KorgeAndroidView(context).also { view ->
+                manager.korgeAndroidView = view
                 view.loadModule(Korge(
                     backgroundColor = Colors.TRANSPARENT,
                     virtualSize = Size(1000, 500),

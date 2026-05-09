@@ -196,11 +196,15 @@ class GameWorld(
     }
 
     fun startMenuIdle() {
-        cameraStiffness = 1.0 // Immediate snap to position
+        manager.updateNinjaScreenX(500f)
+        cameraStiffness = 1.0
         targetNinjaScreenX = 500.0
         currentNinjaScreenX = 500.0
         if (::ninja.isInitialized) {
-            ninja.triggerWin() // Stand still
+            ninja.visible = true
+            ninja.x = 500.0
+            ninja.y = floorY + 95.0
+            ninja.triggerWin()
         }
         if (::dragon.isInitialized) {
             dragon.setIdle()
@@ -247,6 +251,16 @@ class GameWorld(
                 
             // 3. Now stop him and make him stand
             if (::ninja.isInitialized) ninja.triggerWin()
+        }
+    }
+
+    fun runDefeatSequence() {
+        currentAnimationJob?.cancel()
+        if (::ninja.isInitialized) {
+            ninja.visible = false
+        }
+        if (::dragon.isInitialized) {
+            dragon.visible = false
         }
     }
 

@@ -178,7 +178,7 @@ fun FutoshikiApp(
                 // Pause overlay - dim + PAUSED text on top of korge
                 if (state.screen == Screen.PAUSE) {
                     // Use dim overlay normally, solid background for confirm quit/new game screens
-                    val useSolidBg = state.showConfirmQuit || state.showConfirmNewGame
+                    val useSolidBg = state.showConfirmQuit || state.showConfirmNewGame || state.showHelp
                     val bgColor = if (useSolidBg) FutoshikiColors.background() else if (isDark) Color.Black.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.5f)
                     val textColor = if (isDark) Color.White else Color.Black
                     Box(
@@ -228,6 +228,11 @@ fun FutoshikiApp(
                 transitionSpec = {
                     if (targetState == Screen.GAME && initialState == Screen.LANDING) {
                         // Instant switch for seamless korge, content handles its own entrance
+                        fadeIn(tween(0)) togetherWith fadeOut(tween(0))
+                    } else if ((targetState == Screen.GAME && initialState == Screen.PAUSE) ||
+                               (targetState == Screen.PAUSE && initialState == Screen.GAME)) {
+                        // Instant switch between game/pause — both use GameScreen composable
+                        // PauseOverlay handles its own animation internally
                         fadeIn(tween(0)) togetherWith fadeOut(tween(0))
                     } else if (targetState == Screen.THEMING || initialState == Screen.THEMING) {
                         fadeIn(tween(500, easing = EaseInOutQuart)) togetherWith 

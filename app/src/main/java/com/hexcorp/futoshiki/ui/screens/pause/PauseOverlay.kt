@@ -51,7 +51,8 @@ fun PauseOverlay(
     modifier: Modifier = Modifier,
     startWithQuitConfirm: Boolean = false,
     onConfirmQuitChange: (Boolean) -> Unit = {},
-    onConfirmNewGameChange: (Boolean) -> Unit = {}
+    onConfirmNewGameChange: (Boolean) -> Unit = {},
+    onShowHelpChange: (Boolean) -> Unit = {}
 ) {
     var showHelp by rememberSaveable { mutableStateOf(false) }
     var showConfirmQuit by rememberSaveable { mutableStateOf(startWithQuitConfirm) }
@@ -69,6 +70,11 @@ fun PauseOverlay(
     // Notify parent when entering/exiting confirm new game screen
     LaunchedEffect(showConfirmNewGame) {
         onConfirmNewGameChange(showConfirmNewGame)
+    }
+
+    // Notify parent when entering/exiting help screen
+    LaunchedEffect(showHelp) {
+        onShowHelpChange(showHelp)
     }
 
     BackHandler(enabled = true) {

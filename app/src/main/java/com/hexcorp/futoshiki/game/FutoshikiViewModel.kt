@@ -117,6 +117,8 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
                 won = false,
                 isSolved = false,
                 showCongrats = false,
+                defeated = false,
+                showDefeat = false,
                 timerSeconds = 0,
                 timerRunning = true,
                 gameKey = st.gameKey + 1,
@@ -135,29 +137,36 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     fun inputNumber(num: Int) {
         val st = _state.value
         val (r, c) = st.selected ?: return
-        if (st.won || st.puzzle == null) return
-        if (st.puzzle.initial[r][c] != 0) return   // given cell — locked
+        if (st.won || st.defeated || st.puzzle == null) return
+        if (st.puzzle.initial[r][c] != 0) return
 
         val newGrid = st.grid.mapIndexed { ri, row ->
             if (ri == r) row.toMutableList().also { it[c] = num } else row
         }
         val errors = validateGrid(newGrid, st.size, st.puzzle)
         val won = isWon(newGrid, errors)
-
         val newNinjaScreenX = calculateNinjaScreenX(newGrid, st.size, st.puzzle.solution)
+        val defeated = !won && newNinjaScreenX <= 100f
+
         korgeManager.updateNinjaScreenX(newNinjaScreenX)
 
         _state.update { it.copy(
-            grid = newGrid, 
-            errors = errors, 
-            won = won, 
-            ninjaScreenX = newNinjaScreenX
+            grid = newGrid,
+            errors = errors,
+            won = won,
+            ninjaScreenX = newNinjaScreenX,
+            defeated = defeated,
+            showDefeat = defeated,
+            timerRunning = !won && !defeated
         ) }
 
         if (won) {
-            _state.update { it.copy(won = true, showCongrats = true) }
+            _state.update { it.copy(showCongrats = true) }
             stopTimer()
             korgeManager.gameWorld?.runWinSequence()
+        } else if (defeated) {
+            stopTimer()
+            korgeManager.gameWorld?.runDefeatSequence()
         } else if (errors.isNotEmpty()) {
             korgeManager.updateAggression(0.5f)
         } else {
@@ -167,7 +176,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun clearCell(r: Int, c: Int) {
         val st = _state.value
-        if (st.won || st.puzzle == null) return
+        if (st.won || st.defeated || st.puzzle == null) return
         if (st.puzzle.initial[r][c] != 0) return
         val newGrid = st.grid.mapIndexed { ri, row ->
             if (ri == r) row.toMutableList().also { it[c] = 0 } else row
@@ -185,7 +194,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun clearAll() {
         val st = _state.value
-        if (st.puzzle == null || st.won) return
+        if (st.puzzle == null || st.won || st.defeated) return
         val newGrid = st.puzzle.initial.map { it.toList() }
         _state.update { it.copy(grid = newGrid, errors = emptySet(), selected = null) }
     }
@@ -222,12 +231,20 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         ) }
     }
 
+    fun setForceQuitInPause(show: Boolean) {
+        _state.update { it.copy(forceQuitInPause = show) }
+    }
+
     fun setShowConfirmQuit(show: Boolean) {
         _state.update { it.copy(showConfirmQuit = show) }
     }
 
     fun setShowConfirmNewGame(show: Boolean) {
         _state.update { it.copy(showConfirmNewGame = show) }
+    }
+
+    fun setShowHelp(show: Boolean) {
+        _state.update { it.copy(showHelp = show) }
     }
 
     // ── Countdown timer hold ─────────────────────────────────────────────────

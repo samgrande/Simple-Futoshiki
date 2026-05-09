@@ -11,7 +11,8 @@ enum class GameScene {
     SKIP_INTRO,
     WIN_SEQUENCE,
     SOLVE_SEQUENCE,
-    RESTART
+    RESTART,
+    DEFEAT
 }
 
 data class SceneParams(
@@ -35,6 +36,7 @@ class KorGEGameManager {
     var introFinished = false
     var isPaused = false
     var gameWorld: GameWorld? = null
+    var korgeAndroidView: android.view.View? = null
 
     private val _restartGame = MutableStateFlow(0)
     val restartGame = _restartGame.asStateFlow()
@@ -134,6 +136,7 @@ class KorGEGameManager {
                 GameScene.WIN_SEQUENCE -> gameWorld?.runWinSequence(immediate = params.winImmediate)
                 GameScene.SOLVE_SEQUENCE -> gameWorld?.runSolveSequence()
                 GameScene.RESTART -> gameWorld?.restartGame()
+                GameScene.DEFEAT -> gameWorld?.runDefeatSequence()
             }
         }
     }
@@ -144,4 +147,5 @@ class KorGEGameManager {
     fun playWin(immediate: Boolean = false) = playScene(GameScene.WIN_SEQUENCE, SceneParams(winImmediate = immediate))
     fun playSolve() = playScene(GameScene.SOLVE_SEQUENCE)
     fun playRestart() = playScene(GameScene.RESTART)
+    fun playDefeat() = playScene(GameScene.DEFEAT)
 }

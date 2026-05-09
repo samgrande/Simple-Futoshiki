@@ -159,6 +159,7 @@ class NinjaEntity(
     fun getSpeedMultiplier(): Float = speedMultiplier
 
     fun resetForRestart() {
+        visible = true
         // Don't reset x/y - let the intro sequence handle positioning
         isIntro = true
         autoRun = false
