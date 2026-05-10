@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -87,7 +88,8 @@ fun ThemingScreen(
                 color = FutoshikiColors.onSurface().copy(alpha = 0.6f),
                 letterSpacing = 4.sp,
                 modifier = Modifier
-                    .padding(top = 32.dp)
+                    .statusBarsPadding()
+                    .padding(top = 16.dp)
                     .then(if (scope != null) {
                         with(scope) {
                             Modifier.animateEnterExit(
@@ -100,13 +102,15 @@ fun ThemingScreen(
 
             Spacer(Modifier.weight(0.4f))
 
-            ThemeCarousel(
-                currentIndex = currentIndex,
-                direction = direction,
-                onNavigate = { next -> navigate(next) },
-                useAccentColor = themeMode == ThemeMode.CUSTOM && customMonoAccent,
-                scope = scope
-            )
+            Box(modifier = Modifier.statusBarsPadding()) {
+                ThemeCarousel(
+                    currentIndex = currentIndex,
+                    direction = direction,
+                    onNavigate = { next -> navigate(next) },
+                    useAccentColor = themeMode == ThemeMode.CUSTOM && customMonoAccent,
+                    scope = scope
+                )
+            }
 
             Spacer(Modifier.weight(0.7f))
 

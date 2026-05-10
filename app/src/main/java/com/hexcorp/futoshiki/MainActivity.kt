@@ -111,22 +111,31 @@ fun FutoshikiApp(
         ThemeMode.NIGHT -> false
     }
 
+    var previousScreen by remember { mutableStateOf<Screen?>(null) }
     var landingEntrancePlayed by remember { mutableStateOf(false) }
     var landingEntranceDone by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.screen) {
-        if (state.screen == Screen.LANDING && !landingEntrancePlayed) {
-            landingEntrancePlayed = true
-            delay(1100)
-            landingEntranceDone = true
+        when (state.screen) {
+            Screen.LANDING -> {
+                if (!landingEntrancePlayed) {
+                    landingEntrancePlayed = true
+                    val isInitialLaunch = previousScreen == null
+                    val delayTime = if (isInitialLaunch) 1400L else 300L
+                    delay(delayTime)
+                    landingEntranceDone = true
+                }
+            }
+            else -> {
+                landingEntrancePlayed = false
+                landingEntranceDone = false
+            }
         }
+        previousScreen = state.screen
     }
 
-    val landingKorgeAlpha by animateFloatAsState(
-        targetValue = if (state.screen == Screen.LANDING && !landingEntranceDone) 0f else 1f,
-        animationSpec = tween(800),
-        label = "landingKorgeAlpha"
-    )
+    val showCover = state.screen == Screen.LANDING && !landingEntranceDone
+    val isInitialLaunch = previousScreen == null
 
     var blackRevealProgress by remember { mutableFloatStateOf(0f) }
     val animatedBlackReveal by animateFloatAsState(
@@ -154,18 +163,12 @@ fun FutoshikiApp(
             val ninjaH = if (isSmallScreen) 80.dp else 120.dp
             val korgeHeight = headerH + 16.dp + ninjaH
 
-            // 1. Shared KorGE rendered once at the top (hidden but kept for fast theme exit)
+// 1. Shared KorGE rendered once at the top (hidden but kept for fast theme exit)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(if (state.screen == Screen.THEMING) 0.dp else korgeHeight)
+                    .height(korgeHeight)
                     .zIndex(5f)
-                    .graphicsLayer { alpha = landingKorgeAlpha }
-                    .then(
-                        if (state.screen == Screen.THEMING)
-                            Modifier.clickable(enabled = false) { }
-                        else Modifier
-                    )
             ) {
                 KorGEView(
                     manager = vm.korgeManager,
@@ -175,9 +178,29 @@ fun FutoshikiApp(
                     modifier = Modifier.fillMaxSize()
                 )
 
+                AnimatedVisibility(
+                    visible = showCover,
+                    enter = EnterTransition.None,
+                    exit = fadeOut(animationSpec = tween(600))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(FutoshikiColors.background())
+                    )
+                }
+
+                if (state.screen == Screen.THEMING) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(korgeHeight)
+                            .background(FutoshikiColors.background())
+                    )
+                }
+
                 // Pause overlay - dim + PAUSED text on top of korge
                 if (state.screen == Screen.PAUSE) {
-                    // Use dim overlay normally, solid background for confirm quit/new game screens
                     val useSolidBg = state.showConfirmQuit || state.showConfirmNewGame || state.showHelp
                     val bgColor = if (useSolidBg) FutoshikiColors.background() else if (isDark) Color.Black.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.5f)
                     val textColor = if (isDark) Color.White else Color.Black
@@ -242,7 +265,12 @@ fun FutoshikiApp(
                         fadeOut(tween(180, easing = FastOutSlowInEasing))
                     }
                 },
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (state.screen == Screen.THEMING) Modifier.zIndex(10f)
+                        else Modifier
+                    ),
                 label = "screenTransition",
                 contentKey = { screen -> screen }
             ) { screen ->
@@ -266,7 +294,8 @@ fun FutoshikiApp(
                                 modifier = Modifier.fillMaxSize(),
                                 scope = this@AnimatedContent,
                                 onSizeSave = { vm.saveSizePreference(it) },
-                                onDifficultySave = { vm.saveDifficultyPreference(it) }
+                                onDifficultySave = { vm.saveDifficultyPreference(it) },
+                                skipEntranceAnimation = !isInitialLaunch
                             )
                         }
 

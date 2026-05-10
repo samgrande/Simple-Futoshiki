@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
-import com.hexcorp.futoshiki.ui.components.shared.TimerPill
 
 import androidx.compose.runtime.*
 import androidx.compose.animation.core.animateFloatAsState
@@ -37,8 +36,6 @@ fun GameHeader(
     onTimerLongClick: () -> Unit,
     onSizeChange: (Int) -> Unit = {},
     headerH: Dp,
-    containerCoordinates: LayoutCoordinates?,
-    onPillPositioned: (Offset, Offset) -> Unit,
     hideGameContent: Boolean,
     isSmallScreen: Boolean = false,
     isExpanded: Boolean = false
@@ -70,31 +67,6 @@ fun GameHeader(
                 onLongClick = if (showCountdown) null else onTitleLongClick,
                 showUnderline = false,
                 isSmallScreen = isSmallScreen
-            )
-
-            TimerPill(
-                seconds = timerSeconds,
-                won = won,
-                isPaused = isPaused,
-                enabled = !showCountdown && !won,
-                onClick = onTimerClick,
-                onLongClick = onTimerLongClick,
-                label = if (won) "HOME" else null,
-                icon = null,
-                modifier = Modifier
-                    .onGloballyPositioned { coords ->
-                        containerCoordinates?.let { container ->
-                            if (container.isAttached && coords.isAttached) {
-                                val localPos = container.localPositionOf(coords, Offset.Zero)
-                                val center = Offset(
-                                    localPos.x + coords.size.width / 2f,
-                                    localPos.y + coords.size.height / 2f
-                                )
-                                onPillPositioned(localPos, center)
-                            }
-                        }
-                    }
-                    .graphicsLayer { alpha = if (hideGameContent || won) 0f else 1f }
             )
         }
     }

@@ -332,17 +332,5 @@ fun PauseOverlay(
                 Spacer(Modifier.weight(1f))
             }
         }
-
-        if (!showConfirmQuit && !showConfirmNewGame) {
-            TimerPill(
-                seconds = seconds,
-                won = won,
-                isPaused = true,
-                onClick = onResume,
-                modifier = Modifier.offset {
-                    IntOffset(pillOffset.x.roundToInt(), pillOffset.y.roundToInt())
-                }
-            )
-        }
     }
 }

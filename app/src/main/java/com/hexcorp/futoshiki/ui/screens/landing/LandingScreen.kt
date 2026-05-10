@@ -42,7 +42,8 @@ fun LandingScreen(
     modifier: Modifier = Modifier,
     scope: AnimatedVisibilityScope? = null,
     onSizeSave: (Int) -> Unit = {},
-    onDifficultySave: (Difficulty) -> Unit = {}
+    onDifficultySave: (Difficulty) -> Unit = {},
+    skipEntranceAnimation: Boolean = false
 ) {
     var showHelp by remember { mutableStateOf(false) }
     var showConfirmQuit by remember { mutableStateOf(false) }
@@ -54,7 +55,8 @@ fun LandingScreen(
 
     var entranceActive by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        delay(900)
+        val delayTime = if (skipEntranceAnimation) 300L else 1200L
+        delay(delayTime)
         entranceActive = false
     }
 

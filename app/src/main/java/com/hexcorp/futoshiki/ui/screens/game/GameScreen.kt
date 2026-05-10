@@ -166,11 +166,19 @@ fun GameScreen(
         }
     }
 
+    val showCountdownRef = rememberUpdatedState(showCountdown)
+    val showCongratsRef = rememberUpdatedState(state.showCongrats)
+    val showDefeatRef = rememberUpdatedState(state.showDefeat)
+    val isSolvedRef = rememberUpdatedState(state.isSolved)
     val lifecycleOwner = LocalLifecycleOwner.current
     val wonRef = rememberUpdatedState(won)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_PAUSE && !wonRef.value) {
+            val isInSpecialScreen = showCountdownRef.value ||
+                showCongratsRef.value ||
+                showDefeatRef.value ||
+                (isSolvedRef.value && !showCongratsRef.value)
+            if (event == Lifecycle.Event.ON_PAUSE && !wonRef.value && !isInSpecialScreen) {
                 viewModel.pause()
             }
         }
@@ -180,9 +188,10 @@ fun GameScreen(
         }
     }
 
-    // When won, ensure we're not stuck in pause
+    // When won, ensure we're not stuck in pause - but not on end-game screens
     LaunchedEffect(won) {
-        if (won && state.screen == Screen.PAUSE) {
+        val isEndGame = state.showCongrats || state.showDefeat || (state.isSolved && !state.showCongrats)
+        if (won && state.screen == Screen.PAUSE && !isEndGame) {
             viewModel.resume()
         }
     }
@@ -569,10 +578,6 @@ fun GameScreen(
                             },
                             onTitleLongClick = { /* Handle if needed */ },
                             headerH = headerH,
-                            containerCoordinates = containerCoordinates,
-                            onPillPositioned = { offset, center ->
-                                viewModel.updatePillPosition(offset, center)
-                            },
                             hideGameContent = hideGameContent,
                             isSmallScreen = isSmallScreen,
                             isExpanded = newGameExpanded
@@ -605,6 +610,7 @@ fun GameScreen(
                     .align(Alignment.BottomCenter)
                     .background(FutoshikiColors.background())
                     .zIndex(9f)
+                    .pointerInput(Unit) { }
             )
         }
 
