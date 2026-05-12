@@ -17,20 +17,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.ClipOp
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.graphics.lerp
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -43,6 +40,7 @@ import com.hexcorp.futoshiki.game.Difficulty
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.Yuji
+import com.hexcorp.futoshiki.ui.theme.accentColor
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -57,133 +55,148 @@ fun ExpandableStartButton(
     onStart: () -> Unit,
     isDark: Boolean,
     modifier: Modifier = Modifier,
-    onDifficultySave: ((Difficulty) -> Unit)? = null
+    onDifficultySave: ((Difficulty) -> Unit)? = null,
+    currentSize: Int = selectedSize,
+    currentDifficulty: Difficulty = selectedDifficulty,
+    hasActiveGame: Boolean = false,
+    isQuickStartMode: Boolean = false,
+    onQuickStartModeChange: (Boolean) -> Unit = {},
+    isSmallScreen: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     
+    val accent = accentColor()
+    
     val normalBg = if (isDark) Color.White else Color.Black
     val expandedBg = if (isDark) Color(0xFF0B0B0B) else Color(0xFFF5F2F2)
+    val quickStartBg = accent
     
     val normalText = if (isDark) Color.Black else Color.White
     val expandedText = if (isDark) Color.White else Color.Black
+    val quickStartText = if (isDark) Color.Black else Color.White
 
-    // Use expanded background when expanded, normal when collapsed
+    var swipeProgress by remember { mutableFloatStateOf(0f) }
+
+    val widthFraction by animateFloatAsState(
+        targetValue = if (isExpanded) 1.08f else 0.9f,
+        animationSpec = tween(250, easing = FastOutSlowInEasing),
+        label = "widthFraction"
+    )
+
+    val modeProgress by animateFloatAsState(
+        targetValue = if (isQuickStartMode) 1f else 0f,
+        animationSpec = tween(200),
+        label = "modeAnim"
+    )
+
     val currentBg by animateColorAsState(
-        targetValue = if (isExpanded) expandedBg else normalBg,
-        animationSpec = tween(300),
+        targetValue = when {
+            isExpanded -> expandedBg
+            isQuickStartMode -> quickStartBg
+            else -> normalBg
+        },
+        animationSpec = tween(150),
         label = "bgColor"
     )
 
-    // Separate ripple for inside fill (excluding border)
-    var showRipple by remember { mutableStateOf(false) }
-    
-    val rippleProgress by animateFloatAsState(
-        targetValue = if (showRipple && !isExpanded) 1f else 0f,
-        animationSpec = if (showRipple && !isExpanded) {
-            tween(durationMillis = 250)
-        } else {
-            tween(durationMillis = 200)
-        },
-        label = "rippleProgress"
-    )
-
-    // Text color inverts when ripple shows (matches inverted background)
-    val currentTextColor by animateColorAsState(
+    val textColor by animateColorAsState(
         targetValue = when {
-            showRipple && !isExpanded -> if (isDark) Color.White else Color.Black
-            isDark -> Color.Black
-            else -> Color.White
+            isExpanded -> expandedText
+            isQuickStartMode -> quickStartText
+            else -> normalText
         },
-        animationSpec = tween(200),
+        animationSpec = tween(150),
         label = "textColor"
     )
-
-    // Border color stays constant (no ripple on border)
-    val currentStrokeColor = if (isDark) Color.White else Color.Black
+    
+    val strokeColor = if (isDark) Color.White else Color.Black
     
     val borderWidth = 2f
     val cornerRadius = 14f
+    
+    val swipeBorderColor by animateColorAsState(
+        targetValue = if (swipeProgress > 0f) accent.copy(swipeProgress * 0.6f) else strokeColor,
+        animationSpec = tween(100),
+        label = "borderColor"
+    )
 
     val baseModifier = modifier
-        .fillMaxWidth(if (isExpanded) 1.08f else 0.9f)
-        .animateContentSize(
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioLowBouncy,
-                stiffness = 700f
-            ),
-            alignment = Alignment.TopCenter
-        )
+        .fillMaxWidth(widthFraction)
         .clip(RoundedCornerShape(14.dp))
         .border(
             width = 2.dp,
-            color = currentStrokeColor,
+            color = swipeBorderColor,
             shape = RoundedCornerShape(14.dp)
         )
         .drawBehind {
-            val width = size.width
-            val height = size.height
-            
-            // Draw background
             drawRect(currentBg)
-            
-            // Draw ripple inside (clip to inner area, excluding border)
-            if (rippleProgress > 0f) {
-                val innerPath = Path().apply {
-                    addRoundRect(
-                        androidx.compose.ui.geometry.RoundRect(
-                            left = borderWidth,
-                            top = borderWidth,
-                            right = width - borderWidth,
-                            bottom = height - borderWidth,
-                            radiusX = cornerRadius - borderWidth,
-                            radiusY = cornerRadius - borderWidth
-                        )
-                    )
-                }
-                
-                clipPath(innerPath, clipOp = ClipOp.Intersect) {
-                    val maxRadius = kotlin.math.sqrt(width * width + height * height)
-                    val currentRadius = maxRadius * rippleProgress
-                    
-                    // Ripple color matches menu background (pure dark/pure light)
-                    val rippleColor = if (isDark) Color(0xFF0B0B0B) else Color(0xFFF5F2F2)
-                    
-                    // Always start ripple from the middle of the button
-                    val rippleCenterX = width / 2
-                    val rippleCenterY = height / 2
-                    
-                    drawCircle(
-                        color = rippleColor.copy(alpha = 1f),
-                        radius = currentRadius,
-                        center = Offset(rippleCenterX, rippleCenterY)
-                    )
-                }
-            }
         }
 
     val finalModifier = if (!isExpanded) {
-        baseModifier.combinedClickable(
-            interactionSource = interactionSource,
-            indication = null,
-            onClick = {
-                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                onStart()
-            },
-            onLongClick = {
-                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                // Ripple first, then expand after ripple fills
-                scope.launch {
-                    showRipple = true
-                    delay(250) // Wait for ripple to fill
-                    onExpandToggle()
-                    delay(300) // Wait for expansion to start
-                    showRipple = false
-                }
+        baseModifier
+            .pointerInput(isQuickStartMode) {
+                var totalDragX = 0f
+                var toggledInCurrentDrag = false
+                detectDragGestures(
+                    onDragStart = {
+                        totalDragX = 0f
+                        toggledInCurrentDrag = false
+                    },
+                    onDragEnd = {
+                        swipeProgress = 0f
+                        totalDragX = 0f
+                        toggledInCurrentDrag = false
+                    },
+                    onDragCancel = {
+                        swipeProgress = 0f
+                        totalDragX = 0f
+                        toggledInCurrentDrag = false
+                    },
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        totalDragX += dragAmount.x
+
+                        val buttonWidth = size.width
+                        val fullSwipeThreshold = buttonWidth * 0.9f
+                        val toggleThreshold = buttonWidth * 0.5f
+
+                        when {
+                            totalDragX > fullSwipeThreshold -> {
+                                // Full left-to-right swipe: vibrate + auto-start immediately
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onStart()
+                                swipeProgress = 0f
+                                totalDragX = 0f
+                                toggledInCurrentDrag = false
+                            }
+                            kotlin.math.abs(totalDragX) > toggleThreshold && !toggledInCurrentDrag -> {
+                                // 50%+ swipe: toggle quick-start mode, keep accumulating drag
+                                onQuickStartModeChange(!isQuickStartMode)
+                                toggledInCurrentDrag = true
+                                swipeProgress = (totalDragX.coerceAtLeast(0f) / buttonWidth).coerceIn(0f, 1f)
+                            }
+                            else -> {
+                                swipeProgress = (totalDragX.coerceAtLeast(0f) / buttonWidth).coerceIn(0f, 1f)
+                            }
+                        }
+                    }
+                )
             }
-        )
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    if (isQuickStartMode) {
+                        onStart()
+                    } else {
+                        onExpandToggle()
+                    }
+                }
+            )
     } else {
         baseModifier.clickable(
             interactionSource = interactionSource,
@@ -195,9 +208,9 @@ fun ExpandableStartButton(
     AnimatedContent(
         targetState = isExpanded,
         transitionSpec = {
-            fadeIn(tween(450, delayMillis = 150))
-                .togetherWith(fadeOut(tween(250)))
-                .using(SizeTransform(clip = false))
+            fadeIn(tween(350, delayMillis = 80))
+                .togetherWith(fadeOut(tween(200)))
+                .using(SizeTransform(clip = true, sizeAnimationSpec = { _, _ -> tween(280) }))
         },
         label = "buttonContentTransition",
         modifier = finalModifier
@@ -206,12 +219,13 @@ fun ExpandableStartButton(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp),
+                    .height(64.dp)
+                    .background(currentBg),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = label,
-                    color = currentTextColor,
+                    text = if (isQuickStartMode || modeProgress > 0.5f) "START" else label,
+                    color = textColor,
                     fontSize = 18.sp,
                     fontFamily = PixelF,
                     letterSpacing = 1.sp
@@ -222,7 +236,7 @@ fun ExpandableStartButton(
                 modifier = Modifier
                     .fillMaxWidth(0.98f)
                     .widthIn(max = 420.dp)
-                    .padding(top = 32.dp, bottom = 28.dp)
+                    .padding(top = if (isSmallScreen) 24.dp else 32.dp, bottom = if (isSmallScreen) 20.dp else 28.dp)
                     .pointerInput(Unit) {
                         var verticalDragSum = 0f
                         detectVerticalDragGestures(
@@ -240,41 +254,39 @@ fun ExpandableStartButton(
                     },
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Section Title: Grid Size
                 Text(
                     text = "GRID SIZE",
                     color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.7f),
                     fontSize = 12.5.sp,
                     fontFamily = PixelF,
                     letterSpacing = 3.sp,
-                    modifier = Modifier.padding(bottom = 12.dp),
+                    modifier = Modifier.padding(bottom = if (isSmallScreen) 8.dp else 12.dp),
                     textAlign = TextAlign.Center
                 )
 
-                // Size Slider
                 SizeSlider(
                     selectedSize = selectedSize,
                     onSizeSelected = onSizeSelected,
-                    isDark = isDark
+                    isDark = isDark,
+                    currentSize = currentSize,
+                    isSmallScreen = isSmallScreen
                 )
-                
-                Spacer(Modifier.height(32.dp))
 
-                // Section Title: Difficulty
+                Spacer(Modifier.height(if (isSmallScreen) 20.dp else 32.dp))
+
                 Text(
                     text = "DIFFICULTY",
                     color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.7f),
                     fontSize = 12.5.sp,
                     fontFamily = PixelF,
                     letterSpacing = 3.sp,
-                    modifier = Modifier.padding(bottom = 12.dp),
+                    modifier = Modifier.padding(bottom = if (isSmallScreen) 8.dp else 12.dp),
                     textAlign = TextAlign.Center
                 )
-                
-                // Difficulty Selector Cards (易, 普, 難)
+
                 Row(
                     modifier = Modifier.fillMaxWidth(0.9f),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 12.dp else 16.dp)
                 ) {
                     Difficulty.entries.forEach { difficulty ->
                         Box(modifier = Modifier.weight(1f)) {
@@ -282,31 +294,30 @@ fun ExpandableStartButton(
                                 difficulty = difficulty,
                                 isSelected = selectedDifficulty == difficulty,
                                 onClick = { onDifficultyChange(difficulty) },
-                                isDark = isDark
+                                isDark = isDark,
+                                isSmallScreen = isSmallScreen
                             )
                         }
                     }
                 }
                 
-                Spacer(Modifier.height(36.dp))
+                Spacer(Modifier.height(if (isSmallScreen) 24.dp else 36.dp))
 
-                // SAVE Button
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(0.9f)
-                        .height(48.dp)
+                        .height(if (isSmallScreen) 44.dp else 48.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (isDark) Color(0xFF141414) else Color(0xFFD6D6D6))
+                        .background(accentColor())
                         .clickable(onClick = {
                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onDifficultySave?.invoke(selectedDifficulty)
-                            onExpandToggle()
+                            onStart()
                         }),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "SAVE",
-                        color = if (isDark) Color.White else Color.Black,
+                        text = "START",
+                        color = if (isDark) Color.Black else Color.White,
                         fontSize = 16.sp,
                         fontFamily = PixelF,
                         fontWeight = FontWeight.Medium,
@@ -322,10 +333,12 @@ fun ExpandableStartButton(
 fun SizeSlider(
     selectedSize: Int,
     onSizeSelected: (Int) -> Unit,
-    isDark: Boolean
+    isDark: Boolean,
+    currentSize: Int = selectedSize,
+    isSmallScreen: Boolean = false
 ) {
     val containerBg = if (isDark) Color(0xFF141414) else Color(0xFFD6D6D6)
-    val accent = com.hexcorp.futoshiki.ui.theme.accentColor()
+    val accent = accentColor()
     val options = listOf(4, 5, 6)
     val textColor by animateColorAsState(
         targetValue = if (isDark) Color.White else Color.Black,
@@ -334,31 +347,44 @@ fun SizeSlider(
     )
     
     var totalDrag by remember { mutableFloatStateOf(0f) }
+    var dragAccumulator by remember { mutableFloatStateOf(0f) }
     val selectedIndex = options.indexOf(selectedSize)
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth(0.9f)
-            .height(48.dp)
+            .height(if (isSmallScreen) 44.dp else 48.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(containerBg)
             .padding(4.dp)
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
-                    onDragEnd = { },
-                    onDragCancel = { },
-                    onHorizontalDrag = { _, dragAmount ->
+                    onDragStart = {
+                        totalDrag = 0f
+                        dragAccumulator = 0f
+                    },
+                    onDragEnd = {
+                        totalDrag = 0f
+                        dragAccumulator = 0f
+                    },
+                    onDragCancel = {
+                        totalDrag = 0f
+                        dragAccumulator = 0f
+                    },
+                    onHorizontalDrag = { change, dragAmount ->
+                        change.consume()
                         totalDrag += dragAmount
-                        val threshold = 50f
-                        if (totalDrag > threshold) {
-                            if (selectedIndex < options.size - 1) {
-                                onSizeSelected(options[selectedIndex + 1])
-                                totalDrag = 0f
-                            }
-                        } else if (totalDrag < -threshold) {
-                            if (selectedIndex > 0) {
-                                onSizeSelected(options[selectedIndex - 1])
-                                totalDrag = 0f
-                            }
+                        dragAccumulator += dragAmount
+                        
+                        val threshold = 30f
+                        
+                        if (dragAccumulator > threshold && selectedIndex < options.size - 1) {
+                            onSizeSelected(options[selectedIndex + 1])
+                            dragAccumulator = 0f
+                            totalDrag = 0f
+                        } else if (dragAccumulator < -threshold && selectedIndex > 0) {
+                            onSizeSelected(options[selectedIndex - 1])
+                            dragAccumulator = 0f
+                            totalDrag = 0f
                         }
                     }
                 )
@@ -367,11 +393,10 @@ fun SizeSlider(
         val width = maxWidth
         val optionsCount = options.size
         val thumbWidth = width / optionsCount
-        val selectedIndex = options.indexOf(selectedSize)
+        val currentSelectedIndex = options.indexOf(selectedSize)
         
-        // Dynamic thumb offset based on selection
         val thumbOffset by animateDpAsState(
-            targetValue = thumbWidth * selectedIndex,
+            targetValue = thumbWidth * currentSelectedIndex,
             animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
             label = "thumbOffset"
         )
@@ -418,13 +443,13 @@ fun DifficultyCard(
     difficulty: Difficulty,
     isSelected: Boolean,
     onClick: () -> Unit,
-    isDark: Boolean
+    isDark: Boolean,
+    isSmallScreen: Boolean = false
 ) {
-    val accent = com.hexcorp.futoshiki.ui.theme.accentColor()
+    val accent = accentColor()
     val unselectedBg = if (isDark) Color(0xFF141414) else Color(0xFFD6D6D6)
     val targetBg = if (isSelected) accent else unselectedBg
     
-    // Animated states
     val cardBg by animateColorAsState(
         targetValue = targetBg,
         animationSpec = tween(durationMillis = 300),
@@ -456,7 +481,7 @@ fun DifficultyCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(0.98f) // Maintain the slightly taller rectangular shape
+                .aspectRatio(0.98f)
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
@@ -473,7 +498,7 @@ fun DifficultyCard(
             Text(
                 text = kanji,
                 color = textColor,
-                fontSize = 32.sp,
+                fontSize = if (isSmallScreen) 28.sp else 32.sp,
                 textAlign = TextAlign.Center,
                 fontFamily = Yuji,
                 style = androidx.compose.ui.text.TextStyle(
@@ -484,8 +509,8 @@ fun DifficultyCard(
             )
         }
         
-        Spacer(Modifier.height(12.dp))
-        
+        Spacer(Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
+
         Text(
             text = difficulty.name,
             color = textColor.copy(alpha = 0.7f),

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -96,10 +97,15 @@ fun LandingScreen(
         val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val vh = maxHeight - navBarBottom
 
-        val isSmallScreen = vh < 720.dp
+        val isSmallScreen = vh < 800.dp
         val headerH = if (isSmallScreen) vh * 0.07f else vh * 0.09f
-        val ninjaH = if (isSmallScreen) 80.dp else 120.dp
-        val korgeHeight = headerH + 16.dp + ninjaH
+        val ninjaH = if (isSmallScreen) 100.dp else 135.dp
+        val korgeGap = if (isSmallScreen) 14.dp else 16.dp
+        val korgeHeight = headerH + korgeGap + ninjaH
+
+        val titleSize = if (isSmallScreen) 42.sp else 46.sp
+        val buttonSpacing = if (isSmallScreen) 28.dp else 35.dp
+        val titleSpacing = if (isSmallScreen) 28.dp else 40.dp
 
         // KorGEView removed - managed by MainActivity
 
@@ -128,17 +134,17 @@ fun LandingScreen(
                 .zIndex(1f),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Match game screen layout - same height as korge + 16dp
-            Spacer(Modifier.height(korgeHeight + 8.dp))
+            // Match game screen layout - same height as korge area
+            Spacer(Modifier.height(korgeHeight + if (isSmallScreen) 0.dp else 8.dp))
 
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                FutoshikiTitle(fontSize = 46.sp)
+                FutoshikiTitle(fontSize = titleSize)
             }
 
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(titleSpacing))
 
             Box(
                 modifier = Modifier
@@ -198,7 +204,8 @@ fun LandingScreen(
                             korgeManager.gameWorld?.revertNinjaToStandSprite()
                             showHelp = false
                         },
-                        onHideConfirmQuit = { showConfirmQuit = false }
+                        onHideConfirmQuit = { showConfirmQuit = false },
+                        isSmallScreen = isSmallScreen
                     )
                 }
             }

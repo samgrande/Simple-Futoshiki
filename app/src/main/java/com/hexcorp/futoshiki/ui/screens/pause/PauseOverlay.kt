@@ -56,8 +56,8 @@ fun PauseOverlay(
 ) {
     var showHelp by rememberSaveable { mutableStateOf(false) }
     var showConfirmQuit by rememberSaveable { mutableStateOf(startWithQuitConfirm) }
-    var showConfirmNewGame by rememberSaveable { mutableStateOf(false) }
     var newGameExpanded by rememberSaveable { mutableStateOf(false) }
+    var isQuickStartMode by rememberSaveable { mutableStateOf(false) }
     
     var selectedSize by remember { mutableIntStateOf(currentSize) }
     var selectedDifficulty by remember { mutableStateOf(currentDifficulty) }
@@ -65,11 +65,6 @@ fun PauseOverlay(
     // Notify parent when entering/exiting confirm quit screen
     LaunchedEffect(showConfirmQuit) {
         onConfirmQuitChange(showConfirmQuit)
-    }
-
-    // Notify parent when entering/exiting confirm new game screen
-    LaunchedEffect(showConfirmNewGame) {
-        onConfirmNewGameChange(showConfirmNewGame)
     }
 
     // Notify parent when entering/exiting help screen
@@ -81,7 +76,6 @@ fun PauseOverlay(
         when {
             showHelp -> showHelp = false
             showConfirmQuit -> if (won) onResume() else showConfirmQuit = false
-            showConfirmNewGame -> showConfirmNewGame = false
             newGameExpanded -> {
                 selectedSize = currentSize
                 selectedDifficulty = currentDifficulty
@@ -97,10 +91,11 @@ fun PauseOverlay(
         val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val vh = maxHeight - navBarBottom
 
-        val isSmallScreen = vh < 720.dp
+        val isSmallScreen = vh < 800.dp
         val headerH = if (isSmallScreen) vh * 0.07f else vh * 0.09f
-        val ninjaH = if (isSmallScreen) 80.dp else 120.dp
-        val korgeHeight = headerH + 16.dp + ninjaH
+        val ninjaH = if (isSmallScreen) 100.dp else 135.dp
+        val korgeGap = if (isSmallScreen) 14.dp else 16.dp
+        val korgeHeight = headerH + korgeGap + ninjaH
 
         Box(
             modifier = Modifier
@@ -140,15 +135,14 @@ fun PauseOverlay(
                     .widthIn(max = 420.dp)
                     .fillMaxHeight()
                     .systemBarsPadding()
-                    .padding(horizontal = 20.dp, vertical = 40.dp),
+                    .padding(horizontal = 20.dp, vertical = if (isSmallScreen) 30.dp else 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(Modifier.height(korgeHeight + 8.dp))
+                Spacer(Modifier.height(korgeHeight + if (isSmallScreen) 0.dp else 8.dp))
 
                 AnimatedContent(
                     targetState = when {
                         showConfirmQuit -> "confirm_quit"
-                        showConfirmNewGame -> "confirm_new_game"
                         showHelp -> "help"
                         else -> "menu"
                     },
@@ -222,56 +216,13 @@ fun PauseOverlay(
                             }
                         }
 
-                        "confirm_new_game" -> {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Spacer(Modifier.height(32.dp))
-                                Text(
-                                    text = "THE CURRENT PUZZLE WILL END",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = PixelF,
-                                    color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
-                                    letterSpacing = 1.sp,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    text = "PROCEED?",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = PixelF,
-                                    color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
-                                    letterSpacing = 2.sp
-                                )
-                                Spacer(Modifier.height(32.dp))
-                                BigButton(
-                                    label = "YES",
-                                    onClick = { onNewGame(selectedSize, selectedDifficulty) },
-                                    inverted = true,
-                                    isDark = isDark
-                                )
-                                Spacer(Modifier.height(20.dp))
-                                BigButton(
-                                    label = "NO",
-                                    onClick = { 
-                                        selectedSize = currentSize
-                                        showConfirmNewGame = false 
-                                    },
-                                    isDark = isDark
-                                )
-                            }
-                        }
-
                         else -> {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                FutoshikiTitle(fontSize = 32.sp)
-                                Spacer(Modifier.height(36.dp))
+                                FutoshikiTitle(fontSize = if (isSmallScreen) 30.sp else 32.sp)
+                                Spacer(Modifier.height(if (isSmallScreen) 24.dp else 36.dp))
                                 
                                 ExpandableStartButton(
                                     label = "NEW GAME",
@@ -282,45 +233,51 @@ fun PauseOverlay(
                                     selectedDifficulty = selectedDifficulty,
                                     onDifficultyChange = { selectedDifficulty = it },
                                     onStart = { 
-                                        if (won) {
-                                            onNewGame(selectedSize, selectedDifficulty)
-                                        } else {
-                                            showConfirmNewGame = true
-                                        }
+                                        isQuickStartMode = false
+                                        onNewGame(selectedSize, selectedDifficulty) 
                                     },
                                     isDark = isDark,
-                                    onDifficultySave = onDifficultySave
+                                    onDifficultySave = onDifficultySave,
+                                    currentSize = currentSize,
+                                    currentDifficulty = currentDifficulty,
+                                    hasActiveGame = !won,
+                                    isQuickStartMode = isQuickStartMode,
+                                    onQuickStartModeChange = { isQuickStartMode = it },
+                                    isSmallScreen = isSmallScreen
                                 )
-                                
+
                                 AnimatedVisibility(
                                     visible = !newGameExpanded,
                                     enter = fadeIn(tween(300)),
                                     exit = fadeOut(tween(200))
                                 ) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Spacer(Modifier.height(20.dp))
-                                        
+                                        Spacer(Modifier.height(if (isSmallScreen) 18.dp else 20.dp))
+
                                         BigButton(
                                             label = "HELP",
                                             onClick = { showHelp = true },
-                                            isDark = isDark
+                                            isDark = isDark,
+                                            height = if (isSmallScreen) 58.dp else 64.dp
                                         )
-                                        
-                                        Spacer(Modifier.height(20.dp))
-                                        
+
+                                        Spacer(Modifier.height(if (isSmallScreen) 18.dp else 20.dp))
+
                                         BigButton(
                                             label = "THEMES",
                                             onClick = onTheming,
-                                            isDark = isDark
+                                            isDark = isDark,
+                                            height = if (isSmallScreen) 58.dp else 64.dp
                                         )
-                                        
-                                        Spacer(Modifier.height(20.dp))
-                                        
+
+                                        Spacer(Modifier.height(if (isSmallScreen) 18.dp else 20.dp))
+
                                         BigButton(
                                             label = "MAIN MENU",
                                             onClick = { showConfirmQuit = true },
                                             inverted = false,
-                                            isDark = isDark
+                                            isDark = isDark,
+                                            height = if (isSmallScreen) 58.dp else 64.dp
                                         )
                                     }
                                 }

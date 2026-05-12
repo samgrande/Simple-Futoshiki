@@ -37,10 +37,15 @@ import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.animations.CircularRevealShape
 import com.hexcorp.futoshiki.ui.korge.KorGEView
+import com.hexcorp.futoshiki.ui.components.shared.TimerPill
+import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.sp
+import android.util.Log
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -154,14 +159,16 @@ fun FutoshikiApp(
         theme = state.theme,
         isDark = isDark
     ) {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        var mainContainerCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().onGloballyPositioned { mainContainerCoords = it }) {
             val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
             val vh = maxHeight - navBarBottom
             
-            val isSmallScreen = vh < 720.dp
+            val isSmallScreen = vh < 800.dp
             val headerH = if (isSmallScreen) vh * 0.07f else vh * 0.09f
-            val ninjaH = if (isSmallScreen) 80.dp else 120.dp
-            val korgeHeight = headerH + 16.dp + ninjaH
+            val ninjaH = if (isSmallScreen) 100.dp else 135.dp
+            val korgeGap = if (isSmallScreen) 14.dp else 16.dp
+            val korgeHeight = headerH + korgeGap + ninjaH
 
 // 1. Shared KorGE rendered once at the top (hidden but kept for fast theme exit)
             Box(
@@ -197,6 +204,49 @@ fun FutoshikiApp(
                             .height(korgeHeight)
                             .background(FutoshikiColors.background())
                     )
+                }
+
+                // Timer pill - rendered here so it appears above the KorGE AndroidView
+                // zIndex(15f) to stay above pause dim overlay (zIndex 10f)
+                if ((isGame || isPaused) && !state.isSolved && !state.showDefeat && !state.showCongrats) {
+                    val isCustomMonoNight = state.themeMode == ThemeMode.CUSTOM && !state.customMonoAccent && state.customDayNight
+                    CompositionLocalProvider(LocalIsDark provides if (isCustomMonoNight) false else LocalIsDark.current) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .widthIn(max = 420.dp)
+                                .align(Alignment.TopCenter)
+                                .statusBarsPadding()
+                                .padding(start = 20.dp, end = 20.dp, top = if (isSmallScreen) 6.dp else 10.dp)
+                                .zIndex(15f),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            TimerPill(
+                                seconds = state.timerSeconds,
+                                won = state.won,
+                                isPaused = isPaused,
+                                enabled = !state.won && !state.isCountdownActive,
+                                onClick = {
+                                    Log.d("FutoshikiDebug", "TimerPill clicked! isPaused=$isPaused, enabled=${!state.won && !state.isCountdownActive}")
+                                    if (!isPaused) vm.pause() else vm.resume()
+                                },
+                                modifier = Modifier
+                                    .onGloballyPositioned { coords ->
+                                        mainContainerCoords?.let { container ->
+                                            if (container.isAttached && coords.isAttached) {
+                                                val localPos = container.localPositionOf(coords, Offset.Zero)
+                                                val center = Offset(
+                                                    localPos.x + coords.size.width / 2f,
+                                                    localPos.y + coords.size.height / 2f
+                                                )
+                                                vm.updatePillPosition(localPos, center)
+                                            }
+                                        }
+                                    }
+                                    .graphicsLayer { alpha = if (state.won) 0f else 1f }
+                            )
+                        }
+                    }
                 }
 
                 // Pause overlay - dim + PAUSED text on top of korge

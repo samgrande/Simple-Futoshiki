@@ -21,8 +21,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,7 +55,7 @@ fun GameScreen(
 
     val pillCenter = Offset(state.pillCenterX, state.pillCenterY)
     val pillOffset = Offset(state.pillOffsetX, state.pillOffsetY)
-    var containerCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    // Pill positioning moved to MainActivity (above KorGE z-layer)
     // Countdown: observe the ninja signal
     val ninjaRunning by viewModel.korgeManager.runningStarted.collectAsStateWithLifecycle()
     val sceneLoaded by viewModel.korgeManager.sceneLoaded.collectAsStateWithLifecycle()
@@ -104,6 +102,7 @@ fun GameScreen(
 
     // Hold the timer while the countdown overlay is active
     LaunchedEffect(showCountdown) {
+        viewModel.setCountdownActive(showCountdown)
         if (showCountdown) {
             viewModel.pauseTimer()
         } else {
@@ -200,9 +199,7 @@ fun GameScreen(
     val bgColor = FutoshikiColors.background()
 
     BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxSize()
-            .onGloballyPositioned { containerCoordinates = it }
+        modifier = Modifier.fillMaxSize()
     ) {
         val vw = maxWidth
         val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -211,20 +208,20 @@ fun GameScreen(
         val hPad = 20.dp
         val usableW = (vw - hPad * 2).coerceAtMost(450.dp)
 
-        val isSmallScreen = vh < 720.dp
+        val isSmallScreen = vh < 800.dp
         val headerH = if (isSmallScreen) vh * 0.07f else vh * 0.09f
-        val ninjaH = if (isSmallScreen) 80.dp else 120.dp
-        val footerBtnH = 64.dp
-        val numpadBtnMaxH = if (isSmallScreen) vh * 0.06f else vh * 0.075f
-        
-        val gridTopSpaceTarget = if (isSmallScreen) 12.dp else 24.dp
+        val ninjaH = if (isSmallScreen) 100.dp else 135.dp
+        val footerBtnH = if (isSmallScreen) 58.dp else 64.dp
+        val numpadBtnMaxH = if (isSmallScreen) vh * 0.065f else vh * 0.075f
+
+        val gridTopSpaceTarget = if (isSmallScreen) 18.dp else 24.dp
         val gridTopSpace by animateDpAsState(
             targetValue = gridTopSpaceTarget,
             animationSpec = tween(400),
             label = "gridTopSpace"
         )
 
-        val commonSpacing = if (isSmallScreen) 16.dp else 50.dp
+        val commonSpacing = if (isSmallScreen) 32.dp else 50.dp
         val footerTotalH = footerBtnH + 20.dp // 12dp row bottom + 8dp button bottom
         
         // Maximize board budget:
@@ -232,7 +229,8 @@ fun GameScreen(
         val boardBudgetH = vh - headerH - ninjaH - gridTopSpaceTarget - numpadBtnMaxH - footerTotalH - 24.dp
         val totalTopSpace = vh * 0.26f
 
-        val korgeHeight = headerH + 16.dp + ninjaH
+        val korgeGap = if (isSmallScreen) 14.dp else 16.dp
+        val korgeHeight = headerH + korgeGap + ninjaH
 
         // Cover alpha: 1 until scene is loaded, then fades to 0. Hides the green flash from
         // KorGE's uninitialized background color before assets are ready.
@@ -349,7 +347,7 @@ fun GameScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Keep grid position consistent by always using the same spacers
-                Spacer(Modifier.height(headerH + 16.dp))
+                Spacer(Modifier.height(headerH + korgeGap))
                 Spacer(Modifier.height(ninjaH))
 
                 Spacer(Modifier.height(gridTopSpace)) // Lowered the grid
@@ -497,19 +495,10 @@ fun GameScreen(
                     isSolveMode   = isSolveMode,
                     onSolveModeChange = { isSolveMode = it },
                     hPad          = hPad,
-                    // Timer parameters
-                    timerSeconds  = state.timerSeconds,
                     isPaused      = isPaused,
-                    onTimerClick  = { 
+                    onPauseClick  = {
                         if (!isPaused) viewModel.pause() else viewModel.resume()
                     },
-                    onTimerLongClick = {
-                        if (!won) {
-                            viewModel.setForceQuitInPause(true)
-                            viewModel.pause()
-                        }
-                    },
-                    // New parameters for solution screen new game
                     newGameExpanded = newGameExpanded,
                     onNewGameExpandedChange = { newGameExpanded = it },
                     selectedSize = selectedSize,
@@ -518,7 +507,9 @@ fun GameScreen(
                     onDifficultyChange = { selectedDifficulty = it },
                     onNewGame = { s, d -> viewModel.newGame(s, d) },
                     buttonHeight = footerBtnH,
-                    isDark = isDark
+                    isDark = isDark,
+                    hasActiveGame = state.screen == Screen.GAME || state.screen == Screen.PAUSE,
+                    isSmallScreen = isSmallScreen
                 )
             }
 
@@ -566,12 +557,6 @@ fun GameScreen(
                             onTitleClick = { },
                             onTimerClick = {
                                 if (!isPaused) viewModel.pause() else viewModel.resume()
-                            },
-                            onTimerLongClick = {
-                                if (!won) {
-                                    viewModel.setForceQuitInPause(true)
-                                    viewModel.pause()
-                                }
                             },
                             onSizeChange = { newSize ->
                                 viewModel.changeSize(newSize)

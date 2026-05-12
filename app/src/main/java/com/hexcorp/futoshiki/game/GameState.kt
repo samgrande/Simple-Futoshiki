@@ -42,5 +42,7 @@ data class GameState(
     val showConfirmNewGame: Boolean = false,
     val showHelp: Boolean = false,
     val defeated: Boolean = false,
-    val showDefeat: Boolean = false
+    val showDefeat: Boolean = false,
+    val mistakeCount: Int = 0,
+    val isCountdownActive: Boolean = false
 )

@@ -33,7 +33,6 @@ fun GameHeader(
     onTitleClick: () -> Unit,
     onTitleLongClick: () -> Unit = {},
     onTimerClick: () -> Unit,
-    onTimerLongClick: () -> Unit,
     onSizeChange: (Int) -> Unit = {},
     headerH: Dp,
     hideGameContent: Boolean,
@@ -50,7 +49,7 @@ fun GameHeader(
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer { this.alpha = headerAlpha }
-            .padding(horizontal = 20.dp, vertical = if (isSmallScreen) 10.dp else 20.dp)
+            .padding(horizontal = 20.dp, vertical = if (isSmallScreen) 16.dp else 20.dp)
     ) {
         Row(
             modifier = Modifier
@@ -68,6 +67,7 @@ fun GameHeader(
                 showUnderline = false,
                 isSmallScreen = isSmallScreen
             )
+
         }
     }
 }

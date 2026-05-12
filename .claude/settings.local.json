@@ -37,7 +37,12 @@
       "Bash(identify *)",
       "Bash(chmod +x build.sh)",
       "Bash(./build.sh)",
-      "Bash(adb shell *)"
+      "Bash(adb shell *)",
+      "Bash(grep -n \"< 720\\\\|720 >\" app/src/main/java/com/hexcorp/futoshiki/ui/screens/**/*.kt)",
+      "Bash(adb devices:*)",
+      "Bash(./gradlew installDebug)",
+      "Bash(adb logcat:*)",
+      "Bash(kill %1 echo \"--- logcat capture done ---\")"
     ]
   }
 }

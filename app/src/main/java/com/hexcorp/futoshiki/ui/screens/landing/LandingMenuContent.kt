@@ -5,6 +5,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,8 +40,14 @@ fun LandingMenuContent(
     onShowHelp: () -> Unit,
     onHideHelp: () -> Unit,
     onHideConfirmQuit: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSmallScreen: Boolean = false
 ) {
+    var isQuickStartMode by remember { mutableStateOf(false) }
+    
+    val buttonSpacing = if (isSmallScreen) 28.dp else 35.dp
+    val topSpacing = if (isSmallScreen) 32.dp else 48.dp
+
     when (state) {
         "help" -> {
             Column(
@@ -96,38 +106,49 @@ fun LandingMenuContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = modifier
             ) {
-                Spacer(Modifier.height(48.dp))
+                Spacer(Modifier.height(topSpacing))
                 
                 ExpandableStartButton(
-                    label = "START",
+                    label = "NEW GAME",
                     isExpanded = startExpanded,
                     onExpandToggle = onStartToggle,
                     selectedSize = selectedSize,
                     onSizeSelected = onSizeSelected,
                     selectedDifficulty = selectedDifficulty,
                     onDifficultyChange = onDifficultyChange,
-                    onStart = onStart,
+                    onStart = {
+                        isQuickStartMode = false
+                        onStart()
+                    },
                     isDark = isDark,
-                    onDifficultySave = onDifficultySave
+                    onDifficultySave = onDifficultySave,
+                    currentSize = selectedSize,
+                    currentDifficulty = selectedDifficulty,
+                    hasActiveGame = false,
+                    isQuickStartMode = isQuickStartMode,
+                    onQuickStartModeChange = { isQuickStartMode = it },
+                    isSmallScreen = isSmallScreen
                 )
-                
+
                 AnimatedVisibility(
                     visible = !startExpanded,
                     enter = fadeIn(tween(300)),
                     exit = fadeOut(tween(200))
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Spacer(Modifier.height(35.dp))
+                        Spacer(Modifier.height(buttonSpacing))
                         BigButton(
                             label = "HELP",
                             onClick = onShowHelp,
-                            isDark = isDark
+                            isDark = isDark,
+                            height = 64.dp
                         )
-                        Spacer(Modifier.height(35.dp))
+                        Spacer(Modifier.height(buttonSpacing))
                         BigButton(
                             label = "THEMES",
                             onClick = onTheming,
-                            isDark = isDark
+                            isDark = isDark,
+                            height = 64.dp
                         )
                     }
                 }

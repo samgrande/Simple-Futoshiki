@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import android.util.Log
 import kotlinx.coroutines.launch
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
@@ -126,7 +127,9 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
                 finishedRows = emptySet(),
                 finishedCols = emptySet(),
                 difficulty = difficulty,
-                ninjaScreenX = 500f
+                ninjaScreenX = 500f,
+                mistakeCount = 0,
+                isCountdownActive = false
             )
         }
         korgeManager.updateNinjaScreenX(500f)
@@ -145,8 +148,30 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         }
         val errors = validateGrid(newGrid, st.size, st.puzzle)
         val won = isWon(newGrid, errors)
+
+        // Mistake: every wrong cell input counts
+        val isMistake = num != 0 && num != st.puzzle.solution[r][c]
+        val newMistakeCount = if (isMistake) st.mistakeCount + 1 else st.mistakeCount
+
+        // Row just became correctly complete → reset mistake counter
+        val prevRowFull = st.grid[r].all { it != 0 }
+        val newRowFull = newGrid[r].all { it != 0 }
+        val rowJustCompleted = !prevRowFull && newRowFull && newGrid[r] == st.puzzle.solution[r]
+
+        // Column just became correctly complete → also resets mistakes
+        val prevColFull = (0 until st.size).all { ri -> st.grid[ri][c] != 0 }
+        val newColFull = (0 until st.size).all { ri -> newGrid[ri][c] != 0 }
+        val colSolution = (0 until st.size).map { ri -> st.puzzle.solution[ri][c] }
+        val newCol = (0 until st.size).map { ri -> newGrid[ri][c] }
+        val colJustCompleted = !prevColFull && newColFull && newCol == colSolution
+
+        val finalMistakeCount = if (rowJustCompleted || colJustCompleted) 0 else newMistakeCount
+
+        Log.d("FutoshikiDebug", "inputNumber($num) at ($r,$c): solution=${st.puzzle.solution[r][c]}, isMistake=$isMistake, mistakes=$finalMistakeCount, rowComplete=$rowJustCompleted, colComplete=$colJustCompleted")
+
         val newNinjaScreenX = calculateNinjaScreenX(newGrid, st.size, st.puzzle.solution)
-        val defeated = !won && newNinjaScreenX <= 100f
+        // Defeat after 6 mistakes (not position-based)
+        val defeated = !won && finalMistakeCount >= 6
 
         korgeManager.updateNinjaScreenX(newNinjaScreenX)
 
@@ -155,6 +180,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
             errors = errors,
             won = won,
             ninjaScreenX = newNinjaScreenX,
+            mistakeCount = finalMistakeCount,
             defeated = defeated,
             showDefeat = defeated,
             timerRunning = !won && !defeated
@@ -247,6 +273,10 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         _state.update { it.copy(showHelp = show) }
     }
 
+    fun setCountdownActive(active: Boolean) {
+        _state.update { it.copy(isCountdownActive = active) }
+    }
+
     // ── Countdown timer hold ─────────────────────────────────────────────────
 
     fun pauseTimer() { stopTimer() }
@@ -258,17 +288,21 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     // ── Pause / Resume ───────────────────────────────────────────────────────
 
     fun pause() {
+        Log.d("FutoshikiDebug", "pause() called, current screen=${_state.value.screen}")
         if (_state.value.screen != Screen.GAME) return
         stopTimer()
         _state.update { it.copy(previousScreen = it.screen, screen = Screen.PAUSE, timerRunning = false) }
+        Log.d("FutoshikiDebug", "pause() done, new screen=${_state.value.screen}")
     }
 
     fun resume() {
+        Log.d("FutoshikiDebug", "resume() called, current screen=${_state.value.screen}")
         val isWon = _state.value.won
         _state.update { it.copy(previousScreen = it.screen, screen = Screen.GAME, timerRunning = !isWon) }
         if (!isWon) {
             startTimer()
         }
+        Log.d("FutoshikiDebug", "resume() done, new screen=${_state.value.screen}")
     }
 
     fun goToMainMenu() {

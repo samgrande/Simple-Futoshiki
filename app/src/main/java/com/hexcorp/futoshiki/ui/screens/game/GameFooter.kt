@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import com.hexcorp.futoshiki.game.Difficulty
-import com.hexcorp.futoshiki.ui.components.shared.BigButton
 import com.hexcorp.futoshiki.ui.components.shared.ExpandableStartButton
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
@@ -31,11 +30,8 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import com.hexcorp.futoshiki.ui.theme.PixelF
-import com.hexcorp.futoshiki.ui.components.shared.formatTimer
 import com.hexcorp.futoshiki.ui.theme.accentColor
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.Canvas
-import androidx.compose.ui.graphics.Path
 
 @Composable
 fun GameFooter(
@@ -46,12 +42,8 @@ fun GameFooter(
     isSolveMode: Boolean,
     onSolveModeChange: (Boolean) -> Unit,
     hPad: Dp,
-    // Timer parameters
-    timerSeconds: Int = 0,
     isPaused: Boolean = false,
-    onTimerClick: () -> Unit = {},
-    onTimerLongClick: (() -> Unit)? = null,
-    // New parameters for solution screen new game
+    onPauseClick: () -> Unit = {},
     newGameExpanded: Boolean = false,
     onNewGameExpandedChange: (Boolean) -> Unit = {},
     selectedSize: Int = 4,
@@ -60,10 +52,14 @@ fun GameFooter(
     onDifficultyChange: (Difficulty) -> Unit = {},
     onNewGame: (Int, Difficulty) -> Unit = { _, _ -> },
     buttonHeight: Dp = 64.dp,
-    isDark: Boolean = LocalIsDark.current
+    isDark: Boolean = LocalIsDark.current,
+    hasActiveGame: Boolean = false,
+    isSmallScreen: Boolean = false
 ) {
     // Hide the footer completely while the intro countdown is running
     if (showCountdown) return
+
+    var quickStartMode by remember { mutableStateOf(false) }
 
     // Auto-revert SOLVE button back to RESET after 5 seconds
     androidx.compose.runtime.LaunchedEffect(isSolveMode) {
@@ -81,9 +77,7 @@ fun GameFooter(
         horizontalArrangement = Arrangement.Center
     ) {
         if (!isSolved) {
-            // Two-button layout: Timer on left, Reset/Solve on right
-            val timerButtonWidth = 140.dp
-            val resetButtonWidth = 196.dp
+            // Two-button layout: Pause on left, Reset/Solve on right
             val spacing = 10.dp
 
             Row(
@@ -91,14 +85,11 @@ fun GameFooter(
                 horizontalArrangement = Arrangement.spacedBy(spacing),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left button: Timer
-                TimerButton(
-                    seconds = timerSeconds,
-                    isPaused = isPaused,
-                    onClick = onTimerClick,
-                    onLongClick = onTimerLongClick,
+                // Left button: Pause (inverted colors of Reset)
+                PauseButton(
+                    onClick = onPauseClick,
                     height = buttonHeight,
-                    modifier = Modifier.width(timerButtonWidth)
+                    modifier = Modifier.weight(1f)
                 )
 
                 // Right button: Reset or SOLVE
@@ -109,7 +100,7 @@ fun GameFooter(
                             onSolveModeChange(false)
                         },
                         height = buttonHeight,
-                        modifier = Modifier.width(resetButtonWidth)
+                        modifier = Modifier.weight(1f)
                     )
                 } else {
                     ResetButton(
@@ -117,7 +108,7 @@ fun GameFooter(
                         onClick = onClearAll,
                         onLongClick = { onSolveModeChange(true) },
                         height = buttonHeight,
-                        modifier = Modifier.width(resetButtonWidth)
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -131,10 +122,19 @@ fun GameFooter(
                 onSizeSelected = onSizeSelected,
                 selectedDifficulty = selectedDifficulty,
                 onDifficultyChange = onDifficultyChange,
-                onStart = { onNewGame(selectedSize, selectedDifficulty) },
+                onStart = {
+                    quickStartMode = false
+                    onNewGame(selectedSize, selectedDifficulty)
+                },
                 isDark = isDark,
                 modifier = Modifier
-                    .padding(bottom = 8.dp)
+                    .padding(bottom = 8.dp),
+                currentSize = selectedSize,
+                currentDifficulty = selectedDifficulty,
+                hasActiveGame = hasActiveGame,
+                isQuickStartMode = quickStartMode,
+                onQuickStartModeChange = { quickStartMode = it },
+                isSmallScreen = isSmallScreen
             )
         }
     }
@@ -222,85 +222,39 @@ fun ResetButton(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TimerButton(
-    seconds: Int,
-    isPaused: Boolean = false,
+fun PauseButton(
     onClick: () -> Unit,
-    onLongClick: (() -> Unit)? = null,
     height: Dp = 64.dp,
     modifier: Modifier = Modifier
 ) {
-    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-    val accent = accentColor()
-    val textColor = FutoshikiColors.onSurface()
-
-    val interactionSource = remember { MutableInteractionSource() }
+    val haptic = LocalHapticFeedback.current
+    // Inverted colors relative to ResetButton (cellDefault bg / onSurface text)
+    val bgColor = FutoshikiColors.onSurface()
+    val textColor = FutoshikiColors.cellDefault()
 
     Box(
         modifier = modifier
             .height(height)
             .clip(RoundedCornerShape(12.dp))
-            .background(accent)
-            .combinedClickable(
-                interactionSource = interactionSource,
+            .background(bgColor)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = {
-                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onClick()
-                },
-                onLongClick = {
-                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                    onLongClick?.invoke()
                 }
             ),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Pause icon (two vertical bars) or Play icon (triangle)
-            Canvas(modifier = Modifier.size(16.dp, 18.dp)) {
-                if (isPaused) {
-                    // Play icon - triangle pointing right
-                    val path = Path().apply {
-                        moveTo(2f.dp.toPx(), 0f)
-                        lineTo(size.width, size.height / 2f)
-                        moveTo(2f.dp.toPx(), size.height)
-                        lineTo(size.width, size.height / 2f)
-                        close()
-                    }
-                    drawPath(path, color = textColor)
-                } else {
-                    // Pause icon - two vertical bars
-                    val barWidth = 4.dp.toPx()
-                    val barHeight = size.height
-                    val gap = 4.dp.toPx()
-                    
-                    // Left bar
-                    drawRect(
-                        color = textColor,
-                        topLeft = androidx.compose.ui.geometry.Offset(0f, 0f),
-                        size = androidx.compose.ui.geometry.Size(barWidth, barHeight)
-                    )
-                    // Right bar
-                    drawRect(
-                        color = textColor,
-                        topLeft = androidx.compose.ui.geometry.Offset(barWidth + gap, 0f),
-                        size = androidx.compose.ui.geometry.Size(barWidth, barHeight)
-                    )
-                }
-            }
-            Text(
-                text = formatTimer(seconds),
-                color = textColor,
-                fontSize = 20.sp,
-                fontFamily = PixelF,
-                letterSpacing = 1.sp
-            )
-        }
+        Text(
+            text = "PAUSE",
+            color = textColor,
+            fontSize = 18.sp,
+            fontFamily = PixelF,
+            letterSpacing = 1.sp
+        )
     }
 }
 
