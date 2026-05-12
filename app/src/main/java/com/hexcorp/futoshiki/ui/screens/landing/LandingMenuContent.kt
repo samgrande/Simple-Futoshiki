@@ -5,10 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,8 +39,6 @@ fun LandingMenuContent(
     modifier: Modifier = Modifier,
     isSmallScreen: Boolean = false
 ) {
-    var isQuickStartMode by remember { mutableStateOf(false) }
-    
     val buttonSpacing = if (isSmallScreen) 28.dp else 35.dp
     val topSpacing = if (isSmallScreen) 32.dp else 48.dp
 
@@ -116,17 +110,12 @@ fun LandingMenuContent(
                     onSizeSelected = onSizeSelected,
                     selectedDifficulty = selectedDifficulty,
                     onDifficultyChange = onDifficultyChange,
-                    onStart = {
-                        isQuickStartMode = false
-                        onStart()
-                    },
+                    onStart = onStart,
                     isDark = isDark,
                     onDifficultySave = onDifficultySave,
                     currentSize = selectedSize,
                     currentDifficulty = selectedDifficulty,
                     hasActiveGame = false,
-                    isQuickStartMode = isQuickStartMode,
-                    onQuickStartModeChange = { isQuickStartMode = it },
                     isSmallScreen = isSmallScreen
                 )
 

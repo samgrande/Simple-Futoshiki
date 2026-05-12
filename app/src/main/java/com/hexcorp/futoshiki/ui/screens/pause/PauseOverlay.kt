@@ -57,7 +57,6 @@ fun PauseOverlay(
     var showHelp by rememberSaveable { mutableStateOf(false) }
     var showConfirmQuit by rememberSaveable { mutableStateOf(startWithQuitConfirm) }
     var newGameExpanded by rememberSaveable { mutableStateOf(false) }
-    var isQuickStartMode by rememberSaveable { mutableStateOf(false) }
     
     var selectedSize by remember { mutableIntStateOf(currentSize) }
     var selectedDifficulty by remember { mutableStateOf(currentDifficulty) }
@@ -232,17 +231,12 @@ fun PauseOverlay(
                                     onSizeSelected = { selectedSize = it },
                                     selectedDifficulty = selectedDifficulty,
                                     onDifficultyChange = { selectedDifficulty = it },
-                                    onStart = { 
-                                        isQuickStartMode = false
-                                        onNewGame(selectedSize, selectedDifficulty) 
-                                    },
+                                    onStart = { onNewGame(selectedSize, selectedDifficulty) },
                                     isDark = isDark,
                                     onDifficultySave = onDifficultySave,
                                     currentSize = currentSize,
                                     currentDifficulty = currentDifficulty,
                                     hasActiveGame = !won,
-                                    isQuickStartMode = isQuickStartMode,
-                                    onQuickStartModeChange = { isQuickStartMode = it },
                                     isSmallScreen = isSmallScreen
                                 )
 

@@ -59,8 +59,6 @@ fun GameFooter(
     // Hide the footer completely while the intro countdown is running
     if (showCountdown) return
 
-    var quickStartMode by remember { mutableStateOf(false) }
-
     // Auto-revert SOLVE button back to RESET after 5 seconds
     androidx.compose.runtime.LaunchedEffect(isSolveMode) {
         if (isSolveMode) {
@@ -122,18 +120,13 @@ fun GameFooter(
                 onSizeSelected = onSizeSelected,
                 selectedDifficulty = selectedDifficulty,
                 onDifficultyChange = onDifficultyChange,
-                onStart = {
-                    quickStartMode = false
-                    onNewGame(selectedSize, selectedDifficulty)
-                },
+                onStart = { onNewGame(selectedSize, selectedDifficulty) },
                 isDark = isDark,
                 modifier = Modifier
                     .padding(bottom = 8.dp),
                 currentSize = selectedSize,
                 currentDifficulty = selectedDifficulty,
                 hasActiveGame = hasActiveGame,
-                isQuickStartMode = quickStartMode,
-                onQuickStartModeChange = { quickStartMode = it },
                 isSmallScreen = isSmallScreen
             )
         }

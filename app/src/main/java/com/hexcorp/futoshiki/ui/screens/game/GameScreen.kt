@@ -76,11 +76,19 @@ fun GameScreen(
     // Track if this is a fresh game from main menu (for full countdown)
     var isFreshGame by remember { mutableStateOf(false) }
 
+    var keepPauseOverlayVisible by remember { mutableStateOf(false) }
+    var isSolveMode by remember { mutableStateOf(false) }
+    var newGameExpanded by rememberSaveable { mutableStateOf(false) }
+    var selectedSize by remember { mutableIntStateOf(state.size) }
+    var selectedDifficulty by remember { mutableStateOf(state.difficulty) }
+
     // When gameKey changes (newGame), show countdown only for actual game starts
     LaunchedEffect(gameKey) {
         // Only show countdown if gameKey actually changed (new game started)
         // This prevents countdown from showing on pause/resume
         if (gameKey != previousGameKey) {
+            newGameExpanded = false
+            isSolveMode = false
             if (freshGameStart || showCountdownTrigger) {
                 countdownStarted = false
                 // Both fresh game from main menu and new game from pause get full countdown
@@ -122,14 +130,6 @@ fun GameScreen(
 
     val isPaused = state.screen == Screen.PAUSE
     val hideGameContent = state.screen != Screen.GAME
-
-    var keepPauseOverlayVisible by remember { mutableStateOf(false) }
-    var isSolveMode by remember { mutableStateOf(false) }
-    
-    // New Game states for the solution screen footer
-    var newGameExpanded by rememberSaveable { mutableStateOf(false) }
-    var selectedSize by remember { mutableIntStateOf(state.size) }
-    var selectedDifficulty by remember { mutableStateOf(state.difficulty) }
 
     LaunchedEffect(state.screen) {
         if (state.screen == Screen.PAUSE) {

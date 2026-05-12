@@ -2,12 +2,10 @@ package com.hexcorp.futoshiki.ui.components.shared
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -20,14 +18,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.ClipOp
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -36,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import com.hexcorp.futoshiki.game.Difficulty
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
@@ -59,14 +53,11 @@ fun ExpandableStartButton(
     currentSize: Int = selectedSize,
     currentDifficulty: Difficulty = selectedDifficulty,
     hasActiveGame: Boolean = false,
-    isQuickStartMode: Boolean = false,
-    onQuickStartModeChange: (Boolean) -> Unit = {},
     isSmallScreen: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val haptics = LocalHapticFeedback.current
-    val scope = rememberCoroutineScope()
     
     val accent = accentColor()
     
@@ -79,6 +70,8 @@ fun ExpandableStartButton(
     val quickStartText = if (isDark) Color.Black else Color.White
 
     var swipeProgress by remember { mutableFloatStateOf(0f) }
+    val displayProgress = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
 
     val widthFraction by animateFloatAsState(
         targetValue = if (isExpanded) 1.08f else 0.9f,
@@ -86,42 +79,21 @@ fun ExpandableStartButton(
         label = "widthFraction"
     )
 
-    val modeProgress by animateFloatAsState(
-        targetValue = if (isQuickStartMode) 1f else 0f,
-        animationSpec = tween(200),
-        label = "modeAnim"
-    )
-
-    val currentBg by animateColorAsState(
-        targetValue = when {
-            isExpanded -> expandedBg
-            isQuickStartMode -> quickStartBg
-            else -> normalBg
-        },
-        animationSpec = tween(150),
-        label = "bgColor"
-    )
-
-    val textColor by animateColorAsState(
-        targetValue = when {
-            isExpanded -> expandedText
-            isQuickStartMode -> quickStartText
-            else -> normalText
-        },
-        animationSpec = tween(150),
-        label = "textColor"
-    )
-    
     val strokeColor = if (isDark) Color.White else Color.Black
     
-    val borderWidth = 2f
-    val cornerRadius = 14f
-    
     val swipeBorderColor by animateColorAsState(
-        targetValue = if (swipeProgress > 0f) accent.copy(swipeProgress * 0.6f) else strokeColor,
+        targetValue = if (swipeProgress > 0f) accent.copy(alpha = (swipeProgress * 0.6f).coerceIn(0f, 1f)) else strokeColor,
         animationSpec = tween(100),
         label = "borderColor"
     )
+
+    val textCrossfadeProgress by animateFloatAsState(
+        targetValue = if (displayProgress.value > 0.5f) 1f else 0f,
+        animationSpec = tween(100),
+        label = "textCrossfade"
+    )
+
+    val textColor = lerp(normalText, quickStartText, displayProgress.value)
 
     val baseModifier = modifier
         .fillMaxWidth(widthFraction)
@@ -131,57 +103,36 @@ fun ExpandableStartButton(
             color = swipeBorderColor,
             shape = RoundedCornerShape(14.dp)
         )
-        .drawBehind {
-            drawRect(currentBg)
-        }
 
     val finalModifier = if (!isExpanded) {
         baseModifier
-            .pointerInput(isQuickStartMode) {
+            .pointerInput(Unit) {
                 var totalDragX = 0f
-                var toggledInCurrentDrag = false
                 detectDragGestures(
                     onDragStart = {
                         totalDragX = 0f
-                        toggledInCurrentDrag = false
                     },
                     onDragEnd = {
-                        swipeProgress = 0f
+                        val threshold = size.width * 0.9f
+                        if (totalDragX > threshold) {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onStart()
+                        }
                         totalDragX = 0f
-                        toggledInCurrentDrag = false
+                        swipeProgress = 0f
+                        scope.launch { displayProgress.animateTo(0f, tween(200)) }
                     },
                     onDragCancel = {
-                        swipeProgress = 0f
                         totalDragX = 0f
-                        toggledInCurrentDrag = false
+                        swipeProgress = 0f
+                        scope.launch { displayProgress.animateTo(0f, tween(200)) }
                     },
                     onDrag = { change, dragAmount ->
                         change.consume()
                         totalDragX += dragAmount.x
-
-                        val buttonWidth = size.width
-                        val fullSwipeThreshold = buttonWidth * 0.9f
-                        val toggleThreshold = buttonWidth * 0.5f
-
-                        when {
-                            totalDragX > fullSwipeThreshold -> {
-                                // Full left-to-right swipe: vibrate + auto-start immediately
-                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onStart()
-                                swipeProgress = 0f
-                                totalDragX = 0f
-                                toggledInCurrentDrag = false
-                            }
-                            kotlin.math.abs(totalDragX) > toggleThreshold && !toggledInCurrentDrag -> {
-                                // 50%+ swipe: toggle quick-start mode, keep accumulating drag
-                                onQuickStartModeChange(!isQuickStartMode)
-                                toggledInCurrentDrag = true
-                                swipeProgress = (totalDragX.coerceAtLeast(0f) / buttonWidth).coerceIn(0f, 1f)
-                            }
-                            else -> {
-                                swipeProgress = (totalDragX.coerceAtLeast(0f) / buttonWidth).coerceIn(0f, 1f)
-                            }
-                        }
+                        val raw = (totalDragX.coerceAtLeast(0f) / size.width).coerceIn(0f, 1f)
+                        swipeProgress = raw
+                        scope.launch { displayProgress.snapTo(raw) }
                     }
                 )
             }
@@ -190,11 +141,7 @@ fun ExpandableStartButton(
                 indication = null,
                 onClick = {
                     haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    if (isQuickStartMode) {
-                        onStart()
-                    } else {
-                        onExpandToggle()
-                    }
+                    onExpandToggle()
                 }
             )
     } else {
@@ -220,22 +167,49 @@ fun ExpandableStartButton(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
-                    .background(currentBg),
-                contentAlignment = Alignment.Center
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(normalBg)
             ) {
-                Text(
-                    text = if (isQuickStartMode || modeProgress > 0.5f) "START" else label,
-                    color = textColor,
-                    fontSize = 18.sp,
-                    fontFamily = PixelF,
-                    letterSpacing = 1.sp
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(displayProgress.value)
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                0f to quickStartBg,
+                                0.8f to quickStartBg,
+                                1f to quickStartBg.copy(alpha = 0f)
+                            )
+                        )
                 )
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = label,
+                        color = textColor,
+                        fontSize = 18.sp,
+                        fontFamily = PixelF,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.graphicsLayer { alpha = 1f - textCrossfadeProgress }
+                    )
+                    Text(
+                        text = "START",
+                        color = textColor,
+                        fontSize = 18.sp,
+                        fontFamily = PixelF,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.graphicsLayer { alpha = textCrossfadeProgress }
+                    )
+                }
             }
         } else {
             Column(
                 modifier = Modifier
                     .fillMaxWidth(0.98f)
                     .widthIn(max = 420.dp)
+                    .background(expandedBg)
                     .padding(top = if (isSmallScreen) 24.dp else 32.dp, bottom = if (isSmallScreen) 20.dp else 28.dp)
                     .pointerInput(Unit) {
                         var verticalDragSum = 0f
