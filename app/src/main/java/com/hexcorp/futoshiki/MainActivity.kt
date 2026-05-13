@@ -210,6 +210,8 @@ fun FutoshikiApp(
                 // zIndex(15f) to stay above pause dim overlay (zIndex 10f)
                 if ((isGame || isPaused) && !state.isSolved && !state.showDefeat && !state.showCongrats) {
                     val isCustomMonoNight = state.themeMode == ThemeMode.CUSTOM && !state.customMonoAccent && state.customDayNight
+                    val isCustomAccentDark = state.themeMode == ThemeMode.CUSTOM && state.customMonoAccent == false && isDark
+                    val gameTimerColor = if (isCustomAccentDark) Color.White else Color.Black
                     CompositionLocalProvider(LocalIsDark provides if (isCustomMonoNight) false else LocalIsDark.current) {
                         Box(
                             modifier = Modifier
@@ -217,7 +219,7 @@ fun FutoshikiApp(
                                 .widthIn(max = 420.dp)
                                 .align(Alignment.TopCenter)
                                 .statusBarsPadding()
-                                .padding(start = 20.dp, end = 20.dp, top = if (isSmallScreen) 6.dp else 10.dp)
+                                .padding(start = 20.dp, end = 22.dp, top = if (isSmallScreen) 7.dp else 11.dp)
                                 .zIndex(15f),
                             contentAlignment = Alignment.CenterEnd
                         ) {
@@ -230,6 +232,8 @@ fun FutoshikiApp(
                                     Log.d("FutoshikiDebug", "TimerPill clicked! isPaused=$isPaused, enabled=${!state.won && !state.isCountdownActive}")
                                     if (!isPaused) vm.pause() else vm.resume()
                                 },
+                                textColor = gameTimerColor,
+                                showPill = isPaused,
                                 modifier = Modifier
                                     .onGloballyPositioned { coords ->
                                         mainContainerCoords?.let { container ->
@@ -308,8 +312,9 @@ fun FutoshikiApp(
                         // PauseOverlay handles its own animation internally
                         fadeIn(tween(0)) togetherWith fadeOut(tween(0))
                     } else if (targetState == Screen.THEMING || initialState == Screen.THEMING) {
-                        fadeIn(tween(500, easing = EaseInOutQuart)) togetherWith 
-                        fadeOut(tween(500, easing = EaseInOutQuart))
+                        (fadeIn(tween(300, easing = FastOutSlowInEasing)) togetherWith 
+                        fadeOut(tween(0)))
+                        .using(SizeTransform(clip = false))
                     } else {
                         fadeIn(tween(220, easing = FastOutSlowInEasing)) togetherWith 
                         fadeOut(tween(180, easing = FastOutSlowInEasing))
@@ -317,6 +322,7 @@ fun FutoshikiApp(
                 },
                 modifier = Modifier
                     .fillMaxSize()
+                    .background(FutoshikiColors.background())
                     .then(
                         if (state.screen == Screen.THEMING) Modifier.zIndex(10f)
                         else Modifier

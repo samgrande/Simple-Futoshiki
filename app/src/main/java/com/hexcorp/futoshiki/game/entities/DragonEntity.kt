@@ -190,8 +190,7 @@ class DragonEntity(
 
     fun updateAggression(value: Float) {
         currentAggression = value
-        pulseSpeed = 2.0f + (value * 8.0f)
-        stiffness = 5.0f + (value * 15.0f)
+        pulseSpeed = 2.0f + (value * 1.0f)
     }
 
     fun setDistanceMultiplier(multiplier: Float) {

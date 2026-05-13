@@ -57,6 +57,7 @@ fun PauseOverlay(
     var showHelp by rememberSaveable { mutableStateOf(false) }
     var showConfirmQuit by rememberSaveable { mutableStateOf(startWithQuitConfirm) }
     var newGameExpanded by rememberSaveable { mutableStateOf(false) }
+    val startedWithForceQuit = remember { startWithQuitConfirm }
     
     var selectedSize by remember { mutableIntStateOf(currentSize) }
     var selectedDifficulty by remember { mutableStateOf(currentDifficulty) }
@@ -74,7 +75,7 @@ fun PauseOverlay(
     BackHandler(enabled = true) {
         when {
             showHelp -> showHelp = false
-            showConfirmQuit -> if (won) onResume() else showConfirmQuit = false
+            showConfirmQuit -> if (won || startedWithForceQuit) onResume() else showConfirmQuit = false
             newGameExpanded -> {
                 selectedSize = currentSize
                 selectedDifficulty = currentDifficulty
@@ -172,8 +173,7 @@ fun PauseOverlay(
                                 HelpPanel(
                                     modifier = Modifier
                                         .fillMaxWidth(0.9f)
-                                        .fillMaxHeight(0.8f),
-                                    scrollable = true
+                                        .fillMaxHeight(0.8f)
                                 )
                                 Spacer(Modifier.height(20.dp))
                                 BigButton(
@@ -209,7 +209,7 @@ fun PauseOverlay(
                                 Spacer(Modifier.height(20.dp))
                                 BigButton(
                                     label = "NO",
-                                    onClick = { if (won) onResume() else showConfirmQuit = false },
+                                    onClick = { if (won || startedWithForceQuit) onResume() else showConfirmQuit = false },
                                     isDark = isDark
                                 )
                             }

@@ -24,12 +24,16 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import com.hexcorp.futoshiki.game.Difficulty
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
@@ -74,8 +78,8 @@ fun ExpandableStartButton(
     val scope = rememberCoroutineScope()
 
     val widthFraction by animateFloatAsState(
-        targetValue = if (isExpanded) 1.08f else 0.9f,
-        animationSpec = tween(250, easing = FastOutSlowInEasing),
+        targetValue = if (isExpanded) 1.0f else 0.9f,
+        animationSpec = tween(450, easing = FastOutSlowInEasing),
         label = "widthFraction"
     )
 
@@ -95,14 +99,7 @@ fun ExpandableStartButton(
 
     val textColor = lerp(normalText, quickStartText, displayProgress.value)
 
-    val baseModifier = modifier
-        .fillMaxWidth(widthFraction)
-        .clip(RoundedCornerShape(14.dp))
-        .border(
-            width = 2.dp,
-            color = swipeBorderColor,
-            shape = RoundedCornerShape(14.dp)
-        )
+    val baseModifier = modifier.fillMaxWidth(widthFraction)
 
     val finalModifier = if (!isExpanded) {
         baseModifier
@@ -155,9 +152,19 @@ fun ExpandableStartButton(
     AnimatedContent(
         targetState = isExpanded,
         transitionSpec = {
-            fadeIn(tween(350, delayMillis = 80))
-                .togetherWith(fadeOut(tween(200)))
-                .using(SizeTransform(clip = true, sizeAnimationSpec = { _, _ -> tween(280) }))
+            if (targetState) {
+                fadeIn(tween(300, easing = FastOutSlowInEasing))
+                    .togetherWith(fadeOut(tween(150)))
+                    .using(SizeTransform(clip = false, sizeAnimationSpec = { _, _ ->
+                        tween(450, easing = FastOutSlowInEasing)
+                    }))
+            } else {
+                fadeIn(tween(150))
+                    .togetherWith(fadeOut(tween(300, easing = FastOutSlowInEasing)))
+                    .using(SizeTransform(clip = false, sizeAnimationSpec = { _, _ ->
+                        tween(450, easing = FastOutSlowInEasing)
+                    }))
+            }
         },
         label = "buttonContentTransition",
         modifier = finalModifier
@@ -168,10 +175,13 @@ fun ExpandableStartButton(
                     .fillMaxWidth()
                     .height(64.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(normalBg)
+                    .border(2.dp, swipeBorderColor, RoundedCornerShape(14.dp))
+                    .background(normalBg),
+                contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
+                        .align(Alignment.TopStart)
                         .fillMaxHeight()
                         .fillMaxWidth(displayProgress.value)
                         .background(
@@ -205,24 +215,53 @@ fun ExpandableStartButton(
                 }
             }
         } else {
-            Column(
+            val density = LocalDensity.current
+            var dragOffsetY by remember { mutableFloatStateOf(0f) }
+            val dragAnimatable = remember { Animatable(0f) }
+            val closeThresholdPx = with(density) { 15.dp.toPx() }
+
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth(0.98f)
-                    .widthIn(max = 420.dp)
-                    .background(expandedBg)
-                    .padding(top = if (isSmallScreen) 24.dp else 32.dp, bottom = if (isSmallScreen) 20.dp else 28.dp)
-                    .pointerInput(Unit) {
-                        var verticalDragSum = 0f
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        translationY = if (dragOffsetY != 0f) dragAnimatable.value else 0f
+                    }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .border(2.dp, strokeColor, RoundedCornerShape(14.dp))
+                        .background(expandedBg)
+                        .padding(top = if (isSmallScreen) 24.dp else 32.dp, bottom = if (isSmallScreen) 20.dp else 28.dp)
+                        .pointerInput(Unit) {
                         detectVerticalDragGestures(
-                            onDragEnd = { verticalDragSum = 0f },
-                            onDragCancel = { verticalDragSum = 0f },
+                            onDragEnd = {
+                                scope.launch {
+                                    if (kotlin.math.abs(dragOffsetY) > closeThresholdPx) {
+                                        onExpandToggle()
+                                    }
+                                    dragAnimatable.animateTo(
+                                        targetValue = 0f,
+                                        animationSpec = spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMedium)
+                                    )
+                                    dragOffsetY = 0f
+                                }
+                            },
+                            onDragCancel = {
+                                scope.launch {
+                                    dragAnimatable.animateTo(
+                                        targetValue = 0f,
+                                        animationSpec = spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMedium)
+                                    )
+                                    dragOffsetY = 0f
+                                }
+                            },
                             onVerticalDrag = { change, dragAmount ->
                                 change.consume()
-                                verticalDragSum += dragAmount
-                                if (kotlin.math.abs(verticalDragSum) > 50f) {
-                                    onExpandToggle()
-                                    verticalDragSum = 0f
-                                }
+                                dragOffsetY = (dragOffsetY + dragAmount * 0.05f)
+                                    .coerceIn(-closeThresholdPx * 2f, closeThresholdPx * 2f)
+                                scope.launch { dragAnimatable.snapTo(dragOffsetY) }
                             }
                         )
                     },
@@ -258,11 +297,35 @@ fun ExpandableStartButton(
                     textAlign = TextAlign.Center
                 )
 
+                val difficulties = Difficulty.entries
+                var diffDragAccum by remember { mutableFloatStateOf(0f) }
+
                 Row(
-                    modifier = Modifier.fillMaxWidth(0.9f),
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .pointerInput(difficulties) {
+                            detectHorizontalDragGestures(
+                                onDragStart = { diffDragAccum = 0f },
+                                onHorizontalDrag = { change, dragAmount ->
+                                    change.consume()
+                                    diffDragAccum += dragAmount
+                                    val threshold = 60f
+                                    val cur = selectedDifficulty.ordinal
+                                    if (diffDragAccum > threshold && cur > 0) {
+                                        onDifficultyChange(difficulties[cur - 1])
+                                        diffDragAccum = 0f
+                                    } else if (diffDragAccum < -threshold && cur < difficulties.size - 1) {
+                                        onDifficultyChange(difficulties[cur + 1])
+                                        diffDragAccum = 0f
+                                    }
+                                },
+                                onDragEnd = { diffDragAccum = 0f },
+                                onDragCancel = { diffDragAccum = 0f }
+                            )
+                        },
                     horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 12.dp else 16.dp)
                 ) {
-                    Difficulty.entries.forEach { difficulty ->
+                    difficulties.forEach { difficulty ->
                         Box(modifier = Modifier.weight(1f)) {
                             DifficultyCard(
                                 difficulty = difficulty,
@@ -300,6 +363,7 @@ fun ExpandableStartButton(
                 }
             }
         }
+        }
     }
 }
 
@@ -314,79 +378,96 @@ fun SizeSlider(
     val containerBg = if (isDark) Color(0xFF141414) else Color(0xFFD6D6D6)
     val accent = accentColor()
     val options = listOf(4, 5, 6)
+    val density = LocalDensity.current
+    val scope = rememberCoroutineScope()
+
     val textColor by animateColorAsState(
         targetValue = if (isDark) Color.White else Color.Black,
         animationSpec = tween(durationMillis = 300),
         label = "textColor"
     )
-    
-    var totalDrag by remember { mutableFloatStateOf(0f) }
-    var dragAccumulator by remember { mutableFloatStateOf(0f) }
+
+    var totalWidthPx by remember { mutableIntStateOf(0) }
+    var isDragging by remember { mutableStateOf(false) }
+    var animateOnNextChange by remember { mutableStateOf(false) }
+    val thumbAnimatable = remember { Animatable(0f) }
     val selectedIndex = options.indexOf(selectedSize)
-    BoxWithConstraints(
+    val itemWidthPx = if (totalWidthPx > 0) totalWidthPx.toFloat() / options.size else 0f
+
+    LaunchedEffect(selectedSize, totalWidthPx) {
+        if (itemWidthPx > 0 && !isDragging) {
+            val targetPx = itemWidthPx * selectedIndex
+            if (animateOnNextChange) {
+                thumbAnimatable.animateTo(
+                    targetValue = targetPx,
+                    animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium)
+                )
+            } else {
+                thumbAnimatable.snapTo(targetPx)
+                animateOnNextChange = true
+            }
+        }
+    }
+
+    Box(
         modifier = Modifier
             .fillMaxWidth(0.9f)
             .height(if (isSmallScreen) 44.dp else 48.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(containerBg)
             .padding(4.dp)
-            .pointerInput(Unit) {
+            .onSizeChanged { totalWidthPx = it.width }
+            .pointerInput(itemWidthPx) {
+                if (itemWidthPx <= 0f) return@pointerInput
                 detectHorizontalDragGestures(
-                    onDragStart = {
-                        totalDrag = 0f
-                        dragAccumulator = 0f
-                    },
-                    onDragEnd = {
-                        totalDrag = 0f
-                        dragAccumulator = 0f
-                    },
-                    onDragCancel = {
-                        totalDrag = 0f
-                        dragAccumulator = 0f
-                    },
+                    onDragStart = { isDragging = true },
                     onHorizontalDrag = { change, dragAmount ->
                         change.consume()
-                        totalDrag += dragAmount
-                        dragAccumulator += dragAmount
-                        
-                        val threshold = 30f
-                        
-                        if (dragAccumulator > threshold && selectedIndex < options.size - 1) {
-                            onSizeSelected(options[selectedIndex + 1])
-                            dragAccumulator = 0f
-                            totalDrag = 0f
-                        } else if (dragAccumulator < -threshold && selectedIndex > 0) {
-                            onSizeSelected(options[selectedIndex - 1])
-                            dragAccumulator = 0f
-                            totalDrag = 0f
+                        val newX = (thumbAnimatable.value + dragAmount)
+                            .coerceIn(0f, totalWidthPx.toFloat() - itemWidthPx)
+                        scope.launch { thumbAnimatable.snapTo(newX) }
+                    },
+                    onDragEnd = {
+                        isDragging = false
+                        val snappedIdx = (thumbAnimatable.value / itemWidthPx)
+                            .roundToInt()
+                            .coerceIn(0, options.size - 1)
+                        val newSize = options[snappedIdx]
+                        if (newSize != selectedSize) onSizeSelected(newSize)
+                        val targetPx = snappedIdx * itemWidthPx
+                        scope.launch {
+                            thumbAnimatable.animateTo(
+                                targetValue = targetPx,
+                                animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium)
+                            )
+                        }
+                    },
+                    onDragCancel = {
+                        isDragging = false
+                        val idx = options.indexOf(selectedSize)
+                        val targetPx = idx * itemWidthPx
+                        scope.launch {
+                            thumbAnimatable.animateTo(
+                                targetValue = targetPx,
+                                animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium)
+                            )
                         }
                     }
                 )
             }
     ) {
-        val width = maxWidth
-        val optionsCount = options.size
-        val thumbWidth = width / optionsCount
-        val currentSelectedIndex = options.indexOf(selectedSize)
-        
-        val thumbOffset by animateDpAsState(
-            targetValue = thumbWidth * currentSelectedIndex,
-            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-            label = "thumbOffset"
-        )
-        
-        Box(
-            modifier = Modifier
-                .offset(x = thumbOffset)
-                .width(thumbWidth)
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(8.dp))
-                .background(accent)
-        )
-        
-        Row(
-            modifier = Modifier.fillMaxSize()
-        ) {
+        if (itemWidthPx > 0) {
+            Box(
+                modifier = Modifier
+                    .offset { IntOffset(thumbAnimatable.value.roundToInt(), 0) }
+                    .width(with(density) { itemWidthPx.toDp() })
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(accent)
+            )
+        }
+
+        Row(modifier = Modifier.fillMaxSize()) {
             options.forEach { size ->
                 Box(
                     modifier = Modifier

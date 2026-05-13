@@ -54,8 +54,7 @@ fun LandingMenuContent(
                 HelpPanel(
                     modifier = Modifier
                         .fillMaxWidth(0.9f)
-                        .fillMaxHeight(0.8f),
-                    scrollable = true
+                        .fillMaxHeight(0.8f)
                 )
                 Spacer(Modifier.height(20.dp))
                 BigButton(

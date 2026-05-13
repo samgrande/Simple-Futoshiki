@@ -83,14 +83,14 @@ fun GameFooter(
                 horizontalArrangement = Arrangement.spacedBy(spacing),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left button: Pause (inverted colors of Reset)
+                // Left: Square Pause button with icon
                 PauseButton(
                     onClick = onPauseClick,
-                    height = buttonHeight,
-                    modifier = Modifier.weight(1f)
+                    size = buttonHeight,
+                    modifier = Modifier
                 )
 
-                // Right button: Reset or SOLVE
+                // Right: Reset or SOLVE
                 if (isSolveMode) {
                     SolveButton(
                         onClick = {
@@ -218,17 +218,16 @@ fun ResetButton(
 @Composable
 fun PauseButton(
     onClick: () -> Unit,
-    height: Dp = 64.dp,
+    size: Dp = 64.dp,
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
-    // Inverted colors relative to ResetButton (cellDefault bg / onSurface text)
-    val bgColor = FutoshikiColors.onSurface()
-    val textColor = FutoshikiColors.cellDefault()
+    val bgColor = accentColor()
+    val iconColor = FutoshikiColors.onSurface()
 
     Box(
         modifier = modifier
-            .height(height)
+            .size(size)
             .clip(RoundedCornerShape(12.dp))
             .background(bgColor)
             .clickable(
@@ -241,13 +240,23 @@ fun PauseButton(
             ),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "PAUSE",
-            color = textColor,
-            fontSize = 18.sp,
-            fontFamily = PixelF,
-            letterSpacing = 1.sp
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                Modifier
+                    .width(4.dp)
+                    .height(20.dp)
+                    .background(iconColor, RoundedCornerShape(1.dp))
+            )
+            Box(
+                Modifier
+                    .width(4.dp)
+                    .height(20.dp)
+                    .background(iconColor, RoundedCornerShape(1.dp))
+            )
+        }
     }
 }
 
@@ -258,8 +267,9 @@ fun SolveButton(
     modifier: Modifier = Modifier
 ) {
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-    val accent = accentColor()
-    val textColor = FutoshikiColors.onSurface()
+    val isDark = LocalIsDark.current
+    val bgColor = if (isDark) Color.White else Color.Black
+    val textColor = if (isDark) Color.Black else Color.White
 
     val interactionSource = remember { MutableInteractionSource() }
 
@@ -267,7 +277,7 @@ fun SolveButton(
         modifier = modifier
             .height(height)
             .clip(RoundedCornerShape(12.dp))
-            .background(accent)
+            .background(bgColor)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
