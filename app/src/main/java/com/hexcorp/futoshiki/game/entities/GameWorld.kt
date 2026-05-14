@@ -140,7 +140,7 @@ class GameWorld(
             400, 400,
             manager
         ).apply {
-            x = 100.0
+            x = 500.0
             y = floorY + 95.0
             zIndex = 20.0
             scale = 0.2
@@ -230,7 +230,7 @@ class GameWorld(
         targetNinjaScreenX = 500.0
         currentNinjaScreenX = 500.0
         if (::ninja.isInitialized) {
-            ninja.x = 100.0
+            ninja.x = 500.0
             ninja.resetForRestart()
         }
         if (::dragon.isInitialized) {
@@ -313,10 +313,7 @@ class GameWorld(
 
     fun setNinjaScreenX(value: Float) {
         targetNinjaScreenX = value.toDouble()
-        // If we just jumped a large distance (e.g. initial setup), snap it
-        if (kotlin.math.abs(targetNinjaScreenX - currentNinjaScreenX) > 200) {
-            currentNinjaScreenX = targetNinjaScreenX
-        }
+        // No snapping — all transitions are smoothed in update()
     }
 
     fun swapNinjaToReadSprite() {
@@ -346,10 +343,17 @@ class GameWorld(
     fun update(dt: Double, aggression: Float, enableCloudDrift: Boolean = true) {
         if (!::ninja.isInitialized || !::dragon.isInitialized) return
         
-        // Smoothly move currentNinjaScreenX toward targetNinjaScreenX
+        // Smoothly move currentNinjaScreenX toward targetNinjaScreenX.
+        // Large jumps (puzzle progress) use a very low stiffness so the ninja
+        // drifts to the new position slowly instead of teleporting.
         val diff = targetNinjaScreenX - currentNinjaScreenX
         if (kotlin.math.abs(diff) > 0.1) {
-            currentNinjaScreenX += diff * (1.0 - kotlin.math.exp(-cameraStiffness * dt))
+            val effectiveStiffness = when {
+                kotlin.math.abs(diff) > 150 -> 0.015  // very very slow drift for big jumps
+                kotlin.math.abs(diff) > 50  -> 0.06   // gentle ease for medium shifts
+                else                        -> cameraStiffness  // normal follow
+            }
+            currentNinjaScreenX += diff * (1.0 - kotlin.math.exp(-effectiveStiffness * dt))
         } else {
             currentNinjaScreenX = targetNinjaScreenX
         }

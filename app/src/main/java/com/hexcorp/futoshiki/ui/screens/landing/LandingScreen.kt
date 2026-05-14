@@ -56,7 +56,7 @@ fun LandingScreen(
 
     var entranceActive by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        val delayTime = if (skipEntranceAnimation) 300L else 1200L
+        val delayTime = if (skipEntranceAnimation) 300L else 1440L
         delay(delayTime)
         entranceActive = false
     }
@@ -138,10 +138,45 @@ fun LandingScreen(
             Spacer(Modifier.height(korgeHeight + if (isSmallScreen) 0.dp else 8.dp))
 
             Box(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(titleSize.value.dp * 3f)
+                    .offset(y = -(vh * 0.05f)),
                 contentAlignment = Alignment.Center
             ) {
-                FutoshikiTitle(fontSize = titleSize)
+                val isFirstLaunch = androidx.compose.runtime.remember { !skipEntranceAnimation }
+                val composition by com.airbnb.lottie.compose.rememberLottieComposition(com.airbnb.lottie.compose.LottieCompositionSpec.RawRes(com.hexcorp.futoshiki.R.raw.futo))
+                val progress by com.airbnb.lottie.compose.animateLottieCompositionAsState(
+                    composition,
+                    isPlaying = isFirstLaunch,
+                    iterations = 1
+                )
+                val invertMatrix = floatArrayOf(
+                    -1f,  0f,  0f, 0f, 255f,
+                     0f, -1f,  0f, 0f, 255f,
+                     0f,  0f, -1f, 0f, 255f,
+                     0f,  0f,  0f, 1f,   0f
+                )
+                
+                val dynamicProperties = com.airbnb.lottie.compose.rememberLottieDynamicProperties(
+                    com.airbnb.lottie.compose.rememberLottieDynamicProperty(
+                        property = com.airbnb.lottie.LottieProperty.COLOR_FILTER,
+                        value = if (isDark) android.graphics.ColorMatrixColorFilter(invertMatrix) else null,
+                        keyPath = arrayOf("**")
+                    )
+                )
+                
+                com.airbnb.lottie.compose.LottieAnimation(
+                    composition = composition,
+                    progress = { if (!isFirstLaunch) 1f else progress },
+                    dynamicProperties = dynamicProperties,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = 1.05f
+                            scaleY = 1.05f
+                        }
+                )
             }
 
             Spacer(Modifier.height(titleSpacing))
@@ -149,7 +184,7 @@ fun LandingScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .offset(y = entranceOffset)
+                    .offset(y = entranceOffset - (vh * 0.10f))
                     .graphicsLayer { alpha = entranceProgress }
                     .then(if (scope != null) {
                         with(scope) {

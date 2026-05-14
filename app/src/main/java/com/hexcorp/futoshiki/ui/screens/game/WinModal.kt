@@ -35,14 +35,18 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.hexcorp.futoshiki.R
+import com.hexcorp.futoshiki.game.Difficulty
 import com.hexcorp.futoshiki.ui.components.shared.formatTimer
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import com.hexcorp.futoshiki.ui.theme.Midorima
+import com.hexcorp.futoshiki.ui.theme.PixelF
+import com.hexcorp.futoshiki.ui.theme.Yuji
 import com.hexcorp.futoshiki.ui.theme.accentColor
 import kotlinx.coroutines.delay
 import java.io.File
@@ -60,7 +64,10 @@ private fun findSurfaceView(view: android.view.View): android.view.SurfaceView? 
 }
 
 private fun shareScreenshot(context: Context, view: android.view.View, korgeView: android.view.View?) {
-    val bitmap = android.graphics.Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+    val fullWidth = view.width
+    val fullHeight = view.height
+
+    val bitmap = android.graphics.Bitmap.createBitmap(fullWidth, fullHeight, Bitmap.Config.ARGB_8888)
     val canvas = android.graphics.Canvas(bitmap)
     view.draw(canvas)
 
@@ -80,13 +87,21 @@ private fun shareScreenshot(context: Context, view: android.view.View, korgeView
                     val dy = surfaceLocation[1] - viewLocation[1]
                     canvas.drawBitmap(korgeBitmap, dx.toFloat(), dy.toFloat(), null)
                 }
-                saveAndShare(context, bitmap)
+                saveAndShare(context, cropFooterAndScale(bitmap, context))
             },
             Handler(Looper.getMainLooper())
         )
     } else {
-        saveAndShare(context, bitmap)
+        saveAndShare(context, cropFooterAndScale(bitmap, context))
     }
+}
+
+private fun cropFooterAndScale(bitmap: android.graphics.Bitmap, context: Context): android.graphics.Bitmap {
+    val density = context.resources.displayMetrics.density
+    val footerPx = (120 * density).toInt()
+    val cropH = (bitmap.height - footerPx).coerceAtLeast(bitmap.height / 2)
+    val cropped = android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, cropH)
+    return android.graphics.Bitmap.createScaledBitmap(cropped, bitmap.width, bitmap.height, true)
 }
 
 private fun saveAndShare(context: Context, bitmap: android.graphics.Bitmap) {
@@ -105,6 +120,8 @@ private fun saveAndShare(context: Context, bitmap: android.graphics.Bitmap) {
 fun CongratsView(
     timerSeconds: Int,
     onPlayAgain: () -> Unit,
+    gridSize: Int = 4,
+    difficulty: Difficulty = Difficulty.EASY,
     isExpanded: Boolean = false,
     korgeView: android.view.View? = null,
     modifier: Modifier = Modifier
@@ -115,6 +132,7 @@ fun CongratsView(
     @Suppress("DEPRECATION")
     val vibrator = remember { context.applicationContext.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator }
     val isDark = LocalIsDark.current
+    val accent = accentColor()
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -166,27 +184,78 @@ fun CongratsView(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "S H A R E",
-                color = if (isDark) Color.Black else Color.White,
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
-                letterSpacing = 2.sp,
-                modifier = Modifier
-                    .background(accentColor(), shape = RoundedCornerShape(6.dp))
-                    .clickable { shareScreenshot(context, view, korgeView) }
-                    .padding(horizontal = 14.dp, vertical = 6.dp)
-            )
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(50.dp)
+                        )
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text          = "Grid ",
+                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
+                            fontSize      = 12.sp,
+                            fontWeight    = FontWeight.Medium,
+                            fontFamily    = PixelF,
+                            letterSpacing = 1.sp
+                        )
+                        Text(
+                            text          = "${gridSize}x${gridSize}",
+                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.8f),
+                            fontSize      = 14.sp,
+                            fontWeight    = FontWeight.Bold,
+                            fontFamily    = PixelF,
+                            letterSpacing = 2.sp
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(50.dp)
+                        )
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text          = "Mode ",
+                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
+                            fontSize      = 12.sp,
+                            fontWeight    = FontWeight.Medium,
+                            fontFamily    = PixelF,
+                            letterSpacing = 1.sp
+                        )
+                        Text(
+                            text          = difficulty.name,
+                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.8f),
+                            fontSize      = 14.sp,
+                            fontWeight    = FontWeight.Bold,
+                            fontFamily    = PixelF,
+                            letterSpacing = 2.sp
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            Image(
-                painter = painterResource(id = R.drawable.kanji_congrats),
-                contentDescription = "Congratulations",
+            Text(
+                text = "勝",
+                color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.4f),
+                fontFamily = Yuji,
+                fontSize = 150.sp,
+                textAlign = TextAlign.Center,
                 modifier = Modifier
-                    .fillMaxWidth(0.42f) // Reduced size
-                    .aspectRatio(180f / 312f)
+                    .fillMaxWidth()
                     .graphicsLayer {
                         translationX = if (isShaking) shakeAnim else 0f
                         rotationZ = if (isShaking) shakeAnim * 0.5f else 0f
@@ -210,29 +279,29 @@ fun CongratsView(
                     }
             )
 
-            Spacer(modifier = Modifier.height(20.dp)) // Reduced spacer
+            Spacer(modifier = Modifier.height(36.dp))
 
         Text(
-            text          = "C O N G R A T U L A T I O N",
-            color         = accentColor(),
-            fontSize      = 11.sp, // Slightly smaller
-            fontWeight    = FontWeight.SemiBold,
-            fontFamily    = com.hexcorp.futoshiki.ui.theme.PixelF,
-            letterSpacing = 2.sp
+            text          = "Y O U   W O N",
+            color         = accent,
+            fontSize      = 17.sp,
+            fontWeight    = FontWeight.Bold,
+            fontFamily    = Midorima,
+            letterSpacing = 4.sp
         )
 
-        Spacer(modifier = Modifier.height(12.dp)) // Reduced spacer
+        Spacer(modifier = Modifier.height(28.dp))
 
         Text(
             text          = "S O L V E D   I N",
-            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.65f),
-            fontSize      = 8.5.sp, // Slightly smaller
+            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
+            fontSize      = 10.sp,
             fontWeight    = FontWeight.Medium,
-            fontFamily    = com.hexcorp.futoshiki.ui.theme.PixelF,
+            fontFamily    = PixelF,
             letterSpacing = 3.sp
         )
 
-        Spacer(modifier = Modifier.height(4.dp)) // Reduced spacer
+        Spacer(modifier = Modifier.height(8.dp))
 
         val timeStr = formatTimer(timerSeconds)
         val mm = timeStr.substring(0, 2)
@@ -242,13 +311,28 @@ fun CongratsView(
         Text(
             text          = displayTime,
             color         = if (isDark) Color.White else Color.Black,
-            fontSize      = 22.sp, // Slightly smaller
+            fontSize      = 34.sp,
             fontWeight    = FontWeight.Bold,
             fontFamily    = Midorima,
-            letterSpacing = 2.sp
+            letterSpacing = 3.sp
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Box(
+            modifier = Modifier.clickable { shareScreenshot(context, view, korgeView) }
+        ) {
+            Text(
+                text = "S H A R E",
+                color = accent,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = PixelF,
+                letterSpacing = 3.sp
+            )
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
     }
     }
 }
@@ -256,10 +340,13 @@ fun CongratsView(
 @Composable
 fun DefeatView(
     onPlayAgain: () -> Unit,
+    gridSize: Int = 4,
+    difficulty: Difficulty = Difficulty.EASY,
     isExpanded: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalIsDark.current
+    val accent = accentColor()
 
     val alpha by androidx.compose.animation.core.animateFloatAsState(
         targetValue = if (isExpanded) 0f else 1f,
@@ -277,33 +364,127 @@ fun DefeatView(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Image(
-                painter = painterResource(id = R.drawable.kanji_congrats),
-                contentDescription = "Defeat",
-                modifier = Modifier
-                    .fillMaxWidth(0.42f)
-                    .aspectRatio(180f / 312f)
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(50.dp)
+                        )
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text          = "Grid ",
+                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
+                            fontSize      = 12.sp,
+                            fontWeight    = FontWeight.Medium,
+                            fontFamily    = PixelF,
+                            letterSpacing = 1.sp
+                        )
+                        Text(
+                            text          = "${gridSize}x${gridSize}",
+                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.8f),
+                            fontSize      = 14.sp,
+                            fontWeight    = FontWeight.Bold,
+                            fontFamily    = PixelF,
+                            letterSpacing = 2.sp
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(50.dp)
+                        )
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text          = "Mode ",
+                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
+                            fontSize      = 12.sp,
+                            fontWeight    = FontWeight.Medium,
+                            fontFamily    = PixelF,
+                            letterSpacing = 1.sp
+                        )
+                        Text(
+                            text          = difficulty.name,
+                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.8f),
+                            fontSize      = 14.sp,
+                            fontWeight    = FontWeight.Bold,
+                            fontFamily    = PixelF,
+                            letterSpacing = 2.sp
+                        )
+                    }
+                }
+            }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text          = "You made too many mistakes",
-                color         = accentColor(),
-                fontSize      = 11.sp,
-                fontWeight    = FontWeight.SemiBold,
-                fontFamily    = com.hexcorp.futoshiki.ui.theme.PixelF,
-                letterSpacing = 2.sp
+                text = "失",
+                color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.4f),
+                fontFamily = Yuji,
+                fontSize = 150.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(36.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(50.dp)
+                        )
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text          = "${gridSize}x${gridSize}",
+                        color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.6f),
+                        fontSize      = 13.sp,
+                        fontWeight    = FontWeight.Bold,
+                        fontFamily    = com.hexcorp.futoshiki.ui.theme.PixelF,
+                        letterSpacing = 2.sp
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(50.dp)
+                        )
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text          = difficulty.name,
+                        color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.6f),
+                        fontSize      = 13.sp,
+                        fontWeight    = FontWeight.Bold,
+                        fontFamily    = com.hexcorp.futoshiki.ui.theme.PixelF,
+                        letterSpacing = 2.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             Text(
                 text          = "TRY AGAIN?",
-                color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.65f),
-                fontSize      = 8.5.sp,
+                color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
+                fontSize      = 10.sp,
                 fontWeight    = FontWeight.Medium,
                 fontFamily    = com.hexcorp.futoshiki.ui.theme.PixelF,
                 letterSpacing = 3.sp

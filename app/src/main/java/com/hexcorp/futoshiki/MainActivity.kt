@@ -126,7 +126,7 @@ fun FutoshikiApp(
                 if (!landingEntrancePlayed) {
                     landingEntrancePlayed = true
                     val isInitialLaunch = previousScreen == null
-                    val delayTime = if (isInitialLaunch) 1400L else 300L
+                    val delayTime = if (isInitialLaunch) 1700L else 300L
                     delay(delayTime)
                     landingEntranceDone = true
                 }

@@ -7,8 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
@@ -212,8 +213,8 @@ fun ExpandableStartButton(
                         letterSpacing = 1.sp,
                         modifier = Modifier.graphicsLayer { alpha = textCrossfadeProgress }
                     )
-                }
-            }
+    }
+    }
         } else {
             val density = LocalDensity.current
             var dragOffsetY by remember { mutableFloatStateOf(0f) }
@@ -226,15 +227,8 @@ fun ExpandableStartButton(
                     .graphicsLayer {
                         translationY = if (dragOffsetY != 0f) dragAnimatable.value else 0f
                     }
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .border(2.dp, strokeColor, RoundedCornerShape(14.dp))
-                        .background(expandedBg)
-                        .padding(top = if (isSmallScreen) 24.dp else 32.dp, bottom = if (isSmallScreen) 20.dp else 28.dp)
-                        .pointerInput(Unit) {
+                    .shadow(if (isSmallScreen) 4.dp else 8.dp, RoundedCornerShape(14.dp))
+                    .pointerInput(Unit) {
                         detectVerticalDragGestures(
                             onDragEnd = {
                                 scope.launch {
@@ -264,109 +258,120 @@ fun ExpandableStartButton(
                                 scope.launch { dragAnimatable.snapTo(dragOffsetY) }
                             }
                         )
-                    },
-                horizontalAlignment = Alignment.CenterHorizontally
+                    }
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .border(2.dp, strokeColor, RoundedCornerShape(14.dp))
+                        .background(expandedBg)
+                        .padding(top = if (isSmallScreen) 18.dp else 25.dp, bottom = if (isSmallScreen) 18.dp else 25.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                 Text(
                     text = "GRID SIZE",
-                    color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.7f),
-                    fontSize = 12.5.sp,
+                    color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.65f),
+                    fontSize = 11.5.sp,
                     fontFamily = PixelF,
-                    letterSpacing = 3.sp,
-                    modifier = Modifier.padding(bottom = if (isSmallScreen) 8.dp else 12.dp),
-                    textAlign = TextAlign.Center
-                )
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 3.5.sp,
+                        modifier = Modifier.padding(bottom = if (isSmallScreen) 6.dp else 10.dp),
+                        textAlign = TextAlign.Center
+                    )
 
-                SizeSlider(
-                    selectedSize = selectedSize,
-                    onSizeSelected = onSizeSelected,
-                    isDark = isDark,
-                    currentSize = currentSize,
-                    isSmallScreen = isSmallScreen
-                )
+                    SizeSlider(
+                        selectedSize = selectedSize,
+                        onSizeSelected = onSizeSelected,
+                        isDark = isDark,
+                        currentSize = currentSize,
+                        isSmallScreen = isSmallScreen
+                    )
 
-                Spacer(Modifier.height(if (isSmallScreen) 20.dp else 32.dp))
+                    Spacer(Modifier.height(if (isSmallScreen) 12.dp else 22.dp))
 
-                Text(
-                    text = "DIFFICULTY",
-                    color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.7f),
-                    fontSize = 12.5.sp,
-                    fontFamily = PixelF,
-                    letterSpacing = 3.sp,
-                    modifier = Modifier.padding(bottom = if (isSmallScreen) 8.dp else 12.dp),
-                    textAlign = TextAlign.Center
-                )
+                    Text(
+                        text = "DIFFICULTY",
+                        color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.65f),
+                        fontSize = 11.5.sp,
+                        fontFamily = PixelF,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 3.5.sp,
+                        modifier = Modifier.padding(bottom = if (isSmallScreen) 6.dp else 10.dp),
+                        textAlign = TextAlign.Center
+                    )
 
-                val difficulties = Difficulty.entries
-                var diffDragAccum by remember { mutableFloatStateOf(0f) }
+                    val difficulties = Difficulty.entries
+                    var diffDragAccum by remember { mutableFloatStateOf(0f) }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .pointerInput(difficulties) {
-                            detectHorizontalDragGestures(
-                                onDragStart = { diffDragAccum = 0f },
-                                onHorizontalDrag = { change, dragAmount ->
-                                    change.consume()
-                                    diffDragAccum += dragAmount
-                                    val threshold = 60f
-                                    val cur = selectedDifficulty.ordinal
-                                    if (diffDragAccum > threshold && cur > 0) {
-                                        onDifficultyChange(difficulties[cur - 1])
-                                        diffDragAccum = 0f
-                                    } else if (diffDragAccum < -threshold && cur < difficulties.size - 1) {
-                                        onDifficultyChange(difficulties[cur + 1])
-                                        diffDragAccum = 0f
-                                    }
-                                },
-                                onDragEnd = { diffDragAccum = 0f },
-                                onDragCancel = { diffDragAccum = 0f }
-                            )
-                        },
-                    horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 12.dp else 16.dp)
-                ) {
-                    difficulties.forEach { difficulty ->
-                        Box(modifier = Modifier.weight(1f)) {
-                            DifficultyCard(
-                                difficulty = difficulty,
-                                isSelected = selectedDifficulty == difficulty,
-                                onClick = { onDifficultyChange(difficulty) },
-                                isDark = isDark,
-                                isSmallScreen = isSmallScreen
-                            )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(0.9f)
+                            .pointerInput(difficulties) {
+                                detectHorizontalDragGestures(
+                                    onDragStart = { diffDragAccum = 0f },
+                                    onHorizontalDrag = { change, dragAmount ->
+                                        change.consume()
+                                        diffDragAccum += dragAmount
+                                        val threshold = 60f
+                                        val cur = selectedDifficulty.ordinal
+                                        if (diffDragAccum > threshold && cur > 0) {
+                                            onDifficultyChange(difficulties[cur - 1])
+                                            diffDragAccum = 0f
+                                        } else if (diffDragAccum < -threshold && cur < difficulties.size - 1) {
+                                            onDifficultyChange(difficulties[cur + 1])
+                                            diffDragAccum = 0f
+                                        }
+                                    },
+                                    onDragEnd = { diffDragAccum = 0f },
+                                    onDragCancel = { diffDragAccum = 0f }
+                                )
+                            },
+                        horizontalArrangement = Arrangement.spacedBy(if (isSmallScreen) 10.dp else 14.dp)
+                    ) {
+                        difficulties.forEach { difficulty ->
+                            Box(modifier = Modifier.weight(1f)) {
+                                DifficultyCard(
+                                    difficulty = difficulty,
+                                    isSelected = selectedDifficulty == difficulty,
+                                    onClick = { onDifficultyChange(difficulty) },
+                                    isDark = isDark,
+                                    isSmallScreen = isSmallScreen
+                                )
+                            }
                         }
                     }
-                }
-                
-                Spacer(Modifier.height(if (isSmallScreen) 24.dp else 36.dp))
+                    
+                    Spacer(Modifier.height(if (isSmallScreen) 12.dp else 25.dp))
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .height(if (isSmallScreen) 44.dp else 48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(accentColor())
-                        .clickable(onClick = {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onStart()
-                        }),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "START",
-                        color = if (isDark) Color.Black else Color.White,
-                        fontSize = 16.sp,
-                        fontFamily = PixelF,
-                        fontWeight = FontWeight.Medium,
-                        letterSpacing = 2.sp
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.75f)
+                            .height(60.dp)
+                            .shadow(4.dp, RoundedCornerShape(14.dp))
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(if (isDark) Color.White else Color.Black)
+                            .clickable(onClick = {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onStart()
+                            }),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "START",
+                            color = if (isDark) Color(0xFF0B0B0B) else Color(0xFFF5F2F2),
+                            fontSize = if (isSmallScreen) 16.sp else 18.sp,
+                            fontFamily = PixelF,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 2.sp
+                        )
+                    }
                 }
             }
         }
-        }
     }
 }
-
+  
 @Composable
 fun SizeSlider(
     selectedSize: Int,
@@ -375,7 +380,7 @@ fun SizeSlider(
     currentSize: Int = selectedSize,
     isSmallScreen: Boolean = false
 ) {
-    val containerBg = if (isDark) Color(0xFF141414) else Color(0xFFD6D6D6)
+    val containerBg = if (isDark) Color(0xFF1A1A1A) else Color(0xFFE8E8E8)
     val accent = accentColor()
     val options = listOf(4, 5, 6)
     val density = LocalDensity.current
@@ -412,10 +417,10 @@ fun SizeSlider(
     Box(
         modifier = Modifier
             .fillMaxWidth(0.9f)
-            .height(if (isSmallScreen) 44.dp else 48.dp)
+            .height(if (isSmallScreen) 34.dp else 40.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(containerBg)
-            .padding(4.dp)
+            .padding(2.dp)
             .onSizeChanged { totalWidthPx = it.width }
             .pointerInput(itemWidthPx) {
                 if (itemWidthPx <= 0f) return@pointerInput
@@ -485,7 +490,7 @@ fun SizeSlider(
                         color = textColor,
                         fontSize = 15.sp,
                         fontFamily = PixelF,
-                        fontWeight = if (selectedSize == size) FontWeight.Bold else FontWeight.Normal
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -502,7 +507,8 @@ fun DifficultyCard(
     isSmallScreen: Boolean = false
 ) {
     val accent = accentColor()
-    val unselectedBg = if (isDark) Color(0xFF141414) else Color(0xFFD6D6D6)
+    val unselectedBg = if (isDark) Color(0xFF1A1A1A) else Color(0xFFE8E8E8)
+    val unselectedBorder = if (isDark) Color(0xFF2A2A2A) else Color(0xFFD0D0D0)
     val targetBg = if (isSelected) accent else unselectedBg
     
     val cardBg by animateColorAsState(
@@ -536,13 +542,17 @@ fun DifficultyCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(0.98f)
+                .aspectRatio(1f)
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
                 }
-                .clip(RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(10.dp))
                 .background(cardBg)
+                .then(
+                    if (!isSelected) Modifier.border(1.dp, unselectedBorder, RoundedCornerShape(10.dp))
+                    else Modifier
+                )
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -553,9 +563,10 @@ fun DifficultyCard(
             Text(
                 text = kanji,
                 color = textColor,
-                fontSize = if (isSmallScreen) 28.sp else 32.sp,
+                fontSize = if (isSmallScreen) 34.sp else 40.sp,
                 textAlign = TextAlign.Center,
                 fontFamily = Yuji,
+                fontWeight = FontWeight.Bold,
                 style = androidx.compose.ui.text.TextStyle(
                     platformStyle = androidx.compose.ui.text.PlatformTextStyle(
                         includeFontPadding = false
@@ -564,13 +575,14 @@ fun DifficultyCard(
             )
         }
         
-        Spacer(Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
+        Spacer(Modifier.height(if (isSmallScreen) 6.dp else 8.dp))
 
         Text(
             text = difficulty.name,
             color = textColor.copy(alpha = 0.7f),
             fontSize = 10.sp,
             fontFamily = PixelF,
+            fontWeight = FontWeight.Bold,
             letterSpacing = 2.sp
         )
     }

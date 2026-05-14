@@ -114,9 +114,18 @@ fun generateConstraints(solution: List<List<Int>>, size: Int, count: Int): List<
 
 // ── Full puzzle builder ───────────────────────────────────────────────────────
 
-private fun fillPercent(difficulty: Difficulty): Double = when (difficulty) {
-    Difficulty.EASY   -> 0.70
-    Difficulty.MEDIUM -> 0.50
+private fun fillPercent(difficulty: Difficulty): Double {
+    val rng = Random.Default
+    return when (difficulty) {
+        Difficulty.EASY   -> rng.nextDouble(0.50, 0.60)
+        Difficulty.MEDIUM -> rng.nextDouble(0.30, 0.40)
+        Difficulty.HARD   -> rng.nextDouble(0.00, 0.20)
+    }
+}
+
+private fun maxFillPercent(difficulty: Difficulty): Double = when (difficulty) {
+    Difficulty.EASY   -> 0.60
+    Difficulty.MEDIUM -> 0.40
     Difficulty.HARD   -> 0.20
 }
 
@@ -147,15 +156,18 @@ fun generatePuzzle(size: Int, difficulty: Difficulty = Difficulty.EASY): Puzzle 
     val rng = Random.Default
     val totalCells = size * size
     val targetFill = (totalCells * fillPercent(difficulty)).toInt().coerceAtLeast(1)
+    val maxFill = (totalCells * maxFillPercent(difficulty)).toInt().coerceAtLeast(1)
 
     val baseConstraints = when (size) {
         3 -> 2; 4 -> 4; 5 -> 6; else -> 8
     }
+    // HARD = more constraints (compensates for fewer prefilled cells)
+    // EASY = fewer constraints (more ambiguity offset by more prefilled)
     val constraintCount = when (difficulty) {
-        Difficulty.EASY   -> baseConstraints + 2
+        Difficulty.EASY   -> (baseConstraints - 1).coerceAtLeast(1)
         Difficulty.MEDIUM -> baseConstraints
-        Difficulty.HARD   -> baseConstraints - 1
-    }.coerceAtLeast(1)
+        Difficulty.HARD   -> baseConstraints + 2
+    }
 
     while (true) {
         val solution = generateSolution(size)
@@ -177,14 +189,21 @@ fun generatePuzzle(size: Int, difficulty: Difficulty = Difficulty.EASY): Puzzle 
             return Puzzle(solution, constraints, initialGrid)
         }
 
+        var exceeded = false
         for ((r, c) in allCells.drop(fillCount)) {
             if (grid[r][c] == 0) {
                 grid[r][c] = solution[r][c]
+                val currentFill = grid.sumOf { row -> row.count { it != 0 } }
+                if (currentFill > maxFill) {
+                    exceeded = true
+                    break
+                }
                 if (countSolutions(grid.map { it.toList() }, constraints, size) == 1) {
                     return Puzzle(solution, constraints, grid.map { it.toList() })
                 }
             }
         }
+        if (exceeded) continue
     }
 }
 

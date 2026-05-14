@@ -85,5 +85,6 @@ dependencies {
     implementation(libs.androidx.compose.ui.viewbinding)
     implementation(libs.korge.android)
     implementation("com.soywiz.korge:korge-core-android:6.0.0")
+    implementation("com.airbnb.android:lottie-compose:6.4.0")
     debugImplementation(libs.androidx.ui.tooling)
 }

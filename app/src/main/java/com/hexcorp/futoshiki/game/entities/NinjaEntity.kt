@@ -79,7 +79,7 @@ class NinjaEntity(
     }
 
     fun skipIntro() {
-        x = 100.0
+        // x is already set to the correct start position by GameWorld
         isIntro = false
         autoRun = true
         manager.signalRunningStarted()

@@ -39,6 +39,10 @@ class DragonEntity(
     private var animationTimer = 0.0f
     private val frameDuration = 0.1f
 
+    // Internal scope for entrance animations (cancelled on reset)
+    private val entityScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private var entranceJob: Job? = null
+
     init {
         // Initialize the sprite component
         val firstFrame = spriteSheet.slice(RectangleInt(0, 0, frameWidth, frameHeight))
@@ -86,25 +90,73 @@ class DragonEntity(
             delay(16)
         }
 
-        // PHASE 2: START CHASE
-        x = ninja.x - 400.0f
-        y = ninja.y - 500.0f
+        // PHASE 2: SLIDE IN FROM THE LEFT EDGE
+        // X: drive a screen-space offset so the slide is correct even as ninja runs.
+        // Y: use the same dynamicFloat formula as update() so there is zero snap on handoff.
+        alpha = 0.0
         sprite.scaleX = 1.0
         sprite.scaleY = 1.0
         visible = true
+
+        val enterDuration = 4200L   // slow, dramatic entrance
+        var enterElapsed  = 0L
+        while (enterElapsed < enterDuration) {
+            if (!manager.isPaused) {
+                val t     = enterElapsed.toFloat() / enterDuration.toFloat()
+                // Ease-in-out sine: starts gently, smooth arc, decelerates softly
+                val eased = (-(cos(PI.toFloat() * t) - 1f) / 2f)
+                val screenOffset = -1000f * (1f - eased)
+                x = ninja.x - 400.0 + screenOffset
+                val dynamicFloat = 220.0f + (cos(timePassed * pulseSpeed * 0.5f) * verticalSwing)
+                y = ninja.y - dynamicFloat.toDouble()
+                alpha = eased.toDouble()
+                enterElapsed += 16
+            }
+            delay(16)
+        }
+        // Land exactly where update() would place it
+        val dynamicFloatFinal = 220.0f + (cos(timePassed * pulseSpeed * 0.5f) * verticalSwing)
+        x     = ninja.x - 400.0
+        y     = ninja.y - dynamicFloatFinal.toDouble()
+        alpha = 1.0
         isChasing = true
-        // Set initial velocity to match Ninja so it doesn't fall behind immediately
         velocityX = 250.0f
     }
 
     fun skipIntro(ninja: NinjaEntity) {
-        x = ninja.x - 400.0f
-        y = ninja.y - 500.0f
+        // X: screen-space offset tracks ninja live.
+        // Y: matches update()'s dynamicFloat formula so there is no snap on handoff.
+        entranceJob?.cancel()
+        isChasing = false
         sprite.scaleX = 1.0
         sprite.scaleY = 1.0
+        alpha = 0.0
+        val initDynamic = 220.0f + (cos(timePassed * pulseSpeed * 0.5f) * verticalSwing)
+        x = ninja.x - 400.0 - 800.0   // start off-screen (screen offset -800)
+        y = ninja.y - initDynamic.toDouble()
         visible = true
-        isChasing = true
-        velocityX = 250.0f
+        entranceJob = entityScope.launch {
+            val enterDuration = 2200L   // slow, dramatic
+            var enterElapsed  = 0L
+            while (enterElapsed < enterDuration) {
+                val t     = enterElapsed.toFloat() / enterDuration.toFloat()
+                // Ease-in-out sine: smooth arc entry
+                val eased = (-(cos(PI.toFloat() * t) - 1f) / 2f)
+                val screenOffset = -800f * (1f - eased)
+                x = ninja.x - 400.0 + screenOffset
+                val dynamicFloat = 220.0f + (cos(timePassed * pulseSpeed * 0.5f) * verticalSwing)
+                y = ninja.y - dynamicFloat.toDouble()
+                alpha = eased.toDouble()
+                enterElapsed += 16
+                delay(16)
+            }
+            val dynamicFloatFinal = 220.0f + (cos(timePassed * pulseSpeed * 0.5f) * verticalSwing)
+            x     = ninja.x - 400.0
+            y     = ninja.y - dynamicFloatFinal.toDouble()
+            alpha = 1.0
+            isChasing = true
+            velocityX = 250.0f
+        }
     }
 
     fun setIdle() {
@@ -198,6 +250,8 @@ class DragonEntity(
     }
 
     fun resetForRestart() {
+        entranceJob?.cancel()
+        entranceJob = null
         timePassed = 0.0f
         pulseSpeed = 0.5f
         hoverBreadth = 150.0f
@@ -212,6 +266,7 @@ class DragonEntity(
         damping = 10.0f
         currentFrame = 0
         animationTimer = 0.0f
+        alpha = 1.0
         visible = false
         x = 0.0
         y = 0.0

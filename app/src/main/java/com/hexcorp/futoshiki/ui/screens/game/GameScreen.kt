@@ -362,6 +362,8 @@ fun GameScreen(
                         CongratsView(
                             timerSeconds = state.timerSeconds,
                             onPlayAgain = { viewModel.newGame(size) },
+                            gridSize = state.size,
+                            difficulty = state.difficulty,
                             isExpanded = newGameExpanded,
                             korgeView = viewModel.korgeManager.korgeAndroidView,
                             modifier = Modifier.padding(horizontal = hPad)
@@ -376,6 +378,8 @@ fun GameScreen(
                     ) {
                         DefeatView(
                             onPlayAgain = { viewModel.newGame(size) },
+                            gridSize = state.size,
+                            difficulty = state.difficulty,
                             isExpanded = newGameExpanded,
                             modifier = Modifier.padding(horizontal = hPad)
                         )
