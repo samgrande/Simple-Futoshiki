@@ -93,7 +93,7 @@ class DragonEntity(
         // PHASE 2: SLIDE IN FROM THE LEFT EDGE
         // X: drive a screen-space offset so the slide is correct even as ninja runs.
         // Y: use the same dynamicFloat formula as update() so there is zero snap on handoff.
-        alpha = 0.0
+        alpha = 1.0
         sprite.scaleX = 1.0
         sprite.scaleY = 1.0
         visible = true
@@ -103,22 +103,18 @@ class DragonEntity(
         while (enterElapsed < enterDuration) {
             if (!manager.isPaused) {
                 val t     = enterElapsed.toFloat() / enterDuration.toFloat()
-                // Ease-in-out sine: starts gently, smooth arc, decelerates softly
                 val eased = (-(cos(PI.toFloat() * t) - 1f) / 2f)
                 val screenOffset = -1000f * (1f - eased)
                 x = ninja.x - 400.0 + screenOffset
                 val dynamicFloat = 220.0f + (cos(timePassed * pulseSpeed * 0.5f) * verticalSwing)
                 y = ninja.y - dynamicFloat.toDouble()
-                alpha = eased.toDouble()
                 enterElapsed += 16
             }
             delay(16)
         }
-        // Land exactly where update() would place it
         val dynamicFloatFinal = 220.0f + (cos(timePassed * pulseSpeed * 0.5f) * verticalSwing)
         x     = ninja.x - 400.0
         y     = ninja.y - dynamicFloatFinal.toDouble()
-        alpha = 1.0
         isChasing = true
         velocityX = 250.0f
     }
@@ -130,30 +126,27 @@ class DragonEntity(
         isChasing = false
         sprite.scaleX = 1.0
         sprite.scaleY = 1.0
-        alpha = 0.0
+        alpha = 1.0
         val initDynamic = 220.0f + (cos(timePassed * pulseSpeed * 0.5f) * verticalSwing)
         x = ninja.x - 400.0 - 800.0   // start off-screen (screen offset -800)
         y = ninja.y - initDynamic.toDouble()
         visible = true
         entranceJob = entityScope.launch {
-            val enterDuration = 2200L   // slow, dramatic
+            val enterDuration = 2200L
             var enterElapsed  = 0L
             while (enterElapsed < enterDuration) {
                 val t     = enterElapsed.toFloat() / enterDuration.toFloat()
-                // Ease-in-out sine: smooth arc entry
                 val eased = (-(cos(PI.toFloat() * t) - 1f) / 2f)
                 val screenOffset = -800f * (1f - eased)
                 x = ninja.x - 400.0 + screenOffset
                 val dynamicFloat = 220.0f + (cos(timePassed * pulseSpeed * 0.5f) * verticalSwing)
                 y = ninja.y - dynamicFloat.toDouble()
-                alpha = eased.toDouble()
                 enterElapsed += 16
                 delay(16)
             }
             val dynamicFloatFinal = 220.0f + (cos(timePassed * pulseSpeed * 0.5f) * verticalSwing)
             x     = ninja.x - 400.0
             y     = ninja.y - dynamicFloatFinal.toDouble()
-            alpha = 1.0
             isChasing = true
             velocityX = 250.0f
         }

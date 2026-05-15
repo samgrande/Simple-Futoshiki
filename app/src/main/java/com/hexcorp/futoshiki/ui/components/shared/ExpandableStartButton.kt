@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import com.hexcorp.futoshiki.game.Difficulty
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
@@ -75,6 +76,7 @@ fun ExpandableStartButton(
     val quickStartText = if (isDark) Color.Black else Color.White
 
     var swipeProgress by remember { mutableFloatStateOf(0f) }
+    var dragFromRight by remember { mutableStateOf(false) }
     val displayProgress = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
 
@@ -109,26 +111,30 @@ fun ExpandableStartButton(
                 detectDragGestures(
                     onDragStart = {
                         totalDragX = 0f
+                        dragFromRight = false
                     },
                     onDragEnd = {
                         val threshold = size.width * 0.9f
-                        if (totalDragX > threshold) {
+                        if (totalDragX > threshold || totalDragX < -threshold) {
                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                             onStart()
                         }
                         totalDragX = 0f
+                        dragFromRight = false
                         swipeProgress = 0f
                         scope.launch { displayProgress.animateTo(0f, tween(200)) }
                     },
                     onDragCancel = {
                         totalDragX = 0f
+                        dragFromRight = false
                         swipeProgress = 0f
                         scope.launch { displayProgress.animateTo(0f, tween(200)) }
                     },
                     onDrag = { change, dragAmount ->
                         change.consume()
                         totalDragX += dragAmount.x
-                        val raw = (totalDragX.coerceAtLeast(0f) / size.width).coerceIn(0f, 1f)
+                        dragFromRight = totalDragX < 0
+                        val raw = (abs(totalDragX) / size.width).coerceIn(0f, 1f)
                         swipeProgress = raw
                         scope.launch { displayProgress.snapTo(raw) }
                     }
@@ -180,19 +186,36 @@ fun ExpandableStartButton(
                     .background(normalBg),
                 contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .fillMaxHeight()
-                        .fillMaxWidth(displayProgress.value)
-                        .background(
-                            brush = Brush.horizontalGradient(
-                                0f to quickStartBg,
-                                0.8f to quickStartBg,
-                                1f to quickStartBg.copy(alpha = 0f)
+                if (!dragFromRight) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .fillMaxHeight()
+                            .fillMaxWidth(displayProgress.value)
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    0f to quickStartBg,
+                                    0.8f to quickStartBg,
+                                    1f to quickStartBg.copy(alpha = 0f)
+                                )
                             )
-                        )
-                )
+                    )
+                }
+                if (dragFromRight) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .fillMaxHeight()
+                            .fillMaxWidth(displayProgress.value)
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    0f to quickStartBg.copy(alpha = 0f),
+                                    0.2f to quickStartBg,
+                                    1f to quickStartBg
+                                )
+                            )
+                    )
+                }
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center

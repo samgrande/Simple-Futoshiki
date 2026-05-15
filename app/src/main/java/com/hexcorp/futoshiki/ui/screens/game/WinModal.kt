@@ -26,7 +26,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.*
@@ -100,8 +102,7 @@ internal fun cropFooterAndScale(bitmap: android.graphics.Bitmap, context: Contex
     val density = context.resources.displayMetrics.density
     val footerPx = (120 * density).toInt()
     val cropH = (bitmap.height - footerPx).coerceAtLeast(bitmap.height / 2)
-    val cropped = android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, cropH)
-    return android.graphics.Bitmap.createScaledBitmap(cropped, bitmap.width, bitmap.height, true)
+    return android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, cropH)
 }
 
 internal fun saveAndShare(context: Context, bitmap: android.graphics.Bitmap) {
@@ -250,36 +251,62 @@ fun CongratsView(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text(
-                text = "勝",
-                color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.4f),
-                fontFamily = Yuji,
-                fontSize = 200.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        translationX = if (isShaking) shakeAnim else 0f
-                        rotationZ = if (isShaking) shakeAnim * 0.5f else 0f
-                    }
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null
-                    ) { /* Just for shaking effect */ }
-                    .pointerInput(korgeView) {
-                        awaitEachGesture {
-                            awaitFirstDown()
-                            try {
-                                withTimeout(1200L) {
-                                    waitForUpOrCancellation()
+        val rankingRes = if (pauseCount == 0) {
+            when {
+                timerSeconds < 10 -> R.drawable.g_rank
+                timerSeconds < 20 -> R.drawable.s_rank
+                timerSeconds < 30 -> R.drawable.a_rank
+                timerSeconds < 40 -> R.drawable.b_rank
+                timerSeconds < 50 -> R.drawable.c_rank
+                else -> null
+            }
+        } else null
+
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "勝",
+                    color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.4f),
+                    fontFamily = Yuji,
+                    fontSize = 200.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            translationX = if (isShaking) shakeAnim else 0f
+                            rotationZ = if (isShaking) shakeAnim * 0.5f else 0f
+                        }
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null
+                        ) { /* Just for shaking effect */ }
+                        .pointerInput(korgeView) {
+                            awaitEachGesture {
+                                awaitFirstDown()
+                                try {
+                                    withTimeout(1200L) {
+                                        waitForUpOrCancellation()
+                                    }
+                                } catch (_: kotlinx.coroutines.TimeoutCancellationException) {
+                                    shareScreenshot(context, view, korgeView)
+                                    try { waitForUpOrCancellation() } catch (_: Exception) {}
                                 }
-                            } catch (_: kotlinx.coroutines.TimeoutCancellationException) {
-                                shareScreenshot(context, view, korgeView)
-                                try { waitForUpOrCancellation() } catch (_: Exception) {}
                             }
                         }
-                    }
-            )
+                )
+
+                if (rankingRes != null) {
+                    Image(
+                        painter = painterResource(rankingRes),
+                        contentDescription = null,
+                        colorFilter = ColorFilter.tint(accent),
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .offset(x = (-56).dp, y = (-8).dp)
+                            .size(80.dp)
+                            .zIndex(1f)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -307,6 +334,11 @@ fun CongratsView(
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        val timeStr = formatTimer(timerSeconds)
+        val mm = timeStr.substring(0, 2)
+        val ss = timeStr.substring(3, 5)
+        val displayTime = "${mm[0]} ${mm[1]} : ${ss[0]} ${ss[1]}"
+
         Text(
             text          = "S O L V E D   I N",
             color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
@@ -318,11 +350,6 @@ fun CongratsView(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        val timeStr = formatTimer(timerSeconds)
-        val mm = timeStr.substring(0, 2)
-        val ss = timeStr.substring(3, 5)
-        val displayTime = "${mm[0]} ${mm[1]} : ${ss[0]} ${ss[1]}"
-
         Text(
             text          = displayTime,
             color         = if (isDark) Color.White else Color.Black,
@@ -332,24 +359,22 @@ fun CongratsView(
             letterSpacing = 3.sp
         )
 
-        val totalPauseSecs = (pauseTimeMs / 1000).toInt()
-        val pm = totalPauseSecs / 60
-        val ps = totalPauseSecs % 60
-        val pmStr = if (pm < 10) "0${pm}" else "$pm"
-        val psStr = if (ps < 10) "0${ps}" else "$ps"
-        val pauseStr = "spent ${pmStr}:${psStr} time in pause menu"
-        val showPauseLine = pauseCount > 0
+        if (pauseCount > 0) {
+            val totalPauseSecs = (pauseTimeMs / 1000).toInt()
+            val pm = totalPauseSecs / 60
+            val ps = totalPauseSecs % 60
+            val pmStr = if (pm < 10) "0${pm}" else "$pm"
+            val psStr = if (ps < 10) "0${ps}" else "$ps"
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text          =         if (showPauseLine) pauseStr else "",
-            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
-            fontSize      = 11.sp,
-            fontWeight    = FontWeight.Medium,
-            fontFamily    = PixelF,
-            letterSpacing = 1.sp
-        )
+            Text(
+                text          = "although you spent ${pmStr}:${psStr} in pause menu",
+                color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
+                fontSize      = 10.sp,
+                fontWeight    = FontWeight.Medium,
+                fontFamily    = PixelF,
+                letterSpacing = 1.sp
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
         }
