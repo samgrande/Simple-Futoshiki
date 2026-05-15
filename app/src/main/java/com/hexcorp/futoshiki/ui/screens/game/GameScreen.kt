@@ -366,6 +366,8 @@ fun GameScreen(
                             difficulty = state.difficulty,
                             isExpanded = newGameExpanded,
                             korgeView = viewModel.korgeManager.korgeAndroidView,
+                            pauseCount = state.pauseCount,
+                            pauseTimeMs = state.pauseTimeMs,
                             modifier = Modifier.padding(horizontal = hPad)
                         )
                     }

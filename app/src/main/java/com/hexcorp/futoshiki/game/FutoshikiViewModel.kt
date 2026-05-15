@@ -36,6 +36,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     val korgeManager = KorGEGameManager()
 
     private var timerJob: Job? = null
+    private var pauseStartTime: Long? = null
 
     private fun loadTheme(): AppTheme {
         val themeName = prefs.getString("app_theme", AppTheme.FIRE.name)
@@ -130,9 +131,12 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
                 ninjaScreenX = 500f,
                 mistakeCount = 0,
                 isCountdownActive = false,
-                forceQuitInPause = false
+                forceQuitInPause = false,
+                pauseCount = 0,
+                pauseTimeMs = 0L
             )
         }
+        pauseStartTime = null
         korgeManager.updateNinjaScreenX(500f)
     }
 
@@ -292,14 +296,27 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         Log.d("FutoshikiDebug", "pause() called, current screen=${_state.value.screen}")
         if (_state.value.screen != Screen.GAME) return
         stopTimer()
-        _state.update { it.copy(previousScreen = it.screen, screen = Screen.PAUSE, timerRunning = false) }
+        pauseStartTime = System.currentTimeMillis()
+        _state.update { it.copy(
+            previousScreen = it.screen,
+            screen = Screen.PAUSE,
+            timerRunning = false,
+            pauseCount = it.pauseCount + 1
+        ) }
         Log.d("FutoshikiDebug", "pause() done, new screen=${_state.value.screen}")
     }
 
     fun resume() {
         Log.d("FutoshikiDebug", "resume() called, current screen=${_state.value.screen}")
         val isWon = _state.value.won
-        _state.update { it.copy(previousScreen = it.screen, screen = Screen.GAME, timerRunning = !isWon) }
+        val elapsed = pauseStartTime?.let { System.currentTimeMillis() - it } ?: 0L
+        pauseStartTime = null
+        _state.update { it.copy(
+            previousScreen = it.screen,
+            screen = Screen.GAME,
+            timerRunning = !isWon,
+            pauseTimeMs = it.pauseTimeMs + elapsed
+        ) }
         if (!isWon) {
             startTimer()
         }

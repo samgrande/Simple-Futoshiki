@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,6 +32,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hexcorp.futoshiki.game.FutoshikiViewModel
 import com.hexcorp.futoshiki.game.Screen
 import com.hexcorp.futoshiki.ui.screens.game.GameScreen
+import com.hexcorp.futoshiki.ui.screens.game.shareScreenshot
 import com.hexcorp.futoshiki.ui.screens.landing.LandingScreen
 import com.hexcorp.futoshiki.ui.screens.theming.ThemingScreen
 import com.hexcorp.futoshiki.ui.theme.FutoshikiTheme
@@ -39,6 +43,7 @@ import com.hexcorp.futoshiki.ui.animations.CircularRevealShape
 import com.hexcorp.futoshiki.ui.korge.KorGEView
 import com.hexcorp.futoshiki.ui.components.shared.TimerPill
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -248,6 +253,39 @@ fun FutoshikiApp(
                                         }
                                     }
                                     .graphicsLayer { alpha = if (state.won) 0f else 1f }
+                            )
+                        }
+                    }
+                }
+
+                // Share button - shown on the win screen, positioned on top of KorGE
+                if (state.showCongrats) {
+                    val context = LocalContext.current
+                    val view = LocalView.current
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = 420.dp)
+                            .align(Alignment.TopCenter)
+                            .statusBarsPadding()
+                            .padding(start = 20.dp, end = 22.dp, top = if (isSmallScreen) 7.dp else 11.dp)
+                            .zIndex(15f),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(if (isDark) Color.White else Color.Black)
+                                .clickable { shareScreenshot(context, view, vm.korgeManager.korgeAndroidView) }
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "S H A R E",
+                                color = if (isDark) Color.Black else Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = PixelF,
+                                letterSpacing = 1.sp
                             )
                         }
                     }

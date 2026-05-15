@@ -44,5 +44,7 @@ data class GameState(
     val defeated: Boolean = false,
     val showDefeat: Boolean = false,
     val mistakeCount: Int = 0,
-    val isCountdownActive: Boolean = false
+    val isCountdownActive: Boolean = false,
+    val pauseCount: Int = 0,
+    val pauseTimeMs: Long = 0L
 )

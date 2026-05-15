@@ -63,7 +63,7 @@ private fun findSurfaceView(view: android.view.View): android.view.SurfaceView? 
     return null
 }
 
-private fun shareScreenshot(context: Context, view: android.view.View, korgeView: android.view.View?) {
+internal fun shareScreenshot(context: Context, view: android.view.View, korgeView: android.view.View?) {
     val fullWidth = view.width
     val fullHeight = view.height
 
@@ -96,7 +96,7 @@ private fun shareScreenshot(context: Context, view: android.view.View, korgeView
     }
 }
 
-private fun cropFooterAndScale(bitmap: android.graphics.Bitmap, context: Context): android.graphics.Bitmap {
+internal fun cropFooterAndScale(bitmap: android.graphics.Bitmap, context: Context): android.graphics.Bitmap {
     val density = context.resources.displayMetrics.density
     val footerPx = (120 * density).toInt()
     val cropH = (bitmap.height - footerPx).coerceAtLeast(bitmap.height / 2)
@@ -104,7 +104,7 @@ private fun cropFooterAndScale(bitmap: android.graphics.Bitmap, context: Context
     return android.graphics.Bitmap.createScaledBitmap(cropped, bitmap.width, bitmap.height, true)
 }
 
-private fun saveAndShare(context: Context, bitmap: android.graphics.Bitmap) {
+internal fun saveAndShare(context: Context, bitmap: android.graphics.Bitmap) {
     val file = File(context.cacheDir, "futoshiki_win.png")
     FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
@@ -124,6 +124,8 @@ fun CongratsView(
     difficulty: Difficulty = Difficulty.EASY,
     isExpanded: Boolean = false,
     korgeView: android.view.View? = null,
+    pauseCount: Int = 0,
+    pauseTimeMs: Long = 0L,
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
@@ -246,13 +248,13 @@ fun CongratsView(
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
                 text = "勝",
                 color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.4f),
                 fontFamily = Yuji,
-                fontSize = 150.sp,
+                fontSize = 200.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -279,10 +281,23 @@ fun CongratsView(
                     }
             )
 
-            Spacer(modifier = Modifier.height(36.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+
+        val ratingText = if (pauseCount > 0) {
+            "Y O U   W O N"
+        } else {
+            when {
+                timerSeconds < 10 -> "THE G.O.A.T"
+                timerSeconds < 20 -> "EXCELLENT"
+                timerSeconds < 30 -> "AMAZING"
+                timerSeconds < 40 -> "GOOD"
+                timerSeconds < 50 -> "NICE"
+                else -> "Y O U   W O N"
+            }
+        }
 
         Text(
-            text          = "Y O U   W O N",
+            text          = ratingText,
             color         = accent,
             fontSize      = 17.sp,
             fontWeight    = FontWeight.Bold,
@@ -290,7 +305,7 @@ fun CongratsView(
             letterSpacing = 4.sp
         )
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Text(
             text          = "S O L V E D   I N",
@@ -317,23 +332,27 @@ fun CongratsView(
             letterSpacing = 3.sp
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        val totalPauseSecs = (pauseTimeMs / 1000).toInt()
+        val pm = totalPauseSecs / 60
+        val ps = totalPauseSecs % 60
+        val pmStr = if (pm < 10) "0${pm}" else "$pm"
+        val psStr = if (ps < 10) "0${ps}" else "$ps"
+        val pauseStr = "spent ${pmStr}:${psStr} time in pause menu"
+        val showPauseLine = pauseCount > 0
 
-        Box(
-            modifier = Modifier.clickable { shareScreenshot(context, view, korgeView) }
-        ) {
-            Text(
-                text = "S H A R E",
-                color = accent,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = PixelF,
-                letterSpacing = 3.sp
-            )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text          =         if (showPauseLine) pauseStr else "",
+            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
+            fontSize      = 11.sp,
+            fontWeight    = FontWeight.Medium,
+            fontFamily    = PixelF,
+            letterSpacing = 1.sp
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
         }
-
-        Spacer(modifier = Modifier.height(20.dp))
-    }
     }
 }
 
@@ -432,52 +451,21 @@ fun DefeatView(
                 text = "失",
                 color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.4f),
                 fontFamily = Yuji,
-                fontSize = 150.sp,
+                fontSize = 200.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
 
-        Spacer(modifier = Modifier.height(36.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(50.dp)
-                        )
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text          = "${gridSize}x${gridSize}",
-                        color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.6f),
-                        fontSize      = 13.sp,
-                        fontWeight    = FontWeight.Bold,
-                        fontFamily    = com.hexcorp.futoshiki.ui.theme.PixelF,
-                        letterSpacing = 2.sp
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(50.dp)
-                        )
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text          = difficulty.name,
-                        color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.6f),
-                        fontSize      = 13.sp,
-                        fontWeight    = FontWeight.Bold,
-                        fontFamily    = com.hexcorp.futoshiki.ui.theme.PixelF,
-                        letterSpacing = 2.sp
-                    )
-                }
-            }
+        Text(
+            text          = "YOU MADE TOO MANY MISTAKES",
+            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.6f),
+            fontSize      = 14.sp,
+            fontWeight    = FontWeight.Bold,
+            fontFamily    = PixelF,
+            letterSpacing = 2.sp
+        )
 
             Spacer(modifier = Modifier.height(24.dp))
 
