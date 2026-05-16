@@ -4,184 +4,274 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hexcorp.futoshiki.ui.components.shared.BigButton
-import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
-import com.hexcorp.futoshiki.ui.components.shared.HelpPanel
-import com.hexcorp.futoshiki.ui.components.shared.LogoMark
-import com.hexcorp.futoshiki.ui.components.shared.TimerPill
+import com.hexcorp.futoshiki.game.Difficulty
+import com.hexcorp.futoshiki.ui.components.shared.*
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
-import kotlin.math.roundToInt
+import com.hexcorp.futoshiki.ui.theme.PixelF
+import com.hexcorp.futoshiki.ui.theme.ThemeMode
 
 @Composable
 fun PauseOverlay(
     revealCenter: Offset,
     pillOffset: Offset,
     seconds: Int,
+    won: Boolean = false,
+    currentSize: Int = 4,
+    currentDifficulty: Difficulty = Difficulty.EASY,
     onResume: () -> Unit,
     onMainMenu: () -> Unit,
-    onSolve: () -> Unit,
-    onNewGame: () -> Unit,
+    onNewGame: (Int, Difficulty) -> Unit,
     onTheming: () -> Unit,
-    modifier: Modifier = Modifier
+    onDifficultySave: (Difficulty) -> Unit = {},
+    korgeManager: com.hexcorp.futoshiki.ui.korge.KorGEGameManager,
+    isDark: Boolean,
+    themeMode: ThemeMode,
+    customMonoAccent: Boolean,
+    customDayNight: Boolean,
+    modifier: Modifier = Modifier,
+    startWithQuitConfirm: Boolean = false,
+    onConfirmQuitChange: (Boolean) -> Unit = {},
+    onConfirmNewGameChange: (Boolean) -> Unit = {},
+    onShowHelpChange: (Boolean) -> Unit = {}
 ) {
-    var showHelp by remember { mutableStateOf(false) }
-    var showConfirmQuit by remember { mutableStateOf(false) }
-    var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { visible = true }
+    var showHelp by rememberSaveable { mutableStateOf(false) }
+    var showConfirmQuit by rememberSaveable { mutableStateOf(startWithQuitConfirm) }
+    var newGameExpanded by rememberSaveable { mutableStateOf(false) }
+    val startedWithForceQuit = remember { startWithQuitConfirm }
+    
+    var selectedSize by remember { mutableIntStateOf(currentSize) }
+    var selectedDifficulty by remember { mutableStateOf(currentDifficulty) }
 
-    BackHandler(enabled = visible) {
+    // Notify parent when entering/exiting confirm quit screen
+    LaunchedEffect(showConfirmQuit) {
+        onConfirmQuitChange(showConfirmQuit)
+    }
+
+    // Notify parent when entering/exiting help screen
+    LaunchedEffect(showHelp) {
+        onShowHelpChange(showHelp)
+    }
+
+    BackHandler(enabled = true) {
         when {
             showHelp -> showHelp = false
-            showConfirmQuit -> showConfirmQuit = false
+            showConfirmQuit -> if (won || startedWithForceQuit) onResume() else showConfirmQuit = false
+            newGameExpanded -> {
+                selectedSize = currentSize
+                selectedDifficulty = currentDifficulty
+                newGameExpanded = false
+            }
             else -> onResume()
         }
     }
 
-    val alpha by animateFloatAsState(
-        targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(180),
-        label = "alpha"
-    )
-
-    Box(
+    BoxWithConstraints(
         modifier = modifier.fillMaxSize()
     ) {
+        val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val vh = maxHeight - navBarBottom
+
+        val isSmallScreen = vh < 800.dp
+        val headerH = if (isSmallScreen) vh * 0.07f else vh * 0.09f
+        val ninjaH = if (isSmallScreen) 100.dp else 135.dp
+        val korgeGap = if (isSmallScreen) 14.dp else 16.dp
+        val korgeHeight = headerH + korgeGap + ninjaH
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer {
-                    this.alpha = alpha
-                }
                 .background(FutoshikiColors.background()),
             contentAlignment = Alignment.Center
         ) {
+            if (newGameExpanded) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { 
+                                selectedSize = currentSize
+                                selectedDifficulty = currentDifficulty
+                                newGameExpanded = false 
+                            }
+                        )
+                )
+            }
+            
+            val isSkyboxDark = if (themeMode == ThemeMode.CUSTOM) customMonoAccent else isDark
+            
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(korgeHeight)
+                    .align(Alignment.TopCenter)
+            ) {
+                // KorGEView removed - managed by MainActivity
+            }
+            
             Column(
                 modifier = Modifier
                     .widthIn(max = 420.dp)
                     .fillMaxHeight()
                     .systemBarsPadding()
-                    .padding(horizontal = 20.dp, vertical = 40.dp),
+                    .padding(horizontal = 20.dp, vertical = if (isSmallScreen) 30.dp else 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(Modifier.weight(0.8f))
-
-                LogoMark(size = 80.dp)
-                Spacer(Modifier.height(16.dp))
-                FutoshikiTitle(fontSize = 32.sp)
+                Spacer(Modifier.height(korgeHeight + if (isSmallScreen) 0.dp else 8.dp))
 
                 AnimatedContent(
-                    targetState = if (showConfirmQuit) "confirm" else if (showHelp) "help" else "menu",
+                    targetState = when {
+                        showConfirmQuit -> "confirm_quit"
+                        showHelp -> "help"
+                        else -> "menu"
+                    },
                     transitionSpec = {
                         val duration = 280
                         if (targetState != "menu") {
                             (slideInVertically(tween(duration)) { it / 4 } + fadeIn(tween(duration)))
-                                .togetherWith(slideOutVertically(tween(duration)) { -it / 4 } + fadeOut(tween(400)))
+                                .togetherWith(
+                                    slideOutVertically(tween(duration)) { -it / 4 } + fadeOut(tween(400))
+                                )
                         } else {
-                            (slideInVertically(tween(duration)) { -it / 4 } + fadeIn(tween(duration)))
-                                .togetherWith(slideOutVertically(tween(duration)) { it / 4 } + fadeOut(tween(400)))
+                            fadeIn(tween(duration))
+                                .togetherWith(fadeOut(tween(200)))
                         }.using(SizeTransform(clip = false))
                     },
                     label = "pauseContentTransition"
-                ) { state ->
+                ) { currentState ->
                     val isDark = LocalIsDark.current
-                    when (state) {
+                    when (currentState) {
                         "help" -> {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 20.dp)
                             ) {
                                 Spacer(Modifier.height(24.dp))
-                                HelpPanel()
-                                Spacer(Modifier.height(24.dp))
+                                HelpPanel(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.9f)
+                                        .fillMaxHeight(0.8f)
+                                )
+                                Spacer(Modifier.height(20.dp))
                                 BigButton(
-                                    label = "← BACK",
+                                    label = "BACK",
                                     onClick = { showHelp = false },
+                                    inverted = true,
                                     isDark = isDark
                                 )
                             }
                         }
-                        "confirm" -> {
+
+                        "confirm_quit" -> {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Spacer(Modifier.height(32.dp))
                                 Text(
-                                    text          = "QUIT TO MAIN MENU?",
-                                    fontSize      = 14.sp,
-                                    fontWeight    = FontWeight.SemiBold,
-                                    fontFamily    = ReemKufi,
-                                    color         = if (isDark) Color(0xFF888888) else Color(0xFF999999),
+                                    text = "QUIT TO MAIN MENU?",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = PixelF,
+                                    color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
                                     letterSpacing = 2.sp
                                 )
                                 Spacer(Modifier.height(32.dp))
                                 BigButton(
                                     label = "YES",
                                     onClick = onMainMenu,
-                                    primary = true,
+                                    inverted = true,
                                     isDark = isDark
                                 )
-                                Spacer(Modifier.height(14.dp))
+                                Spacer(Modifier.height(20.dp))
                                 BigButton(
                                     label = "NO",
-                                    onClick = { showConfirmQuit = false },
+                                    onClick = { if (won || startedWithForceQuit) onResume() else showConfirmQuit = false },
                                     isDark = isDark
                                 )
                             }
                         }
+
                         else -> {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Spacer(Modifier.height(12.dp))
-                                Text(
-                                    text          = "PAUSED",
-                                    fontSize      = 14.sp,
-                                    fontWeight    = FontWeight.SemiBold,
-                                    fontFamily    = ReemKufi,
-                                    color         = if (isDark) Color(0xFF888888) else Color(0xFF999999),
-                                    letterSpacing = 2.sp
+                                FutoshikiTitle(fontSize = if (isSmallScreen) 30.sp else 32.sp)
+                                Spacer(Modifier.height(if (isSmallScreen) 24.dp else 36.dp))
+                                
+                                ExpandableStartButton(
+                                    label = "NEW GAME",
+                                    isExpanded = newGameExpanded,
+                                    onExpandToggle = { newGameExpanded = !newGameExpanded },
+                                    selectedSize = selectedSize,
+                                    onSizeSelected = { selectedSize = it },
+                                    selectedDifficulty = selectedDifficulty,
+                                    onDifficultyChange = { selectedDifficulty = it },
+                                    onStart = { onNewGame(selectedSize, selectedDifficulty) },
+                                    isDark = isDark,
+                                    onDifficultySave = onDifficultySave,
+                                    currentSize = currentSize,
+                                    currentDifficulty = currentDifficulty,
+                                    isSmallScreen = isSmallScreen
                                 )
-                                Spacer(Modifier.height(48.dp))
-                                BigButton(
-                                    label = "MAIN MENU",
-                                    onClick = { showConfirmQuit = true },
-                                    primary = true,
-                                    isDark = isDark
-                                )
-                                Spacer(Modifier.height(14.dp))
-                                BigButton(
-                                    label = "SOLVE",
-                                    onClick = onSolve,
-                                    isDark = isDark
-                                )
-                                Spacer(Modifier.height(14.dp))
-                                BigButton(
-                                    label = "HELP",
-                                    onClick = { showHelp = true },
-                                    isDark = isDark
-                                )
-                                Spacer(Modifier.height(14.dp))
-                                BigButton(
-                                    label = "THEMES",
-                                    onClick = onTheming,
-                                    isDark = isDark
-                                )
+
+                                AnimatedVisibility(
+                                    visible = !newGameExpanded,
+                                    enter = fadeIn(tween(300)),
+                                    exit = fadeOut(tween(200))
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Spacer(Modifier.height(if (isSmallScreen) 18.dp else 20.dp))
+
+                                        BigButton(
+                                            label = "HELP",
+                                            onClick = { showHelp = true },
+                                            isDark = isDark,
+                                            height = if (isSmallScreen) 58.dp else 64.dp
+                                        )
+
+                                        Spacer(Modifier.height(if (isSmallScreen) 18.dp else 20.dp))
+
+                                        BigButton(
+                                            label = "THEMES",
+                                            onClick = onTheming,
+                                            isDark = isDark,
+                                            height = if (isSmallScreen) 58.dp else 64.dp
+                                        )
+
+                                        Spacer(Modifier.height(if (isSmallScreen) 18.dp else 20.dp))
+
+                                        BigButton(
+                                            label = "MAIN MENU",
+                                            onClick = { showConfirmQuit = true },
+                                            inverted = false,
+                                            isDark = isDark,
+                                            height = if (isSmallScreen) 58.dp else 64.dp
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -190,15 +280,5 @@ fun PauseOverlay(
                 Spacer(Modifier.weight(1f))
             }
         }
-
-        TimerPill(
-            seconds = seconds,
-            won = false,
-            isPaused = true,
-            onClick = onResume,
-            modifier = Modifier.offset {
-                IntOffset(pillOffset.x.roundToInt(), pillOffset.y.roundToInt())
-            }
-        )
     }
 }

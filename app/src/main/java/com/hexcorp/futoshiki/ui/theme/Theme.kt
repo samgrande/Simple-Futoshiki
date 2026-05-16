@@ -3,6 +3,7 @@ package com.hexcorp.futoshiki.ui.theme
 import android.app.Activity
 import android.view.ContextThemeWrapper
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
@@ -13,7 +14,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.core.view.WindowCompat
 import com.hexcorp.futoshiki.R
-
 // ── Theme Enum ──────────────────────────────────────────────────────────────
 
 enum class AppTheme {
@@ -21,7 +21,7 @@ enum class AppTheme {
 }
 
 enum class ThemeMode {
-    AUTO, DAY, NIGHT, BLISS
+    AUTO, DAY, NIGHT, CUSTOM
 }
 
 // ── Brand colours ─────────────────────────────────────────────────────────────
@@ -41,12 +41,12 @@ object FutoshikiColors {
     val EarthAccent     = Color(0xFF34C759)
     val WoodAccent      = Color(0xFFFF8D28)
 
-    val CellDefault     = Color(0xFFEBEBEB)
-    val CellDefaultDark = Color(0xFF141414)
+    val CellDefault     = Color(0xFFDCDCDC)
+    val CellDefaultDark = Color(0xFF222222)
     val CellSelected    = Color(0xFFFFFFFF)
-    val CellSelectedDark = Color(0xFF2A2A2A)
-    val CellRelated     = Color(0xFFDCDCDC)
-    val CellRelatedDark = Color(0xFF0F0F0F)
+    val CellSelectedDark = Color(0xFF333333)
+    val CellRelated     = Color(0xFFC0C0C0)
+    val CellRelatedDark = Color(0xFF1A1A1A)
     val ErrorBg         = Color(0xFFFFE5E5)
     val ErrorBgDark     = Color(0xFF3D1D1D)
     val ErrorStroke     = Color(0xFFE24B4A)
@@ -71,6 +71,9 @@ object FutoshikiColors {
     val LogoCellBg      = Color(0xFFF1F0F0)
     val LogoCellBgDark  = Color(0xFF1A1A1A)
 
+    val NumberPadBg      = Color(0xFFC8C8C8) // Darker than CellDefault (DCDCDC)
+    val NumberPadBgDark  = Color(0xFF2A2A2A) // Lighter than CellDefaultDark (222222)
+    
     @Composable
     fun background(): Color = if (LocalIsDark.current) BackgroundDark else Background
 
@@ -82,6 +85,9 @@ object FutoshikiColors {
 
     @Composable
     fun cellDefault(): Color = if (LocalIsDark.current) CellDefaultDark else CellDefault
+    
+    @Composable
+    fun numberPadBg(): Color = if (LocalIsDark.current) NumberPadBgDark else NumberPadBg
 
     @Composable
     fun cellRelated(): Color = if (LocalIsDark.current) CellRelatedDark else CellRelated
@@ -107,22 +113,6 @@ object FutoshikiColors {
     @Composable
     fun shadowColor(): Color = if (LocalIsDark.current) Color.Black.copy(alpha = 0.6f) else Color.Black.copy(alpha = 0.3f)
 
-    @Composable
-    fun bigButtonBg(primary: Boolean): Color = if (LocalIsDark.current) {
-        if (primary) BigButtonPrimaryDark else BigButtonPrimary
-    } else {
-        if (primary) BigButtonPrimary else BigButtonSecondary
-    }
-
-    @Composable
-    fun bigButtonText(primary: Boolean): Color = if (LocalIsDark.current) {
-        if (primary) BigButtonTextPrimaryDark else BigButtonTextSecondaryDark
-    } else {
-        if (primary) BigButtonTextPrimary else BigButtonTextSecondary
-    }
-
-    @Composable
-    fun bigButtonBorder(): Color = if (LocalIsDark.current) BigButtonPrimaryDark else OnSurface
 }
 
 // Dynamic accent provider
@@ -139,11 +129,16 @@ val LocalIsDark = staticCompositionLocalOf { false }
 
 // ── Typography ───────────────────────────────────────────────────────────────
 
-val ReemKufi = FontFamily(
-    Font(R.font.reem_kufi_regular,   FontWeight.Normal),
-    Font(R.font.reem_kufi_medium,    FontWeight.Medium),
-    Font(R.font.reem_kufi_semibold,  FontWeight.SemiBold),
-    Font(R.font.reem_kufi_bold,      FontWeight.Bold)
+val Midorima = FontFamily(
+    Font(R.font.midorima, FontWeight.Normal)
+)
+
+val PixelF = FontFamily(
+    Font(R.font.pixel_f, FontWeight.Normal)
+)
+
+val Yuji = FontFamily(
+    Font(R.font.yuji, FontWeight.Normal)
 )
 
 // ── Material theme wrapper ────────────────────────────────────────────────────
@@ -183,20 +178,20 @@ fun FutoshikiTheme(
     }
 
     val colorScheme = if (isDark) {
-        lightColorScheme(
-            background = FutoshikiColors.BackgroundDark,
-            surface    = FutoshikiColors.SurfaceDark,
-            primary    = accent,
-            onPrimary  = Color.White,
-            onSurface  = FutoshikiColors.OnSurfaceDark,
+        darkColorScheme(
+            background = Color.Transparent,
+            surface = FutoshikiColors.SurfaceDark,
+            primary = accent,
+            onPrimary = Color.White,
+            onSurface = FutoshikiColors.OnSurfaceDark,
         )
     } else {
         lightColorScheme(
-            background = FutoshikiColors.Background,
-            surface    = FutoshikiColors.Surface,
-            primary    = accent,
-            onPrimary  = Color.White,
-            onSurface  = FutoshikiColors.OnSurface,
+            background = Color.Transparent,
+            surface = FutoshikiColors.Surface,
+            primary = accent,
+            onPrimary = Color.White,
+            onSurface = FutoshikiColors.OnSurface,
         )
     }
 
@@ -221,3 +216,4 @@ fun FutoshikiTheme(
         )
     }
 }
+

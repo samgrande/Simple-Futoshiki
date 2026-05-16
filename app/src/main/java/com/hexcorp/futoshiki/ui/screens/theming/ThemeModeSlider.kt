@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.R
 import com.hexcorp.futoshiki.ui.theme.AppTheme
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.ThemeMode
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -86,39 +86,6 @@ fun ThemeModeSlider(
             },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Labels
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            modes.forEach { mode ->
-                val isSelected = if (isDragging) {
-                    val sectionWidth = if (modes.size > 1) width.toFloat() / (modes.size - 1) else 1f
-                    (dragOffset / sectionWidth).roundToInt().coerceIn(0, modes.size - 1) == mode.ordinal
-                } else {
-                    mode == currentMode
-                }
-
-                Text(
-                    text = mode.name,
-                    fontSize = 9.sp,
-                    fontFamily = ReemKufi,
-                    fontWeight = FontWeight.Bold,
-                    color = FutoshikiColors.onSurface().copy(alpha = if (isSelected) 1f else 0.4f),
-                    letterSpacing = 1.sp,
-                    modifier = Modifier
-                        .width(60.dp)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { onModeChange(mode) },
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-
-        Spacer(Modifier.height(12.dp))
-
         // Slider Track
         Box(
             modifier = Modifier
@@ -211,6 +178,38 @@ fun ThemeModeSlider(
                     painter = painterResource(id = if (isDark) R.drawable.shuriken_dark else R.drawable.shuriken),
                     contentDescription = null,
                     modifier = Modifier.size(50.dp)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Labels
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            modes.forEach { mode ->
+                val isSelected = if (isDragging) {
+                    val sectionWidth = if (modes.size > 1) width.toFloat() / (modes.size - 1) else 1f
+                    (dragOffset / sectionWidth).roundToInt().coerceIn(0, modes.size - 1) == mode.ordinal
+                } else {
+                    mode == currentMode
+                }
+
+                Text(
+                    text = mode.name,
+                    fontSize = 9.sp,
+                    fontFamily = PixelF,
+                    fontWeight = FontWeight.Bold,
+                    color = FutoshikiColors.onSurface().copy(alpha = if (isSelected) 1f else 0.4f),
+                    letterSpacing = 1.sp,
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onModeChange(mode) },
+                    textAlign = TextAlign.Center
                 )
             }
         }

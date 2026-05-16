@@ -38,17 +38,27 @@ android {
         }
     }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+    aaptOptions {
+        // Assets for KorGE/Engine
+        noCompress("png", "jpg", "jpeg")
     }
 
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    kotlinOptions {
+        jvmTarget = "21"
+    }
 }
+
 
 dependencies {
     implementation(libs.androidx.core.ktx)
@@ -65,6 +75,10 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.google.material)
     implementation(libs.coil.compose)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.compose.ui.viewbinding)
+    implementation(libs.korge.android)
+    implementation("com.soywiz.korge:korge-core-android:6.0.0")
+    implementation("com.airbnb.android:lottie-compose:6.4.0")
     debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
 }

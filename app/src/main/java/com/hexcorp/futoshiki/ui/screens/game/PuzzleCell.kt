@@ -16,7 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -27,10 +26,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
-import com.hexcorp.futoshiki.ui.theme.ReemKufi
+import com.hexcorp.futoshiki.ui.theme.Midorima
 import com.hexcorp.futoshiki.ui.theme.accentColor
+import com.hexcorp.futoshiki.ui.theme.AnimationConstants
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -47,6 +46,7 @@ fun PuzzleCell(
     r: Int,
     c: Int,
     isSolved: Boolean,
+    revealTrigger: Int,
     onTap: (Int, Int) -> Unit,
     onClear: (Int, Int) -> Unit
 ) {
@@ -60,9 +60,17 @@ fun PuzzleCell(
     var flashAlpha by remember { mutableStateOf(0f) }
     val animatedFlashAlpha by animateFloatAsState(
         targetValue = flashAlpha,
-        animationSpec = tween(if (flashAlpha > 0f) 60 else 300),
+        animationSpec = if (flashAlpha > 0f) tween(100) else tween(700),
         label = "flashAlpha"
     )
+
+    LaunchedEffect(revealTrigger) {
+        if (revealTrigger > 0 && isGiven) {
+            flashAlpha = 1.0f
+            delay(150)
+            flashAlpha = 0f
+        }
+    }
 
     LaunchedEffect(isShaking) {
         if (isShaking) {
@@ -81,28 +89,10 @@ fun PuzzleCell(
         ),
         label = "shakeRot"
     )
-    val shakeOffsetX by shakeTransition.animateFloat(
-        initialValue = -1.2f,
-        targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(50, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "shakeX"
-    )
-    val shakeOffsetY by shakeTransition.animateFloat(
-        initialValue = -1.2f,
-        targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(60, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "shakeY"
-    )
 
     val currentRotation = if (isShaking) shakeRotation else 0f
-    val currentOffsetX  = if (isShaking) shakeOffsetX  else 0f
-    val currentOffsetY  = if (isShaking) shakeOffsetY  else 0f
+    val currentOffsetX = if (isShaking) shakeRotation * 0.48f else 0f
+    val currentOffsetY = if (isShaking) shakeRotation * 0.48f else 0f
 
     var triggered by remember(gameKey) { mutableStateOf(false) }
     val scale by animateFloatAsState(
@@ -117,29 +107,39 @@ fun PuzzleCell(
     }
 
     val accent = accentColor()
-    val bg = when {
+    val targetBg = when {
         hasError   -> FutoshikiColors.errorBg()
         isSelected -> accent.copy(alpha = 0.12f)
-        isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = 0.12f * animatedFlashAlpha)
+        isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = 0.25f * animatedFlashAlpha)
         isRelated  -> FutoshikiColors.cellRelated()
         else       -> FutoshikiColors.cellDefault()
     }
-    val borderColor = when {
+    val bg by androidx.compose.animation.animateColorAsState(targetBg, tween(150), label = "bg")
+
+    val targetBorderColor = when {
         hasError   -> FutoshikiColors.ErrorStroke
         isSelected -> accent
         isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = animatedFlashAlpha)
-        else       -> FutoshikiColors.onSurface()
+        else       -> Color.Transparent
     }
-    val borderWidth = if (isSelected || (isGiven && animatedFlashAlpha > 0f)) 2.5.dp else 1.5.dp
+    val borderColor by androidx.compose.animation.animateColorAsState(targetBorderColor, tween(150), label = "borderColor")
+
+    val targetBorderWidth = when {
+        hasError || isSelected || (isGiven && animatedFlashAlpha > 0f) -> 2.2.dp
+        else -> 0.dp
+    }
+    val borderWidth by animateDpAsState(targetBorderWidth, tween(150), label = "borderWidth")
+
     val textColor   = if (hasError) FutoshikiColors.ErrorStroke else FutoshikiColors.onSurface()
     val cornerRadius = sizeDp * 0.27f
 
-    val shadowColor = when {
+    val targetShadowColor = when {
         hasError   -> FutoshikiColors.ErrorStroke.copy(alpha = 0.22f)
         isSelected -> accent.copy(alpha = 0.4f)
-        isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = 0.4f * animatedFlashAlpha)
+        isGiven && animatedFlashAlpha > 0f -> accent.copy(alpha = 0.5f * animatedFlashAlpha)
         else       -> Color(0x42000000)
     }
+    val shadowColor by androidx.compose.animation.animateColorAsState(targetShadowColor, tween(150), label = "shadowColor")
 
     Box(
         modifier = Modifier
@@ -151,20 +151,15 @@ fun PuzzleCell(
                 translationX = currentOffsetX
                 translationY = currentOffsetY
             }
+            .then(
+                if (borderWidth > 0.dp) Modifier.border(borderWidth, borderColor, RoundedCornerShape(cornerRadius))
+                else Modifier
+            )
+            .background(bg, RoundedCornerShape(cornerRadius))
     ) {
         Box(
             modifier = Modifier
-                .offset(x = 2.dp, y = 2.dp)
                 .fillMaxSize()
-                .clip(RoundedCornerShape(cornerRadius))
-                .background(shadowColor)
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(cornerRadius))
-                .background(bg)
-                .border(borderWidth, borderColor, RoundedCornerShape(cornerRadius))
                 .combinedClickable(
                     interactionSource = interactionSource,
                     indication = null,
@@ -183,11 +178,7 @@ fun PuzzleCell(
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 }
                                 isShaking = true
-                                scope.launch {
-                                    flashAlpha = 1f
-                                    delay(200)
-                                    flashAlpha = 0f
-                                }
+                                onTap(r, c)
                             }
                         } else {
                             onTap(r, c)
@@ -219,9 +210,15 @@ fun PuzzleCell(
                 Text(
                     text       = value.toString(),
                     color      = textColor,
-                    fontSize   = (sizeDp.value * 0.38f).sp,
-                    fontWeight = if (isGiven) FontWeight.Bold else FontWeight.Medium,
-                    fontFamily = ReemKufi
+                    fontSize   = (sizeDp.value * 0.45f).sp,
+                    fontWeight = FontWeight.Normal,
+                    fontFamily = Midorima,
+                    textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
+                    style      = androidx.compose.ui.text.TextStyle(
+                        platformStyle = androidx.compose.ui.text.PlatformTextStyle(
+                            includeFontPadding = false
+                        )
+                    )
                 )
             }
         }

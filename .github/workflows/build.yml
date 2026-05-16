@@ -22,6 +22,21 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Download animation PCK from Godot library (latest release)
+        run: |
+          mkdir -p app/src/main/assets
+          if gh release download \
+            --repo "${{ github.repository_owner }}/Android-Godot-Futoshiki-library" \
+            --pattern "data.pck" \
+            --dir app/src/main/assets/ \
+            --clobber 2>/dev/null; then
+            echo "Animation PCK downloaded: $(du -sh app/src/main/assets/data.pck | cut -f1)"
+          else
+            echo "WARNING: Could not download animation PCK — building without it"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+
       - name: Decode keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > ${{ github.workspace }}/release.jks
@@ -40,10 +55,22 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
-      - name: Rename APKs
+      - name: Build release AAB
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew bundleRelease
+
+      - name: Rename outputs
         run: |
-          mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/Futoshiki-debug.apk
-          mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/Futoshiki-release.apk
+          mv app/build/outputs/apk/debug/app-debug.apk \
+             app/build/outputs/apk/debug/Futoshiki-debug.apk
+          mv app/build/outputs/apk/release/app-release.apk \
+             app/build/outputs/apk/release/Futoshiki-release.apk
+          mv app/build/outputs/bundle/release/app-release.aab \
+             app/build/outputs/bundle/release/Futoshiki-release.aab
 
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
@@ -57,6 +84,12 @@ jobs:
           name: release-apk
           path: app/build/outputs/apk/release/Futoshiki-release.apk
 
+      - name: Upload release AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-aab
+          path: app/build/outputs/bundle/release/Futoshiki-release.aab
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -65,5 +98,6 @@ jobs:
           files: |
             app/build/outputs/apk/debug/Futoshiki-debug.apk
             app/build/outputs/apk/release/Futoshiki-release.apk
+            app/build/outputs/bundle/release/Futoshiki-release.aab
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
