@@ -91,22 +91,13 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         korgeManager.updateAggression(0f)
         korgeManager.resetBoost()
         
-        val wasInGame = _state.value.screen == Screen.GAME || _state.value.screen == Screen.PAUSE
-        
-        // Always restart animation when pressing New Game from game/pause/solve
-        // This shows the countdown and restarts the dragon chase
-        if (wasInGame || _state.value.isSolved) {
-            korgeManager.resetRunningStarted()
-            korgeManager.resetSceneLoaded()
-            korgeManager.introFinished = false
-            korgeManager.resetNinjaPosition()
-            korgeManager.cancelCurrentScene()
-            korgeManager.playRestart()
-            korgeManager.signalGameRestart()
-        } else {
-            // Starting from main menu - signal fresh game start for full countdown
-            korgeManager.signalFreshGameStart()
-        }
+        korgeManager.resetRunningStarted()
+        korgeManager.resetSceneLoaded()
+        korgeManager.introFinished = false
+        korgeManager.resetNinjaPosition()
+        korgeManager.cancelCurrentScene()
+        korgeManager.playRestart()
+        korgeManager.signalGameRestart()
         _state.update { st ->
             st.copy(
                 previousScreen = st.screen,
@@ -124,9 +115,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
                 timerSeconds = 0,
                 timerRunning = true,
                 gameKey = st.gameKey + 1,
-                completedRowsCount = 0,
-                finishedRows = emptySet(),
-                finishedCols = emptySet(),
+
                 difficulty = difficulty,
                 ninjaScreenX = 500f,
                 mistakeCount = 0,
@@ -295,13 +284,14 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     fun pause() {
         Log.d("FutoshikiDebug", "pause() called, current screen=${_state.value.screen}")
         if (_state.value.screen != Screen.GAME) return
+        val isEndGame = _state.value.won || _state.value.isSolved || _state.value.defeated
         stopTimer()
         pauseStartTime = System.currentTimeMillis()
         _state.update { it.copy(
             previousScreen = it.screen,
             screen = Screen.PAUSE,
             timerRunning = false,
-            pauseCount = it.pauseCount + 1
+            pauseCount = if (!isEndGame) it.pauseCount + 1 else it.pauseCount
         ) }
         Log.d("FutoshikiDebug", "pause() done, new screen=${_state.value.screen}")
     }
@@ -309,13 +299,14 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     fun resume() {
         Log.d("FutoshikiDebug", "resume() called, current screen=${_state.value.screen}")
         val isWon = _state.value.won
+        val isEndGame = isWon || _state.value.isSolved || _state.value.defeated
         val elapsed = pauseStartTime?.let { System.currentTimeMillis() - it } ?: 0L
         pauseStartTime = null
         _state.update { it.copy(
             previousScreen = it.screen,
             screen = Screen.GAME,
             timerRunning = !isWon,
-            pauseTimeMs = it.pauseTimeMs + elapsed
+            pauseTimeMs = if (!isEndGame) it.pauseTimeMs + elapsed else it.pauseTimeMs
         ) }
         if (!isWon) {
             startTimer()
@@ -357,12 +348,6 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     fun updateThemeMode(newMode: ThemeMode) {
         prefs.edit().putString("theme_mode", newMode.name).apply()
         _state.update { it.copy(themeMode = newMode) }
-    }
-
-    fun toggleDarkMode() {
-        val newIsDark = !_state.value.isDark
-        prefs.edit().putBoolean("is_dark", newIsDark).apply()
-        _state.update { it.copy(isDark = newIsDark) }
     }
 
     fun updateCustomMonoAccent(isAccent: Boolean) {

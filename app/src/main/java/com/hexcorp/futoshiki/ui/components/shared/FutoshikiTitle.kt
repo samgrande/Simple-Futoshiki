@@ -24,8 +24,7 @@ import com.hexcorp.futoshiki.ui.theme.accentColor
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun FutoshikiTitle(
-    size: Int? = null,
-    showTabs: Boolean = false,
+    size: Int = 0,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     fontSize: TextUnit = 36.sp,
@@ -66,7 +65,7 @@ fun FutoshikiTitle(
         }
 
         // Grid Size Pill (only shown if size is provided)
-        if (size != null) {
+        if (size > 0) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)

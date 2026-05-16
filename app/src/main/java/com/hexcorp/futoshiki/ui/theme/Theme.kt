@@ -113,22 +113,6 @@ object FutoshikiColors {
     @Composable
     fun shadowColor(): Color = if (LocalIsDark.current) Color.Black.copy(alpha = 0.6f) else Color.Black.copy(alpha = 0.3f)
 
-    @Composable
-    fun bigButtonBg(primary: Boolean): Color = if (LocalIsDark.current) {
-        if (primary) BigButtonPrimaryDark else BigButtonPrimary
-    } else {
-        if (primary) BigButtonPrimary else BigButtonSecondary
-    }
-
-    @Composable
-    fun bigButtonText(primary: Boolean): Color = if (LocalIsDark.current) {
-        if (primary) BigButtonTextPrimaryDark else BigButtonTextSecondaryDark
-    } else {
-        if (primary) BigButtonTextPrimary else BigButtonTextSecondary
-    }
-
-    @Composable
-    fun bigButtonBorder(): Color = if (LocalIsDark.current) BigButtonPrimaryDark else OnSurface
 }
 
 // Dynamic accent provider

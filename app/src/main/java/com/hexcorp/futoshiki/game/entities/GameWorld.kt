@@ -32,6 +32,7 @@ class GameWorld(
     private var targetNinjaScreenX = 500.0
     private var currentNinjaScreenX = 500.0
     private var cameraStiffness = 0.2
+    private var freezeCamera = false
 
     private var currentAnimationJob: Job? = null
     private val animationScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -194,6 +195,7 @@ class GameWorld(
     }
 
     fun startGame(skipIntro: Boolean = false) {
+        freezeCamera = false
         cameraStiffness = 0.2
         currentAnimationJob?.cancel()
         if (skipIntro) {
@@ -209,6 +211,7 @@ class GameWorld(
     }
 
     fun startMenuIdle() {
+        freezeCamera = false
         manager.updateNinjaScreenX(500f)
         cameraStiffness = 1.0
         targetNinjaScreenX = 500.0
@@ -225,6 +228,7 @@ class GameWorld(
     }
 
     fun restartGame() {
+        freezeCamera = false
         currentAnimationJob?.cancel()
         cameraStiffness = 0.2
         targetNinjaScreenX = 500.0
@@ -245,24 +249,18 @@ class GameWorld(
 
     fun runWinSequence(immediate: Boolean = false) {
         currentAnimationJob?.cancel()
-        if (::dragon.isInitialized) {
-            currentAnimationJob = animationScope.launch {
-                dragon.runWinFlyAway()
-            }
-        }
-        
-        // Ninja keeps running for a bit while we center him slowly (unless immediate)
-        animationScope.launch {
-            // 1. Slow down the camera centering speed temporarily for a "cinematic" feel
+        currentAnimationJob = animationScope.launch {
+            if (::dragon.isInitialized) launch { dragon.runWinFlyAway() }
+            
             cameraStiffness = if (immediate) 0.4 else 0.05
             targetNinjaScreenX = 500.0
-                
-            // 2. Wait for some time while he keeps running towards the center (skip if immediate)
+            
             if (!immediate) {
                 delay(2000)
             }
-                
-            // 3. Now stop him and make him stand
+
+            freezeCamera = true
+            
             if (::ninja.isInitialized) ninja.triggerWin()
         }
     }
@@ -342,22 +340,26 @@ class GameWorld(
 
     fun update(dt: Double, aggression: Float, enableCloudDrift: Boolean = true) {
         if (!::ninja.isInitialized || !::dragon.isInitialized) return
-        
-        // Smoothly move currentNinjaScreenX toward targetNinjaScreenX.
-        // Large jumps (puzzle progress) use a very low stiffness so the ninja
-        // drifts to the new position slowly instead of teleporting.
-        val diff = targetNinjaScreenX - currentNinjaScreenX
-        if (kotlin.math.abs(diff) > 0.1) {
-            val effectiveStiffness = when {
-                kotlin.math.abs(diff) > 150 -> 0.015  // very very slow drift for big jumps
-                kotlin.math.abs(diff) > 50  -> 0.06   // gentle ease for medium shifts
-                else                        -> cameraStiffness  // normal follow
-            }
-            currentNinjaScreenX += diff * (1.0 - kotlin.math.exp(-effectiveStiffness * dt))
-        } else {
-            currentNinjaScreenX = targetNinjaScreenX
-        }
 
+        val actualCloudDrift = enableCloudDrift && !freezeCamera
+        
+        if (!freezeCamera) {
+            // Smoothly move currentNinjaScreenX toward targetNinjaScreenX.
+            // Large jumps (puzzle progress) use a very low stiffness so the ninja
+            // drifts to the new position slowly instead of teleporting.
+            val diff = targetNinjaScreenX - currentNinjaScreenX
+            if (kotlin.math.abs(diff) > 0.1) {
+                val effectiveStiffness = when {
+                    kotlin.math.abs(diff) > 150 -> 0.015  // very very slow drift for big jumps
+                    kotlin.math.abs(diff) > 50  -> 0.06   // gentle ease for medium shifts
+                    else                        -> cameraStiffness  // normal follow
+                }
+                currentNinjaScreenX += diff * (1.0 - kotlin.math.exp(-effectiveStiffness * dt))
+            } else {
+                currentNinjaScreenX = targetNinjaScreenX
+            }
+        }
+        
         // Use 60.0 offset to keep his feet at the grass line with the new larger 400x400 sprite
         ninja.update(dt, floorY + 95.0)
         dragon.update(dt, currentNinjaScreenX)
@@ -367,7 +369,7 @@ class GameWorld(
         this.x = currentNinjaScreenX - ninja.x
 
         // Update Parallax based on Ninja's world position
-        layers.forEach { it.update(ninja.x, dt, enableCloudDrift) }
+        layers.forEach { it.update(ninja.x, dt, actualCloudDrift) }
         
         // Keep sky background roughly centered on ninja
         children.firstOrNull { it is SolidRect }?.let { 

@@ -56,9 +56,8 @@ fun ExpandableStartButton(
     isDark: Boolean,
     modifier: Modifier = Modifier,
     onDifficultySave: ((Difficulty) -> Unit)? = null,
-    currentSize: Int = selectedSize,
-    currentDifficulty: Difficulty = selectedDifficulty,
-    hasActiveGame: Boolean = false,
+    currentSize: Int = 4,
+    currentDifficulty: Difficulty = Difficulty.EASY,
     isSmallScreen: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }

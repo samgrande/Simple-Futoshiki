@@ -24,9 +24,9 @@ import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import com.hexcorp.futoshiki.ui.theme.PixelF
-import com.hexcorp.futoshiki.ui.theme.ThemeMode
-import com.hexcorp.futoshiki.ui.korge.KorGEView
 import androidx.compose.ui.graphics.graphicsLayer
+import com.hexcorp.futoshiki.ui.components.shared.BigButton
+import com.hexcorp.futoshiki.ui.components.shared.HelpPanel
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -37,18 +37,16 @@ fun LandingScreen(
     onStart: (Int, Difficulty) -> Unit,
     onTheming: () -> Unit,
     onQuit: () -> Unit,
-    showKorge: Boolean = true,
     korgeManager: com.hexcorp.futoshiki.ui.korge.KorGEGameManager,
-    isSkyboxDark: Boolean = false,
     modifier: Modifier = Modifier,
     scope: AnimatedVisibilityScope? = null,
     onSizeSave: (Int) -> Unit = {},
     onDifficultySave: (Difficulty) -> Unit = {},
     skipEntranceAnimation: Boolean = false
 ) {
-    var showHelp by remember { mutableStateOf(false) }
     var showConfirmQuit by remember { mutableStateOf(false) }
     var startExpanded by remember { mutableStateOf(false) }
+    var helpExpanded by remember { mutableStateOf(false) }
     
     var selectedSize by remember { mutableIntStateOf(currentSize) }
     var selectedDifficulty by remember { mutableStateOf(currentDifficulty) }
@@ -75,9 +73,9 @@ fun LandingScreen(
 
     BackHandler(enabled = true) {
         when {
-            showHelp -> {
+            helpExpanded -> {
                 korgeManager.gameWorld?.revertNinjaToStandSprite()
-                showHelp = false
+                helpExpanded = false
             }
             showConfirmQuit -> showConfirmQuit = false
             startExpanded -> {
@@ -129,7 +127,7 @@ fun LandingScreen(
             modifier = Modifier
                 .widthIn(max = 420.dp)
                 .fillMaxHeight()
-                .systemBarsPadding()
+                .statusBarsPadding()
                 .padding(horizontal = 20.dp)
                 .zIndex(1f),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -197,18 +195,11 @@ fun LandingScreen(
                 AnimatedContent(
                     targetState = when {
                         showConfirmQuit -> "confirm"
-                        showHelp -> "help"
                         else -> "menu"
                     },
                     transitionSpec = {
-                        val duration = 300
-                        if (targetState != "menu") {
-                            (fadeIn(tween(duration)) + slideInVertically { it / 4 })
-                                .togetherWith(fadeOut(tween(250)) + slideOutVertically { -it / 4 })
-                        } else {
-                            (fadeIn(tween(duration)) + slideInVertically { -it / 4 })
-                                .togetherWith(fadeOut(tween(250)) + slideOutVertically { it / 4 })
-                        }.using(SizeTransform(clip = false))
+                        val duration = 200
+                        fadeIn(tween(duration)).togetherWith(fadeOut(tween(duration)))
                     },
                     label = "landingContentTransition",
                     modifier = Modifier.fillMaxWidth()
@@ -233,11 +224,11 @@ fun LandingScreen(
                         onQuit = onQuit,
                         onShowHelp = {
                             korgeManager.gameWorld?.swapNinjaToReadSprite()
-                            showHelp = true
+                            helpExpanded = true
                         },
                         onHideHelp = {
                             korgeManager.gameWorld?.revertNinjaToStandSprite()
-                            showHelp = false
+                            helpExpanded = false
                         },
                         onHideConfirmQuit = { showConfirmQuit = false },
                         isSmallScreen = isSmallScreen
@@ -267,6 +258,57 @@ fun LandingScreen(
                     color = Color(0xFF888888),
                     fontFamily = PixelF
                 )
+            }
+        }
+
+        AnimatedVisibility(
+            visible = helpExpanded,
+            enter = fadeIn(tween(250)) + scaleIn(
+                animationSpec = spring(dampingRatio = 0.3f, stiffness = Spring.StiffnessMedium),
+                initialScale = 0.92f
+            ),
+            exit = fadeOut(tween(200)) + scaleOut(
+                animationSpec = spring(dampingRatio = 0.3f, stiffness = Spring.StiffnessMedium),
+                targetScale = 0.92f
+            ),
+            modifier = Modifier.zIndex(10f)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(FutoshikiColors.surface())
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {}
+                    ),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp)
+                ) {
+                    HelpPanel(
+                        modifier = Modifier
+                            .fillMaxWidth(0.9f)
+                            .padding(vertical = 12.dp)
+                    )
+                    Spacer(Modifier.height(40.dp))
+                    BigButton(
+                        label = "BACK",
+                        onClick = {
+                            korgeManager.gameWorld?.revertNinjaToStandSprite()
+                            helpExpanded = false
+                        },
+                        inverted = true,
+                        isDark = isDark
+                    )
+                    Spacer(Modifier.height(50.dp))
+                }
             }
         }
     }

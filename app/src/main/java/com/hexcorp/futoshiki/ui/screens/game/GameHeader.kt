@@ -26,16 +26,11 @@ import androidx.compose.animation.core.animateFloatAsState
 @Composable
 fun GameHeader(
     size: Int,
-    timerSeconds: Int,
     won: Boolean,
-    isPaused: Boolean,
     showCountdown: Boolean,
     onTitleClick: () -> Unit,
     onTitleLongClick: () -> Unit = {},
-    onTimerClick: () -> Unit,
-    onSizeChange: (Int) -> Unit = {},
     headerH: Dp,
-    hideGameContent: Boolean,
     isSmallScreen: Boolean = false,
     isExpanded: Boolean = false
 ) {

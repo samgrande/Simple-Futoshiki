@@ -172,7 +172,7 @@ fun CongratsView(
     )
 
     val alpha by animateFloatAsState(
-        targetValue = if (isExpanded) 0f else 1f,
+        targetValue = if (isExpanded) 0.2f else 1f,
         animationSpec = tween(400),
         label = "congratsAlpha"
     )
@@ -189,78 +189,20 @@ fun CongratsView(
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(50.dp)
-                        )
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text          = "Grid ",
-                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
-                            fontSize      = 12.sp,
-                            fontWeight    = FontWeight.Medium,
-                            fontFamily    = PixelF,
-                            letterSpacing = 1.sp
-                        )
-                        Text(
-                            text          = "${gridSize}x${gridSize}",
-                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.8f),
-                            fontSize      = 14.sp,
-                            fontWeight    = FontWeight.Bold,
-                            fontFamily    = PixelF,
-                            letterSpacing = 2.sp
-                        )
-                    }
-                }
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(50.dp)
-                        )
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text          = "Mode ",
-                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
-                            fontSize      = 12.sp,
-                            fontWeight    = FontWeight.Medium,
-                            fontFamily    = PixelF,
-                            letterSpacing = 1.sp
-                        )
-                        Text(
-                            text          = difficulty.name,
-                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.8f),
-                            fontSize      = 14.sp,
-                            fontWeight    = FontWeight.Bold,
-                            fontFamily    = PixelF,
-                            letterSpacing = 2.sp
-                        )
-                    }
-                }
-            }
+            GameInfoBadge(gridSize = gridSize, difficulty = difficulty, isDark = isDark)
 
             Spacer(modifier = Modifier.height(20.dp))
 
-        val rankingRes = if (pauseCount == 0) {
-            when {
-                timerSeconds < 10 -> R.drawable.g_rank
-                timerSeconds < 20 -> R.drawable.s_rank
-                timerSeconds < 30 -> R.drawable.a_rank
-                timerSeconds < 40 -> R.drawable.b_rank
-                timerSeconds < 50 -> R.drawable.c_rank
-                else -> null
-            }
-        } else null
+            val rankingRes = if (pauseCount == 0) {
+                when {
+                    timerSeconds < 10 -> R.drawable.g_rank
+                    timerSeconds < 20 -> R.drawable.s_rank
+                    timerSeconds < 30 -> R.drawable.a_rank
+                    timerSeconds < 40 -> R.drawable.b_rank
+                    timerSeconds < 50 -> R.drawable.c_rank
+                    else -> null
+                }
+            } else null
 
             Box(modifier = Modifier.fillMaxWidth()) {
                 Text(
@@ -310,73 +252,73 @@ fun CongratsView(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-        val ratingText = if (pauseCount > 0) {
-            "Y O U   W O N"
-        } else {
-            when {
-                timerSeconds < 10 -> "THE G.O.A.T"
-                timerSeconds < 20 -> "EXCELLENT"
-                timerSeconds < 30 -> "AMAZING"
-                timerSeconds < 40 -> "GOOD"
-                timerSeconds < 50 -> "NICE"
-                else -> "Y O U   W O N"
+            val ratingText = if (pauseCount > 0) {
+                "Y O U   W O N"
+            } else {
+                when {
+                    timerSeconds < 10 -> "THE G.O.A.T"
+                    timerSeconds < 20 -> "EXCELLENT"
+                    timerSeconds < 30 -> "AMAZING"
+                    timerSeconds < 40 -> "GOOD"
+                    timerSeconds < 50 -> "NICE"
+                    else -> "Y O U   W O N"
+                }
             }
-        }
-
-        Text(
-            text          = ratingText,
-            color         = accent,
-            fontSize      = 17.sp,
-            fontWeight    = FontWeight.Bold,
-            fontFamily    = Midorima,
-            letterSpacing = 4.sp
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        val timeStr = formatTimer(timerSeconds)
-        val mm = timeStr.substring(0, 2)
-        val ss = timeStr.substring(3, 5)
-        val displayTime = "${mm[0]} ${mm[1]} : ${ss[0]} ${ss[1]}"
-
-        Text(
-            text          = "S O L V E D   I N",
-            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
-            fontSize      = 10.sp,
-            fontWeight    = FontWeight.Medium,
-            fontFamily    = PixelF,
-            letterSpacing = 3.sp
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text          = displayTime,
-            color         = if (isDark) Color.White else Color.Black,
-            fontSize      = 34.sp,
-            fontWeight    = FontWeight.Bold,
-            fontFamily    = Midorima,
-            letterSpacing = 3.sp
-        )
-
-        if (pauseCount > 0) {
-            val totalPauseSecs = (pauseTimeMs / 1000).toInt()
-            val pm = totalPauseSecs / 60
-            val ps = totalPauseSecs % 60
-            val pmStr = if (pm < 10) "0${pm}" else "$pm"
-            val psStr = if (ps < 10) "0${ps}" else "$ps"
 
             Text(
-                text          = "although you spent ${pmStr}:${psStr} in pause menu",
+                text          = ratingText,
+                color         = accent,
+                fontSize      = 17.sp,
+                fontWeight    = FontWeight.Bold,
+                fontFamily    = Midorima,
+                letterSpacing = 4.sp
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            val timeStr = formatTimer(timerSeconds)
+            val mm = timeStr.substring(0, 2)
+            val ss = timeStr.substring(3, 5)
+            val displayTime = "${mm[0]} ${mm[1]} : ${ss[0]} ${ss[1]}"
+
+            Text(
+                text          = "S O L V E D   I N",
                 color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
                 fontSize      = 10.sp,
                 fontWeight    = FontWeight.Medium,
                 fontFamily    = PixelF,
-                letterSpacing = 1.sp
+                letterSpacing = 3.sp
             )
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text          = displayTime,
+                color         = if (isDark) Color.White else Color.Black,
+                fontSize      = 34.sp,
+                fontWeight    = FontWeight.Bold,
+                fontFamily    = Midorima,
+                letterSpacing = 3.sp
+            )
+
+            if (pauseCount > 0) {
+                val totalPauseSecs = (pauseTimeMs / 1000).toInt()
+                val pm = totalPauseSecs / 60
+                val ps = totalPauseSecs % 60
+                val pmStr = if (pm < 10) "0${pm}" else "$pm"
+                val psStr = if (ps < 10) "0${ps}" else "$ps"
+
+                Text(
+                    text          = "although you spent ${pmStr}:${psStr} in pause menu",
+                    color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
+                    fontSize      = 10.sp,
+                    fontWeight    = FontWeight.Medium,
+                    fontFamily    = PixelF,
+                    letterSpacing = 1.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
@@ -393,7 +335,7 @@ fun DefeatView(
     val accent = accentColor()
 
     val alpha by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (isExpanded) 0f else 1f,
+        targetValue = if (isExpanded) 0.2f else 1f,
         animationSpec = tween(400),
         label = "defeatAlpha"
     )
@@ -410,65 +352,7 @@ fun DefeatView(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(50.dp)
-                        )
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text          = "Grid ",
-                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
-                            fontSize      = 12.sp,
-                            fontWeight    = FontWeight.Medium,
-                            fontFamily    = PixelF,
-                            letterSpacing = 1.sp
-                        )
-                        Text(
-                            text          = "${gridSize}x${gridSize}",
-                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.8f),
-                            fontSize      = 14.sp,
-                            fontWeight    = FontWeight.Bold,
-                            fontFamily    = PixelF,
-                            letterSpacing = 2.sp
-                        )
-                    }
-                }
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(50.dp)
-                        )
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text          = "Mode ",
-                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
-                            fontSize      = 12.sp,
-                            fontWeight    = FontWeight.Medium,
-                            fontFamily    = PixelF,
-                            letterSpacing = 1.sp
-                        )
-                        Text(
-                            text          = difficulty.name,
-                            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.8f),
-                            fontSize      = 14.sp,
-                            fontWeight    = FontWeight.Bold,
-                            fontFamily    = PixelF,
-                            letterSpacing = 2.sp
-                        )
-                    }
-                }
-            }
+            GameInfoBadge(gridSize = gridSize, difficulty = difficulty, isDark = isDark)
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -481,16 +365,16 @@ fun DefeatView(
                 modifier = Modifier.fillMaxWidth()
             )
 
-        Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-        Text(
-            text          = "YOU MADE TOO MANY MISTAKES",
-            color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.6f),
-            fontSize      = 14.sp,
-            fontWeight    = FontWeight.Bold,
-            fontFamily    = PixelF,
-            letterSpacing = 2.sp
-        )
+            Text(
+                text          = "YOU MADE TOO MANY MISTAKES",
+                color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.6f),
+                fontSize      = 14.sp,
+                fontWeight    = FontWeight.Bold,
+                fontFamily    = PixelF,
+                letterSpacing = 2.sp
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -504,6 +388,73 @@ fun DefeatView(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun GameInfoBadge(
+    gridSize: Int,
+    difficulty: Difficulty,
+    isDark: Boolean
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .background(
+                    color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(50.dp)
+                )
+                .padding(horizontal = 14.dp, vertical = 6.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Grid ",
+                    color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = PixelF,
+                    letterSpacing = 1.sp
+                )
+                Text(
+                    text = "${gridSize}x${gridSize}",
+                    color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.8f),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = PixelF,
+                    letterSpacing = 2.sp
+                )
+            }
+        }
+        Box(
+            modifier = Modifier
+                .background(
+                    color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(50.dp)
+                )
+                .padding(horizontal = 14.dp, vertical = 6.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Mode ",
+                    color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = PixelF,
+                    letterSpacing = 1.sp
+                )
+                Text(
+                    text = difficulty.name,
+                    color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.8f),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = PixelF,
+                    letterSpacing = 2.sp
+                )
+            }
         }
     }
 }

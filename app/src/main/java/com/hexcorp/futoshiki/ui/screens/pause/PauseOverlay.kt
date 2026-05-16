@@ -27,8 +27,6 @@ import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.ThemeMode
-import com.hexcorp.futoshiki.ui.korge.KorGEView
-import kotlin.math.roundToInt
 
 @Composable
 fun PauseOverlay(
@@ -236,7 +234,6 @@ fun PauseOverlay(
                                     onDifficultySave = onDifficultySave,
                                     currentSize = currentSize,
                                     currentDifficulty = currentDifficulty,
-                                    hasActiveGame = !won,
                                     isSmallScreen = isSmallScreen
                                 )
 

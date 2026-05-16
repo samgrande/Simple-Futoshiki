@@ -4,7 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,28 +43,6 @@ fun LandingMenuContent(
     val topSpacing = if (isSmallScreen) 32.dp else 48.dp
 
     when (state) {
-        "help" -> {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 20.dp)
-            ) {
-                Spacer(Modifier.height(24.dp))
-                HelpPanel(
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .fillMaxHeight(0.8f)
-                )
-                Spacer(Modifier.height(20.dp))
-                BigButton(
-                    label = "BACK",
-                    onClick = onHideHelp,
-                    inverted = true,
-                    isDark = isDark
-                )
-            }
-        }
         "confirm" -> {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -114,7 +92,6 @@ fun LandingMenuContent(
                     onDifficultySave = onDifficultySave,
                     currentSize = selectedSize,
                     currentDifficulty = selectedDifficulty,
-                    hasActiveGame = false,
                     isSmallScreen = isSmallScreen
                 )
 

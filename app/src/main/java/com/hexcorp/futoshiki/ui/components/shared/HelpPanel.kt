@@ -56,38 +56,44 @@ fun HelpPanel(
             },
         contentAlignment = Alignment.Center
     ) {
-        AnimatedContent(
-            targetState = currentSection,
-            transitionSpec = {
-                val direction = if (targetState > initialState) 1 else -1
-                (slideInVertically(tween(300)) { it * direction } + fadeIn(tween(300)))
-                    .togetherWith(
-                        slideOutVertically(tween(300)) { -it * direction } + fadeOut(tween(200))
+        Box(
+            modifier = Modifier.heightIn(min = 400.dp, max = 400.dp)
+        ) {
+            AnimatedContent(
+                targetState = currentSection,
+                transitionSpec = {
+                    val direction = if (targetState > initialState) 1 else -1
+                    (slideInVertically(tween(300)) { it * direction } + fadeIn(tween(300)))
+                        .togetherWith(
+                            slideOutVertically(tween(300)) { -it * direction } + fadeOut(tween(200))
+                        )
+                        .using(SizeTransform(clip = true))
+                },
+                label = "helpSectionTransition",
+                modifier = Modifier.fillMaxSize()
+            ) { section ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    when (section) {
+                        0 -> HowToPlaySection()
+                        1 -> CoreRulesSection()
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        text = if (section == 0) "↑ Swipe up for rules" else "↓ Swipe down for how to play",
+                        fontSize = 10.sp,
+                        fontFamily = PixelF,
+                        color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
+                        letterSpacing = 1.sp
                     )
-                    .using(SizeTransform(clip = false))
-            },
-            label = "helpSectionTransition"
-        ) { section ->
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                when (section) {
-                    0 -> HowToPlaySection()
-                    1 -> CoreRulesSection()
                 }
-
-                Spacer(Modifier.height(8.dp))
-
-                Text(
-                    text = if (section == 0) "↑ Swipe up for rules" else "↓ Swipe down for how to play",
-                    fontSize = 10.sp,
-                    fontFamily = PixelF,
-                    color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
-                    letterSpacing = 1.sp
-                )
             }
         }
     }

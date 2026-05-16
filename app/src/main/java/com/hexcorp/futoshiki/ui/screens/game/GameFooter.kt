@@ -126,7 +126,6 @@ fun GameFooter(
                     .padding(bottom = 8.dp),
                 currentSize = selectedSize,
                 currentDifficulty = selectedDifficulty,
-                hasActiveGame = hasActiveGame,
                 isSmallScreen = isSmallScreen
             )
         }

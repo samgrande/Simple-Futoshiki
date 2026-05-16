@@ -1,5 +1,6 @@
 package com.hexcorp.futoshiki
 
+import android.annotation.SuppressLint
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.KeyEvent
@@ -39,7 +40,6 @@ import com.hexcorp.futoshiki.ui.theme.FutoshikiTheme
 import com.hexcorp.futoshiki.ui.theme.ThemeMode
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
-import com.hexcorp.futoshiki.ui.animations.CircularRevealShape
 import com.hexcorp.futoshiki.ui.korge.KorGEView
 import com.hexcorp.futoshiki.ui.components.shared.TimerPill
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
@@ -47,12 +47,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.sp
 import android.util.Log
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class MainActivity : FragmentActivity() {
 
@@ -83,6 +80,7 @@ class MainActivity : FragmentActivity() {
         setContentView(root)
     }
 
+    @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.keyCode == KeyEvent.KEYCODE_BACK) {
             if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) {
@@ -259,7 +257,7 @@ fun FutoshikiApp(
                 }
 
                 // Share button - shown on the win screen, positioned on top of KorGE
-                if (state.showCongrats) {
+                if (state.showCongrats && state.screen == Screen.GAME) {
                     val context = LocalContext.current
                     val view = LocalView.current
                     Box(
@@ -382,9 +380,7 @@ fun FutoshikiApp(
                                 },
                                 onTheming = { vm.goToTheming() },
                                 onQuit = onQuit,
-                                showKorge = false,
                                 korgeManager = vm.korgeManager,
-                                isSkyboxDark = isSkyboxDark,
                                 modifier = Modifier.fillMaxSize(),
                                 scope = this@AnimatedContent,
                                 onSizeSave = { vm.saveSizePreference(it) },

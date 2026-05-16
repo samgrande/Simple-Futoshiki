@@ -36,7 +36,6 @@ import com.hexcorp.futoshiki.ui.screens.pause.PauseOverlay
 import com.hexcorp.futoshiki.ui.components.shared.FutoshikiTitle
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
-import com.hexcorp.futoshiki.ui.korge.KorGEView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
@@ -311,7 +310,11 @@ fun GameScreen(
         val isDark = LocalIsDark.current
 
         val gridAlpha by animateFloatAsState(
-            targetValue = if (hideGameContent || showCountdown || newGameExpanded || state.showDefeat) 0f else 1f,
+            targetValue = when {
+                hideGameContent || showCountdown || state.showDefeat -> 0f
+                newGameExpanded -> 0.2f
+                else -> 1f
+            },
             animationSpec = spring(
                 dampingRatio = Spring.DampingRatioLowBouncy,
                 stiffness = Spring.StiffnessLow
@@ -556,20 +559,11 @@ fun GameScreen(
                     CompositionLocalProvider(LocalIsDark provides if (isCustomMonoNight) false else LocalIsDark.current) {
                         GameHeader(
                             size = size,
-                            timerSeconds = state.timerSeconds,
                             won = won,
-                            isPaused = isPaused,
                             showCountdown = showCountdown,
                             onTitleClick = { },
-                            onTimerClick = {
-                                if (!isPaused) viewModel.pause() else viewModel.resume()
-                            },
-                            onSizeChange = { newSize ->
-                                viewModel.changeSize(newSize)
-                            },
-                            onTitleLongClick = { /* Handle if needed */ },
+                            onTitleLongClick = { },
                             headerH = headerH,
-                            hideGameContent = hideGameContent,
                             isSmallScreen = isSmallScreen,
                             isExpanded = newGameExpanded
                         )
