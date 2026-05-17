@@ -88,7 +88,7 @@ fun HelpPanel(
 
                     Text(
                         text = if (section == 0) "↑ Swipe up for rules" else "↓ Swipe down for how to play",
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         fontFamily = PixelF,
                         color = if (isDark) Color(0xFF888888) else Color(0xFF999999),
                         letterSpacing = 1.sp
@@ -111,7 +111,7 @@ private fun HowToPlaySection() {
     ) {
         Text(
             text = "How to Play",
-            fontSize = 16.sp,
+            fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = PixelF,
             color = FutoshikiColors.onSurface(),
@@ -126,7 +126,7 @@ private fun HowToPlaySection() {
         )
         Text(
             text = "ふと指揮",
-            fontSize = 20.sp,
+            fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = com.hexcorp.futoshiki.ui.theme.Yuji,
             color = accent,
@@ -134,7 +134,7 @@ private fun HowToPlaySection() {
         )
         Text(
             text = "(Japanese for \"inequality\")",
-            fontSize = 10.sp,
+            fontSize = 11.sp,
             fontFamily = PixelF,
             color = bodyColor.copy(alpha = 0.6f),
             letterSpacing = 1.sp,
@@ -152,16 +152,16 @@ private fun HowToPlaySection() {
                 Box(
                     modifier = Modifier
                         .width(3.dp)
-                        .height(60.dp)
+                        .height(66.dp)
                         .background(accent.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
                     text = "Futoshiki is a logic puzzle on a square grid. Fill the board so every row and column contains each number exactly once.",
-                    fontSize = 13.sp,
+                    fontSize = 14.sp,
                     fontFamily = PixelF,
                     color = bodyColor,
-                    lineHeight = 20.sp
+                    lineHeight = 22.sp
                 )
             }
         }
@@ -177,16 +177,16 @@ private fun HowToPlaySection() {
                 Box(
                     modifier = Modifier
                         .width(3.dp)
-                        .height(40.dp)
+                        .height(44.dp)
                         .background(accent.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
                     text = "Select a cell, choose a digit. Complete the puzzle when all cells are filled without breaking any rules.",
-                    fontSize = 13.sp,
+                    fontSize = 14.sp,
                     fontFamily = PixelF,
                     color = bodyColor,
-                    lineHeight = 20.sp
+                    lineHeight = 22.sp
                 )
             }
         }
@@ -204,7 +204,7 @@ private fun CoreRulesSection() {
     ) {
         Text(
             text = "Core Rules",
-            fontSize = 16.sp,
+            fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = PixelF,
             color = FutoshikiColors.onSurface(),
@@ -256,15 +256,15 @@ private fun RuleCard(number: String, title: String, body: String, bgColor: Color
     ) {
         Box(
             modifier = Modifier
-                .width(26.dp)
-                .height(26.dp)
+                .width(28.dp)
+                .height(28.dp)
                 .clip(RoundedCornerShape(6.dp))
                 .background(accent.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = number,
-                fontSize = 11.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = PixelF,
                 color = accent
@@ -273,7 +273,7 @@ private fun RuleCard(number: String, title: String, body: String, bgColor: Color
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                fontSize = 13.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = PixelF,
                 color = FutoshikiColors.onSurface()
@@ -281,10 +281,10 @@ private fun RuleCard(number: String, title: String, body: String, bgColor: Color
             Spacer(Modifier.height(2.dp))
             Text(
                 text = body,
-                fontSize = 12.sp,
+                fontSize = 13.sp,
                 fontFamily = PixelF,
                 color = if (isDark) Color(0xFFBBBBBB) else Color(0xFF555555),
-                lineHeight = 17.sp
+                lineHeight = 19.sp
             )
         }
     }

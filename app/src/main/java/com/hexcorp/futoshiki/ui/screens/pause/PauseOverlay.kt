@@ -117,7 +117,7 @@ fun PauseOverlay(
                 )
             }
             
-            val isSkyboxDark = if (themeMode == ThemeMode.CUSTOM) customMonoAccent else isDark
+            val isSkyboxDark = customMonoAccent
             
             Box(
                 modifier = Modifier

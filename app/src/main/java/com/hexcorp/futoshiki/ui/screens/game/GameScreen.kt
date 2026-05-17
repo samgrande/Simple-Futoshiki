@@ -4,7 +4,10 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -80,6 +83,7 @@ fun GameScreen(
     var newGameExpanded by rememberSaveable { mutableStateOf(false) }
     var selectedSize by remember { mutableIntStateOf(state.size) }
     var selectedDifficulty by remember { mutableStateOf(state.difficulty) }
+
 
     // When gameKey changes (newGame), show countdown only for actual game starts
     LaunchedEffect(gameKey) {
@@ -555,8 +559,7 @@ fun GameScreen(
                     .zIndex(3f)
             ) {
                 if (!state.isSolved && !state.showDefeat) {
-                    val isCustomMonoNight = state.themeMode == com.hexcorp.futoshiki.ui.theme.ThemeMode.CUSTOM && !state.customMonoAccent && state.customDayNight
-                    CompositionLocalProvider(LocalIsDark provides if (isCustomMonoNight) false else LocalIsDark.current) {
+                    CompositionLocalProvider(LocalIsDark provides LocalIsDark.current) {
                         GameHeader(
                             size = size,
                             won = won,
@@ -630,6 +633,7 @@ fun GameScreen(
                 onShowHelpChange = { show -> viewModel.setShowHelp(show) }
             )
         }
+
 
     }
 }

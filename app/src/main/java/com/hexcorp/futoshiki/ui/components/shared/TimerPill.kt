@@ -3,8 +3,10 @@ package com.hexcorp.futoshiki.ui.components.shared
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,6 +58,35 @@ fun TimerPill(
             .padding(horizontal = 10.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (isPaused) {
+            // Play icon (triangle)
+            Text(
+                text = "▶",
+                color = pillTextColor,
+                fontSize = 15.sp,
+                fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
+                modifier = Modifier.padding(end = 6.dp)
+            )
+        } else {
+            // Pause icon: two tiny vertical bars
+            Row(
+                modifier = Modifier.padding(end = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 3.dp, height = 10.dp)
+                        .background(pillTextColor)
+                )
+                Box(modifier = Modifier.size(width = 2.dp, height = 1.dp)) // Spacer box
+                Box(
+                    modifier = Modifier
+                        .size(width = 3.dp, height = 10.dp)
+                        .background(pillTextColor)
+                )
+            }
+        }
+
         Text(
             text = label ?: formatTimer(seconds),
             color = pillTextColor,
