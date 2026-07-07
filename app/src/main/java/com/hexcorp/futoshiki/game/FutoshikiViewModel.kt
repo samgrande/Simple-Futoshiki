@@ -162,7 +162,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
         val finalMistakeCount = if (rowJustCompleted || colJustCompleted) 0 else newMistakeCount
 
-        Log.d("FutoshikiDebug", "inputNumber($num) at ($r,$c): solution=${st.puzzle.solution[r][c]}, isMistake=$isMistake, mistakes=$finalMistakeCount, rowComplete=$rowJustCompleted, colComplete=$colJustCompleted")
+        if (Log.isLoggable("FutoshikiDebug", Log.DEBUG)) Log.d("FutoshikiDebug", "inputNumber($num) at ($r,$c): solution=${st.puzzle.solution[r][c]}, isMistake=$isMistake, mistakes=$finalMistakeCount, rowComplete=$rowJustCompleted, colComplete=$colJustCompleted")
 
         val newNinjaScreenX = calculateNinjaScreenX(newGrid, st.size, st.puzzle.solution, finalMistakeCount)
         // Defeat after 6 mistakes (not position-based)
@@ -283,7 +283,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     // ── Pause / Resume ───────────────────────────────────────────────────────
 
     fun pause() {
-        Log.d("FutoshikiDebug", "pause() called, current screen=${_state.value.screen}")
+        if (Log.isLoggable("FutoshikiDebug", Log.DEBUG)) Log.d("FutoshikiDebug", "pause() called, current screen=${_state.value.screen}")
         if (_state.value.screen != Screen.GAME) return
         val isEndGame = _state.value.won || _state.value.isSolved || _state.value.defeated
         stopTimer()
@@ -294,7 +294,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
             timerRunning = false,
             pauseCount = if (!isEndGame) it.pauseCount + 1 else it.pauseCount
         ) }
-        Log.d("FutoshikiDebug", "pause() done, new screen=${_state.value.screen}")
+        if (Log.isLoggable("FutoshikiDebug", Log.DEBUG)) Log.d("FutoshikiDebug", "pause() done, new screen=${_state.value.screen}")
     }
 
     fun resume() {
@@ -312,7 +312,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         if (!isWon) {
             startTimer()
         }
-        Log.d("FutoshikiDebug", "resume() done, new screen=${_state.value.screen}")
+        if (Log.isLoggable("FutoshikiDebug", Log.DEBUG)) Log.d("FutoshikiDebug", "resume() done, new screen=${_state.value.screen}")
     }
 
     fun goToMainMenu() {

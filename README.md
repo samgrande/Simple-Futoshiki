@@ -1,7 +1,6 @@
 # Futoshiki Puzzle Game
 
 A clean and modern **Futoshiki** logic puzzle built entirely in **Kotlin + Jetpack Compose**, with **KorGE**-powered animations.
-ons
 
 ---
 

@@ -22,7 +22,7 @@ enum class Difficulty {
 
 // ── Solver (backtracking Latin-square) ────────────────────────────────────────
 
-fun generateSolution(size: Int): List<List<Int>> {
+fun generateSolution(size: Int, rng: Random = Random.Default): List<List<Int>> {
     val grid = Array(size) { IntArray(size) }
 
     fun isValid(row: Int, col: Int, num: Int): Boolean {
@@ -36,7 +36,7 @@ fun generateSolution(size: Int): List<List<Int>> {
         if (pos == size * size) return true
         val row = pos / size
         val col = pos % size
-        val nums = (1..size).shuffled()
+        val nums = (1..size).shuffled(rng)
         for (n in nums) {
             if (isValid(row, col, n)) {
                 grid[row][col] = n
@@ -94,7 +94,7 @@ fun countSolutions(initial: List<List<Int>>, constraints: List<Constraint>, size
 
 // ── Constraint generator ──────────────────────────────────────────────────────
 
-fun generateConstraints(solution: List<List<Int>>, size: Int, count: Int): List<Constraint> {
+fun generateConstraints(solution: List<List<Int>>, size: Int, count: Int, rng: Random = Random.Default): List<Constraint> {
     val pairs = mutableListOf<Pair<Pair<Int,Int>, Pair<Int,Int>>>()
     // Horizontal pairs
     for (r in 0 until size)
@@ -105,7 +105,7 @@ fun generateConstraints(solution: List<List<Int>>, size: Int, count: Int): List<
         for (c in 0 until size)
             pairs.add(Pair(r, c) to Pair(r + 1, c))
 
-    return pairs.shuffled().take(count).map { (a, b) ->
+    return pairs.shuffled(rng).take(count).map { (a, b) ->
         val (r1, c1) = a
         val (r2, c2) = b
         Constraint(r1, c1, r2, c2, gt = solution[r1][c1] > solution[r2][c2])
@@ -114,8 +114,7 @@ fun generateConstraints(solution: List<List<Int>>, size: Int, count: Int): List<
 
 // ── Full puzzle builder ───────────────────────────────────────────────────────
 
-private fun fillPercent(difficulty: Difficulty): Double {
-    val rng = Random.Default
+private fun fillPercent(difficulty: Difficulty, rng: Random = Random.Default): Double {
     return when (difficulty) {
         Difficulty.EASY   -> rng.nextDouble(0.50, 0.60)
         Difficulty.MEDIUM -> rng.nextDouble(0.30, 0.40)
@@ -136,26 +135,31 @@ private fun hasEmptyCellsInAllRowsAndCols(grid: Array<IntArray>, size: Int): Boo
 }
 
 private fun makeRowColSatisfied(grid: Array<IntArray>, size: Int, rng: Random) {
-    val totalCells = size * size
-    val maxAttempts = totalCells * 2
+    val maxAttempts = size * size * 2
     repeat(maxAttempts) {
         if (hasEmptyCellsInAllRowsAndCols(grid, size)) return
         val filledRows = (0 until size).filter { r -> grid[r].all { it != 0 } }
         val filledCols = (0 until size).filter { c -> (0 until size).all { grid[it][c] != 0 } }
         if (filledRows.isEmpty() && filledCols.isEmpty()) return
-        val r = filledRows.randomOrNull() ?: filledCols.randomOrNull()!!
-        val prefilled = (0 until size).filter { grid[r][it] != 0 }
-        if (prefilled.isNotEmpty()) {
-            val c = prefilled.random()
-            grid[r][c] = 0
+        if (filledRows.isNotEmpty()) {
+            val r = filledRows.random(rng)
+            val prefilled = (0 until size).filter { grid[r][it] != 0 }
+            if (prefilled.isNotEmpty()) {
+                grid[r][prefilled.random(rng)] = 0
+            }
+        } else {
+            val c = filledCols.random(rng)
+            val prefilled = (0 until size).filter { grid[it][c] != 0 }
+            if (prefilled.isNotEmpty()) {
+                grid[prefilled.random(rng)][c] = 0
+            }
         }
     }
 }
 
-fun generatePuzzle(size: Int, difficulty: Difficulty = Difficulty.EASY): Puzzle {
-    val rng = Random.Default
+fun generatePuzzle(size: Int, difficulty: Difficulty = Difficulty.EASY, rng: Random = Random.Default): Puzzle {
     val totalCells = size * size
-    val targetFill = (totalCells * fillPercent(difficulty)).toInt().coerceAtLeast(1)
+    val targetFill = (totalCells * fillPercent(difficulty, rng)).toInt().coerceAtLeast(1)
     val maxFill = (totalCells * maxFillPercent(difficulty)).toInt().coerceAtLeast(1)
 
     val baseConstraints = when (size) {
@@ -169,9 +173,10 @@ fun generatePuzzle(size: Int, difficulty: Difficulty = Difficulty.EASY): Puzzle 
         Difficulty.HARD   -> baseConstraints + 2
     }
 
-    while (true) {
-        val solution = generateSolution(size)
-        val constraints = generateConstraints(solution, size, constraintCount)
+    val maxAttempts = 200
+    repeat(maxAttempts) {
+        val solution = generateSolution(size, rng)
+        val constraints = generateConstraints(solution, size, constraintCount, rng)
         val allCells = (0 until size).flatMap { r -> (0 until size).map { c -> r to c } }.shuffled(rng)
 
         val grid = Array(size) { IntArray(size) }
@@ -181,7 +186,7 @@ fun generatePuzzle(size: Int, difficulty: Difficulty = Difficulty.EASY): Puzzle 
         makeRowColSatisfied(grid, size, rng)
 
         if (!hasEmptyCellsInAllRowsAndCols(grid, size)) {
-            continue
+            return@repeat
         }
 
         val initialGrid = grid.map { it.toList() }
@@ -203,8 +208,12 @@ fun generatePuzzle(size: Int, difficulty: Difficulty = Difficulty.EASY): Puzzle 
                 }
             }
         }
-        if (exceeded) continue
+        if (exceeded) return@repeat
     }
+
+    // Fallback after exhausting attempts: return solution as fully-filled grid
+    val fallbackSolution = generateSolution(size, rng)
+    return Puzzle(fallbackSolution, emptyList(), fallbackSolution.map { it.toList() })
 }
 
 // ── Validation ────────────────────────────────────────────────────────────────
