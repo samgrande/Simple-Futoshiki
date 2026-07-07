@@ -3,19 +3,16 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
-
 android {
     namespace = "com.hexcorp.futoshiki"
     compileSdk = 35
-
     defaultConfig {
         applicationId = "com.hexcorp.futoshiki"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
     }
-
     signingConfigs {
         if (System.getenv("KEYSTORE_PATH") != null) {
             create("release") {
@@ -26,7 +23,6 @@ android {
             }
         }
     }
-
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -37,29 +33,27 @@ android {
             signingConfig = signingConfigs.findByName("release")
         }
     }
-
     aaptOptions {
         // Assets for KorGE/Engine
         noCompress("png", "jpg", "jpeg", "webp")
     }
-
     packaging {
         jniLibs {
             useLegacyPackaging = true
         }
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
-
     kotlinOptions {
         jvmTarget = "21"
     }
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
 }
-
-
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
