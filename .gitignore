@@ -20,6 +20,4 @@ build_log.txt
 # Stray build output
 artifacts/
 
-# Fastlane metadata (tracked separately)
-fastlane/metadata/android/en-US/images/icon.png
-fastlane/metadata/android/en-US/images/phoneScreenshots/
+# Fastlane images are tracked (needed for F-Droid / store listing)
