@@ -2,7 +2,8 @@ name: Build & Publish APKs
 
 on:
   push:
-    branches: [main]
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -93,8 +94,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: build-${{ github.run_number }}
-          name: "Futoshiki Pre-Alpha — Build #${{ github.run_number }}"
+          tag_name: ${{ github.ref_name }}
+          name: "Simple Futoshiki ${{ github.ref_name }}"
           files: |
             app/build/outputs/apk/debug/Futoshiki-debug.apk
             app/build/outputs/apk/release/Futoshiki-release.apk
