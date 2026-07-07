@@ -54,7 +54,8 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     private fun loadThemeMode(): ThemeMode {
         val modeName = prefs.getString("theme_mode", ThemeMode.AUTO.name)
         return try {
-            ThemeMode.valueOf(modeName ?: ThemeMode.AUTO.name)
+            val mode = ThemeMode.valueOf(modeName ?: ThemeMode.AUTO.name)
+            if (mode == ThemeMode.CUSTOM) ThemeMode.AUTO else mode
         } catch (e: Exception) {
             ThemeMode.AUTO
         }

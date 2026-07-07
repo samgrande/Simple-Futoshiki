@@ -40,7 +40,7 @@ android {
 
     aaptOptions {
         // Assets for KorGE/Engine
-        noCompress("png", "jpg", "jpeg")
+        noCompress("png", "jpg", "jpeg", "webp")
     }
 
     packaging {
@@ -73,7 +73,6 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation("androidx.compose.material:material-icons-extended")
-    implementation(libs.google.material)
     implementation(libs.coil.compose)
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.compose.ui.viewbinding)

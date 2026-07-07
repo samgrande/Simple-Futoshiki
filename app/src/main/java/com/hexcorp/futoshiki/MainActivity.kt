@@ -11,6 +11,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -112,12 +113,7 @@ fun FutoshikiApp(
     val isGame = state.screen == Screen.GAME
     val isPaused = state.screen == Screen.PAUSE
 
-    val isSkyboxDark = when (state.themeMode) {
-        ThemeMode.CUSTOM -> state.customMonoAccent
-        ThemeMode.AUTO -> isDark
-        ThemeMode.DAY -> false
-        ThemeMode.NIGHT -> false
-    }
+    val isSkyboxDark = state.customMonoAccent
 
     var previousScreen by remember { mutableStateOf<Screen?>(null) }
     var landingEntrancePlayed by remember { mutableStateOf(false) }
@@ -144,6 +140,28 @@ fun FutoshikiApp(
 
     val showCover = state.screen == Screen.LANDING && !landingEntranceDone
     val isInitialLaunch = previousScreen == null
+
+    var prevMistakeCount by remember { mutableIntStateOf(state.mistakeCount) }
+    var showToast by remember { mutableStateOf(false) }
+    var toastMistakesRemaining by remember { mutableIntStateOf(6) }
+
+    LaunchedEffect(state.mistakeCount, state.gameKey) {
+        if (state.mistakeCount > prevMistakeCount) {
+            val remaining = 6 - state.mistakeCount
+            if (remaining > 0) {
+                toastMistakesRemaining = remaining
+                showToast = true
+            }
+        }
+        prevMistakeCount = state.mistakeCount
+    }
+
+    LaunchedEffect(showToast) {
+        if (showToast) {
+            delay(1400)
+            showToast = false
+        }
+    }
 
     var blackRevealProgress by remember { mutableFloatStateOf(0f) }
     val animatedBlackReveal by animateFloatAsState(
@@ -212,10 +230,8 @@ fun FutoshikiApp(
                 // Timer pill - rendered here so it appears above the KorGE AndroidView
                 // zIndex(15f) to stay above pause dim overlay (zIndex 10f)
                 if ((isGame || isPaused) && !state.isSolved && !state.showDefeat && !state.showCongrats) {
-                    val isCustomMonoNight = state.themeMode == ThemeMode.CUSTOM && !state.customMonoAccent && state.customDayNight
-                    val isCustomAccentDark = state.themeMode == ThemeMode.CUSTOM && state.customMonoAccent == false && isDark
-                    val gameTimerColor = if (isCustomAccentDark) Color.White else Color.Black
-                    CompositionLocalProvider(LocalIsDark provides if (isCustomMonoNight) false else LocalIsDark.current) {
+                    val gameTimerColor = if (state.customMonoAccent && isDark) Color.White else Color.Black
+                    CompositionLocalProvider(LocalIsDark provides LocalIsDark.current) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -416,6 +432,36 @@ fun FutoshikiApp(
                             )
                         }
                     }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = showToast,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding()
+                    .padding(top = if (isSmallScreen) 16.dp else 24.dp)
+                    .zIndex(20f)
+            ) {
+                val accentColorValue = com.hexcorp.futoshiki.ui.theme.accentColor()
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50.dp))
+                        .background(Color.Black.copy(alpha = 0.8f))
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val countText = if (toastMistakesRemaining == 1) "1 mistake remaining" else "$toastMistakesRemaining mistakes remaining"
+                    Text(
+                        text = countText,
+                        color = accentColorValue,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = PixelF,
+                        letterSpacing = 1.sp
+                    )
                 }
             }
         }

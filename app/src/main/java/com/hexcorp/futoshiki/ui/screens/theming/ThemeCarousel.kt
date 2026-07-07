@@ -68,7 +68,7 @@ fun ThemeCarousel(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
+                .height(230.dp)
                 .then(swipeModifier)
                 .then(if (scope != null) {
                     with(scope) {
@@ -95,7 +95,7 @@ fun ThemeCarousel(
                 },
                 label = "themeLogoTransition"
             ) { index ->
-                Box(modifier = Modifier.size(200.dp), contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.size(230.dp), contentAlignment = Alignment.Center) {
                     // Japanese kanji logo using Yuji font
                     val kanji = when (themes[index].theme) {
                         com.hexcorp.futoshiki.ui.theme.AppTheme.FIRE -> "火"
@@ -105,11 +105,11 @@ fun ThemeCarousel(
                     }
                     Text(
                         text = kanji,
-                        fontSize = 160.sp,
+                        fontSize = 184.sp,
                         fontFamily = Yuji,
                         color = if (useAccentColor) accentColor() else FutoshikiColors.onSurface(),
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.size(200.dp),
+                        modifier = Modifier.size(230.dp),
                         style = androidx.compose.ui.text.TextStyle(
                             platformStyle = androidx.compose.ui.text.PlatformTextStyle(
                                 includeFontPadding = false

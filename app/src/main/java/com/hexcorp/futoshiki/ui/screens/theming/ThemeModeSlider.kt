@@ -45,7 +45,7 @@ fun ThemeModeSlider(
     isDark: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val modes = ThemeMode.entries.toTypedArray()
+    val modes = arrayOf(ThemeMode.AUTO, ThemeMode.DAY, ThemeMode.NIGHT)
 
     var width by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
@@ -56,7 +56,7 @@ fun ThemeModeSlider(
     var dragOffset by remember { mutableFloatStateOf(0f) }
     
     // Snap animation
-    val animatableOffset = remember { Animatable(currentMode.ordinal.toFloat()) }
+    val animatableOffset = remember { Animatable(modes.indexOf(currentMode).coerceAtLeast(0).toFloat()) }
     
     // Rotation animation when dragging
     val rotation by animateFloatAsState(
@@ -72,7 +72,8 @@ fun ThemeModeSlider(
     // Keep animatable in sync with currentMode when not dragging
     LaunchedEffect(currentMode) {
         if (!isDragging) {
-            animatableOffset.animateTo(currentMode.ordinal.toFloat(), tween(300))
+            val targetIndex = modes.indexOf(currentMode).coerceAtLeast(0)
+            animatableOffset.animateTo(targetIndex.toFloat(), tween(300))
         }
     }
 
@@ -118,7 +119,8 @@ fun ThemeModeSlider(
                         onDragCancel = {
                             isDragging = false
                             scope.launch {
-                                animatableOffset.animateTo(currentMode.ordinal.toFloat(), tween(200))
+                                val targetIndex = modes.indexOf(currentMode).coerceAtLeast(0)
+                                animatableOffset.animateTo(targetIndex.toFloat(), tween(200))
                             }
                         }
                     ) { change, dragAmount ->
@@ -192,7 +194,7 @@ fun ThemeModeSlider(
             modes.forEach { mode ->
                 val isSelected = if (isDragging) {
                     val sectionWidth = if (modes.size > 1) width.toFloat() / (modes.size - 1) else 1f
-                    (dragOffset / sectionWidth).roundToInt().coerceIn(0, modes.size - 1) == mode.ordinal
+                    (dragOffset / sectionWidth).roundToInt().coerceIn(0, modes.size - 1) == modes.indexOf(mode)
                 } else {
                     mode == currentMode
                 }

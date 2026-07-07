@@ -341,7 +341,7 @@ class GameWorld(
     fun update(dt: Double, aggression: Float, enableCloudDrift: Boolean = true) {
         if (!::ninja.isInitialized || !::dragon.isInitialized) return
 
-        val actualCloudDrift = enableCloudDrift && !freezeCamera
+        val actualCloudDrift = enableCloudDrift
         
         if (!freezeCamera) {
             // Smoothly move currentNinjaScreenX toward targetNinjaScreenX.

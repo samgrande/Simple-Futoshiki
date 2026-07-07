@@ -100,47 +100,36 @@ fun ThemingScreen(
                     } else Modifier)
             )
 
-            Spacer(Modifier.weight(0.4f))
+            Spacer(Modifier.height(18.dp))
+
+            MonoTintedPill(
+                isTinted = customMonoAccent,
+                onToggle = { tinted -> onCustomThemeChange(tinted, customDayNight) },
+                isDark = isDark,
+                modifier = Modifier
+                    .then(if (scope != null) {
+                        with(scope) {
+                            Modifier.animateEnterExit(
+                                enter = slideInVertically(tween(600)) { -it * 2 } + fadeIn(tween(400)),
+                                exit = slideOutVertically(tween(600)) { -it * 2 } + fadeOut(tween(400))
+                            )
+                        }
+                    } else Modifier)
+            )
+
+            Spacer(Modifier.weight(0.6f))
 
             Box(modifier = Modifier.statusBarsPadding()) {
                 ThemeCarousel(
                     currentIndex = currentIndex,
                     direction = direction,
                     onNavigate = { next -> navigate(next) },
-                    useAccentColor = themeMode == ThemeMode.CUSTOM && customMonoAccent,
+                    useAccentColor = customMonoAccent,
                     scope = scope
                 )
             }
 
-            Spacer(Modifier.weight(0.7f))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(132.dp)
-                    .then(if (scope != null) {
-                        with(scope) {
-                            Modifier.animateEnterExit(
-                                enter = slideInVertically(tween(600)) { it * 2 } + fadeIn(tween(400)),
-                                exit = slideOutVertically(tween(600)) { it * 2 } + fadeOut(tween(400))
-                            )
-                        }
-                    } else Modifier),
-                contentAlignment = Alignment.Center
-            ) {
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = themeMode == ThemeMode.CUSTOM,
-                    enter = fadeIn(tween(300)) + slideInVertically(tween(300)) { it / 2 },
-                    exit = fadeOut(tween(300)) + slideOutVertically(tween(300)) { it / 2 }
-                ) {
-                    CustomThemeToggle(
-                        customMonoAccent = customMonoAccent,
-                        customDayNight = customDayNight,
-                        isDark = isDark,
-                        onCustomThemeChange = onCustomThemeChange
-                    )
-                }
-            }
+            Spacer(Modifier.weight(0.8f))
 
             ThemeModeSlider(
                 currentTheme = currentTheme,

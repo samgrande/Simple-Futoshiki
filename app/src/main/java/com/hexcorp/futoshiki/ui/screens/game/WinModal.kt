@@ -310,8 +310,8 @@ fun CongratsView(
 
                 Text(
                     text          = "although you spent ${pmStr}:${psStr} in pause menu",
-                    color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
-                    fontSize      = 10.sp,
+                    color         = accent,
+                    fontSize      = 10.5.sp,
                     fontWeight    = FontWeight.Medium,
                     fontFamily    = PixelF,
                     letterSpacing = 1.sp
@@ -381,7 +381,7 @@ fun DefeatView(
             Text(
                 text          = "TRY AGAIN?",
                 color         = (if (isDark) Color.White else Color.Black).copy(alpha = 0.5f),
-                fontSize      = 10.sp,
+                fontSize      = 11.sp,
                 fontWeight    = FontWeight.Medium,
                 fontFamily    = com.hexcorp.futoshiki.ui.theme.PixelF,
                 letterSpacing = 3.sp
