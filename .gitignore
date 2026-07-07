@@ -10,3 +10,16 @@ local.properties
 app/release
 ~/*
 .kotlin
+
+# Build artifacts
+build_log.txt
+
+# AI assistant config
+.claude/
+
+# Stray build output
+artifacts/
+
+# Fastlane metadata (tracked separately)
+fastlane/metadata/android/en-US/images/icon.png
+fastlane/metadata/android/en-US/images/phoneScreenshots/
