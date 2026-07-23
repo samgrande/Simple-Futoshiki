@@ -90,6 +90,60 @@ To trigger manually without pushing: **Actions → Build & Publish APKs → Run 
 
 ---
 
+## Versioning & Release Workflow
+
+### Bumping the version
+
+1. Update `versionCode` and `versionName` in `app/build.gradle.kts`:
+   ```kotlin
+   defaultConfig {
+       versionCode = 2       // increment by 1 each release
+       versionName = "1.1"   // semantic version
+   }
+   ```
+2. Update `metadata.yml` (fdroiddata submission) to match:
+   ```yaml
+   Builds:
+     - versionName: "1.1"
+       versionCode: 2
+       commit: v1.1
+   CurrentVersion: "1.1"
+   CurrentVersionCode: 2
+   ```
+
+### Tagging & Pushing a release
+
+```bash
+# Create the tag at current HEAD
+git tag v1.1
+
+# Push commits and tag together
+git push origin main v1.1
+```
+
+### If you need to amend the last commit (after pushing)
+
+```bash
+# Stage all changes
+git add -A
+
+# Amend (keep the same commit message)
+git commit --amend --no-edit
+
+# Force-push (required after amend)
+git push origin main --force-with-lease
+
+# Move the tag to the new commit hash
+git tag -d v1.1
+git tag v1.1
+git push origin --delete v1.1
+git push origin v1.1
+```
+
+> **Warning:** `--force-with-lease` is safe on single-developer branches but avoids `--force` which is destructive. Always move the tag after amend since the commit hash changes.
+
+---
+
 ## Design Philosophy
 
 - Keep it **minimal**
