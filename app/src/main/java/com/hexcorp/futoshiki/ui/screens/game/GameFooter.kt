@@ -32,6 +32,8 @@ import androidx.compose.ui.graphics.Color
 import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.accentColor
 import androidx.compose.foundation.clickable
+import com.hexcorp.futoshiki.audio.Sound
+import com.hexcorp.futoshiki.audio.SoundManager
 
 @Composable
 fun GameFooter(
@@ -199,6 +201,7 @@ fun ResetButton(
                 indication = null, // Disable default ripple
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    SoundManager.play(Sound.BUTTON)
                     onClick()
                 }
             ),
@@ -234,6 +237,7 @@ fun PauseButton(
                 indication = null,
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    SoundManager.play(Sound.BUTTON)
                     onClick()
                 }
             ),
@@ -282,6 +286,7 @@ fun SolveButton(
                 indication = null,
                 onClick = {
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                    SoundManager.play(Sound.BUTTON)
                     onClick()
                 }
             ),

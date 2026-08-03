@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
+import com.hexcorp.futoshiki.audio.Sound
+import com.hexcorp.futoshiki.audio.SoundManager
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.ripple
 import androidx.compose.foundation.indication
@@ -46,7 +48,8 @@ fun BigButton(
     height: androidx.compose.ui.unit.Dp = 64.dp,
     monochrome: Boolean = false,
     rippleColor: Color? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    sound: Sound = Sound.BUTTON
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -125,10 +128,12 @@ fun BigButton(
                 indication = indication,
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    SoundManager.play(sound)
                     onClick()
                 },
                 onLongClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    SoundManager.play(Sound.BUTTON)
                     onLongClick?.invoke()
                 }
             ),

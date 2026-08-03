@@ -32,6 +32,8 @@ import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.Midorima
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import androidx.compose.ui.graphics.graphicsLayer
+import com.hexcorp.futoshiki.audio.Sound
+import com.hexcorp.futoshiki.audio.SoundManager
 
 @Composable
 fun NumberPad(
@@ -93,6 +95,7 @@ private fun NumberButton(label: String, sizeDp: Dp, enabled: Boolean, onClick: (
                 enabled = enabled
             ) {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                SoundManager.play(Sound.TAP)
                 onClick()
             },
         contentAlignment = Alignment.Center

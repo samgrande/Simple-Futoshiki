@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.game.Difficulty
+import com.hexcorp.futoshiki.audio.Sound
 import com.hexcorp.futoshiki.ui.components.shared.BigButton
 import com.hexcorp.futoshiki.ui.components.shared.ExpandableStartButton
 import com.hexcorp.futoshiki.ui.components.shared.HelpPanel
@@ -62,7 +63,8 @@ fun LandingMenuContent(
                     label = "Y E S",
                     onClick = onQuit,
                     inverted = true,
-                    isDark = isDark
+                    isDark = isDark,
+                    sound = Sound.START
                 )
                 Spacer(Modifier.height(35.dp))
                 BigButton(

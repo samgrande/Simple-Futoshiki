@@ -33,6 +33,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hexcorp.futoshiki.game.FutoshikiViewModel
 import com.hexcorp.futoshiki.game.Screen
+import com.hexcorp.futoshiki.audio.Sound
+import com.hexcorp.futoshiki.audio.SoundManager
 import com.hexcorp.futoshiki.ui.screens.game.GameScreen
 import com.hexcorp.futoshiki.ui.screens.game.shareScreenshot
 import com.hexcorp.futoshiki.ui.screens.landing.LandingScreen
@@ -85,6 +87,7 @@ class MainActivity : FragmentActivity() {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.keyCode == KeyEvent.KEYCODE_BACK) {
             if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) {
+                SoundManager.play(Sound.TAP)
                 onBackPressedDispatcher.onBackPressed()
             }
             return true

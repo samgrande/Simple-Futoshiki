@@ -41,6 +41,8 @@ import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.Yuji
 import com.hexcorp.futoshiki.ui.theme.accentColor
+import com.hexcorp.futoshiki.audio.Sound
+import com.hexcorp.futoshiki.audio.SoundManager
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -144,6 +146,7 @@ fun ExpandableStartButton(
                 indication = null,
                 onClick = {
                     haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    SoundManager.play(Sound.BUTTON)
                     onExpandToggle()
                 }
             )
@@ -339,9 +342,11 @@ fun ExpandableStartButton(
                                         val cur = selectedDifficulty.ordinal
                                         if (diffDragAccum > threshold && cur > 0) {
                                             onDifficultyChange(difficulties[cur - 1])
+                                            SoundManager.play(Sound.TAP)
                                             diffDragAccum = 0f
                                         } else if (diffDragAccum < -threshold && cur < difficulties.size - 1) {
                                             onDifficultyChange(difficulties[cur + 1])
+                                            SoundManager.play(Sound.TAP)
                                             diffDragAccum = 0f
                                         }
                                     },
@@ -460,7 +465,10 @@ fun SizeSlider(
                             .roundToInt()
                             .coerceIn(0, options.size - 1)
                         val newSize = options[snappedIdx]
-                        if (newSize != selectedSize) onSizeSelected(newSize)
+                        if (newSize != selectedSize) {
+                            onSizeSelected(newSize)
+                            SoundManager.play(Sound.SWIPE)
+                        }
                         val targetPx = snappedIdx * itemWidthPx
                         scope.launch {
                             thumbAnimatable.animateTo(
@@ -503,7 +511,10 @@ fun SizeSlider(
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
-                            onClick = { onSizeSelected(size) }
+                            onClick = {
+                                SoundManager.play(Sound.SWIPE)
+                                onSizeSelected(size)
+                            }
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -578,7 +589,10 @@ fun DifficultyCard(
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = onClick
+                    onClick = {
+                        SoundManager.play(Sound.TAP)
+                        onClick()
+                    }
                 ),
             contentAlignment = Alignment.Center
         ) {

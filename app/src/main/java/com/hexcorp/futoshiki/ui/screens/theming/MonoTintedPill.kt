@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.accentColor
+import com.hexcorp.futoshiki.audio.Sound
+import com.hexcorp.futoshiki.audio.SoundManager
 
 @Composable
 fun MonoTintedPill(
@@ -81,7 +83,7 @@ fun MonoTintedPill(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
-                    ) { onToggle(false) },
+                    ) { onToggle(false); SoundManager.play(Sound.TOGGLE) },
                 contentAlignment = Alignment.Center
             ) {
                 val monoTextColor = if (!isTinted) {
@@ -107,7 +109,7 @@ fun MonoTintedPill(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
-                    ) { onToggle(true) },
+                    ) { onToggle(true); SoundManager.play(Sound.TOGGLE) },
                 contentAlignment = Alignment.Center
             ) {
                 val tintedTextColor = if (isTinted) {

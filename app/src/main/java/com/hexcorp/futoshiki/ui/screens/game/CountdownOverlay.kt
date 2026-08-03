@@ -21,6 +21,8 @@ import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.Midorima
 import com.hexcorp.futoshiki.ui.theme.accentColor
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
+import com.hexcorp.futoshiki.audio.Sound
+import com.hexcorp.futoshiki.audio.SoundManager
 import kotlinx.coroutines.delay
 
 private const val DIGIT_DURATION_MS = 1000L
@@ -43,11 +45,18 @@ fun CountdownOverlay(
 
     LaunchedEffect(Unit) {
         label = "3"
+        SoundManager.play(Sound.TAP)
         countdownStartedTime = System.currentTimeMillis()
         delay(DIGIT_DURATION_MS)
-        if (!goneDone) label = "2"
+        if (!goneDone) {
+            label = "2"
+            SoundManager.play(Sound.TAP)
+        }
         delay(DIGIT_DURATION_MS)
-        if (!goneDone) label = "1"
+        if (!goneDone) {
+            label = "1"
+            SoundManager.play(Sound.TAP)
+        }
     }
 
     LaunchedEffect(ninjaRunning) {
@@ -62,6 +71,7 @@ fun CountdownOverlay(
             if (!goneDone) {
                 goneDone = true
                 label    = "GO!"
+                SoundManager.play(Sound.START)
                 delay(GO_HOLD_MS)
                 onDone()
             }

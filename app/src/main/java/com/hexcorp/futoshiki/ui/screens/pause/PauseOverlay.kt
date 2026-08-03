@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hexcorp.futoshiki.game.Difficulty
+import com.hexcorp.futoshiki.audio.Sound
 import com.hexcorp.futoshiki.ui.components.shared.*
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
@@ -198,12 +199,13 @@ fun PauseOverlay(
                                     letterSpacing = 2.sp
                                 )
                                 Spacer(Modifier.height(32.dp))
-                                BigButton(
-                                    label = "YES",
-                                    onClick = onMainMenu,
-                                    inverted = true,
-                                    isDark = isDark
-                                )
+                BigButton(
+                    label = "YES",
+                    onClick = onMainMenu,
+                    inverted = true,
+                    isDark = isDark,
+                    sound = Sound.START
+                )
                                 Spacer(Modifier.height(20.dp))
                                 BigButton(
                                     label = "NO",

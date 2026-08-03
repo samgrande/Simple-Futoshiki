@@ -33,6 +33,8 @@ import com.hexcorp.futoshiki.ui.theme.AppTheme
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.ThemeMode
+import com.hexcorp.futoshiki.audio.Sound
+import com.hexcorp.futoshiki.audio.SoundManager
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -98,6 +100,7 @@ fun ThemeModeSlider(
                         val sectionWidth = width.toFloat() / (modes.size - 1)
                         val index = (offset.x / sectionWidth).roundToInt().coerceIn(0, modes.size - 1)
                         onModeChange(modes[index])
+                        SoundManager.play(Sound.TOGGLE)
                     }
                 }
                 .pointerInput(modes.size) {
@@ -112,6 +115,7 @@ fun ThemeModeSlider(
                             val sectionWidth = if (modes.size > 1) width.toFloat() / (modes.size - 1) else 1f
                             val targetIndex = (dragOffset / sectionWidth).roundToInt().coerceIn(0, modes.size - 1)
                             onModeChange(modes[targetIndex])
+                            SoundManager.play(Sound.TOGGLE)
                             scope.launch {
                                 animatableOffset.animateTo(targetIndex.toFloat(), tween(200))
                             }
@@ -210,7 +214,7 @@ fun ThemeModeSlider(
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
-                        ) { onModeChange(mode) },
+                        ) { onModeChange(mode); SoundManager.play(Sound.TOGGLE) },
                     textAlign = TextAlign.Center
                 )
             }

@@ -31,6 +31,8 @@ import com.hexcorp.futoshiki.ui.theme.ThemeMode
 import com.hexcorp.futoshiki.ui.theme.AppTheme
 import com.hexcorp.futoshiki.ui.theme.accentColor
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
+import com.hexcorp.futoshiki.audio.Sound
+import com.hexcorp.futoshiki.audio.SoundManager
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -63,6 +65,7 @@ fun ThemingScreen(
         } else {
             currentIndex = (currentIndex - 1 + themes.size) % themes.size
         }
+        SoundManager.play(Sound.SWIPE)
         onThemeChange(themes[currentIndex].theme)
     }
 

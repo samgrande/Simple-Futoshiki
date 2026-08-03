@@ -4,6 +4,8 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.hexcorp.futoshiki.audio.Sound
+import com.hexcorp.futoshiki.audio.SoundManager
 import com.hexcorp.futoshiki.ui.theme.AppTheme
 import com.hexcorp.futoshiki.ui.theme.ThemeMode
 import com.hexcorp.futoshiki.ui.korge.KorGEGameManager
@@ -32,6 +34,10 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         difficulty = loadDifficulty()
     ))
     val state: StateFlow<GameState> = _state.asStateFlow()
+
+    init {
+        SoundManager.init(application)
+    }
 
     val korgeManager = KorGEGameManager()
 
@@ -86,6 +92,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun newGame(size: Int, difficulty: Difficulty = Difficulty.EASY) {
         prefs.edit().putInt("game_size", size).apply()
+        SoundManager.play(Sound.START)
         val puzzle = generatePuzzle(size, difficulty)
         val grid = puzzle.initial.map { it.toMutableList().toList() }
         stopTimer()
@@ -184,11 +191,14 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         if (won) {
             _state.update { it.copy(showCongrats = true) }
             stopTimer()
+            SoundManager.play(Sound.WIN)
             korgeManager.gameWorld?.runWinSequence()
         } else if (defeated) {
             stopTimer()
+            SoundManager.play(Sound.LOSS)
             korgeManager.gameWorld?.runDefeatSequence()
         } else if (errors.isNotEmpty()) {
+            SoundManager.play(Sound.ERROR)
             korgeManager.updateAggression(0.5f)
         } else {
             korgeManager.updateAggression(0f)
@@ -205,6 +215,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         val errors = validateGrid(newGrid, st.size, st.puzzle)
         val newNinjaScreenX = calculateNinjaScreenX(newGrid, st.size, st.puzzle.solution, st.mistakeCount)
         korgeManager.updateNinjaScreenX(newNinjaScreenX)
+        SoundManager.play(Sound.SELECT)
         _state.update { it.copy(grid = newGrid, errors = errors, won = false, ninjaScreenX = newNinjaScreenX) }
     }
 
@@ -225,9 +236,11 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     fun selectCell(r: Int, c: Int) {
         val st = _state.value
         if (st.puzzle?.initial?.get(r)?.get(c) != 0) {
+            SoundManager.play(Sound.WRONG)
             _state.update { it.copy(selected = null) }
             return
         }
+        SoundManager.play(Sound.TAP)
         _state.update { it.copy(selected = r to c) }
     }
 
@@ -285,6 +298,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     fun pause() {
         if (Log.isLoggable("FutoshikiDebug", Log.DEBUG)) Log.d("FutoshikiDebug", "pause() called, current screen=${_state.value.screen}")
         if (_state.value.screen != Screen.GAME) return
+        SoundManager.play(Sound.BUTTON)
         val isEndGame = _state.value.won || _state.value.isSolved || _state.value.defeated
         stopTimer()
         pauseStartTime = System.currentTimeMillis()
@@ -299,6 +313,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun resume() {
         Log.d("FutoshikiDebug", "resume() called, current screen=${_state.value.screen}")
+        SoundManager.play(Sound.BUTTON)
         val isWon = _state.value.won
         val isEndGame = isWon || _state.value.isSolved || _state.value.defeated
         val elapsed = pauseStartTime?.let { System.currentTimeMillis() - it } ?: 0L
@@ -365,6 +380,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun solve() {
         val puzzle = _state.value.puzzle ?: return
+        SoundManager.play(Sound.LOSS)
         korgeManager.gameWorld?.runSolveSequence()
         stopTimer()
         _state.update { st ->
