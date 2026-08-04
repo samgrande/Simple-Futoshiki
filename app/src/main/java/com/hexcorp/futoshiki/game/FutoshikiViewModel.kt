@@ -359,10 +359,6 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         _state.update { it.copy(previousScreen = it.screen, screen = Screen.THEMING) }
     }
 
-    fun goToThemingFromGame() {
-        _state.update { it.copy(previousScreen = it.screen, screen = Screen.THEMING) }
-    }
-
     fun backFromTheming() {
         val prev = _state.value.previousScreen
         if (prev == Screen.PAUSE || prev == Screen.GAME) {

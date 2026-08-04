@@ -640,7 +640,6 @@ fun GameScreen(
                 },
                 onMainMenu = { viewModel.goToMainMenu() },
                 onNewGame = { s, d -> viewModel.newGame(s, d) },
-                onTheming = { viewModel.goToThemingFromGame() },
                 onDifficultySave = { viewModel.saveDifficultyPreference(it) },
                 korgeManager = viewModel.korgeManager,
                 isDark = isDark,

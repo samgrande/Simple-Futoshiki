@@ -40,7 +40,6 @@ fun PauseOverlay(
     onResume: () -> Unit,
     onMainMenu: () -> Unit,
     onNewGame: (Int, Difficulty) -> Unit,
-    onTheming: () -> Unit,
     onDifficultySave: (Difficulty) -> Unit = {},
     korgeManager: com.hexcorp.futoshiki.ui.korge.KorGEGameManager,
     isDark: Boolean,
@@ -248,8 +247,8 @@ fun PauseOverlay(
                                         Spacer(Modifier.height(if (isSmallScreen) 18.dp else 20.dp))
 
                                         BigButton(
-                                            label = "HELP",
-                                            onClick = { showHelp = true },
+                                            label = "RESUME",
+                                            onClick = onResume,
                                             isDark = isDark,
                                             height = if (isSmallScreen) 58.dp else 64.dp
                                         )
@@ -257,8 +256,8 @@ fun PauseOverlay(
                                         Spacer(Modifier.height(if (isSmallScreen) 18.dp else 20.dp))
 
                                         BigButton(
-                                            label = "THEMES",
-                                            onClick = onTheming,
+                                            label = "HELP",
+                                            onClick = { showHelp = true },
                                             isDark = isDark,
                                             height = if (isSmallScreen) 58.dp else 64.dp
                                         )

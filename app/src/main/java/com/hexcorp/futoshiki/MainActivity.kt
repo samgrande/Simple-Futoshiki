@@ -247,13 +247,7 @@ fun FutoshikiApp(
                         ) {
                             TimerPill(
                                 seconds = state.timerSeconds,
-                                won = state.won,
-                                isPaused = isPaused,
                                 enabled = !state.won && !state.isCountdownActive,
-                                onClick = {
-                                    Log.d("FutoshikiDebug", "TimerPill clicked! isPaused=$isPaused, enabled=${!state.won && !state.isCountdownActive}")
-                                    if (!isPaused) vm.pause() else vm.resume()
-                                },
                                 textColor = gameTimerColor,
                                 showPill = isPaused,
                                 modifier = Modifier
