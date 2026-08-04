@@ -11,12 +11,14 @@ import com.hexcorp.futoshiki.ui.theme.ThemeMode
 import com.hexcorp.futoshiki.ui.korge.KorGEGameManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import android.util.Log
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
 
@@ -91,50 +93,63 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     // ── New game ─────────────────────────────────────────────────────────────
 
     fun newGame(size: Int, difficulty: Difficulty = Difficulty.EASY) {
+        if (_state.value.isGenerating) return
         prefs.edit().putInt("game_size", size).apply()
         SoundManager.play(Sound.START)
-        val puzzle = generatePuzzle(size, difficulty)
-        val grid = puzzle.initial.map { it.toMutableList().toList() }
         stopTimer()
-        korgeManager.updateAggression(0f)
-        korgeManager.resetBoost()
-        
-        korgeManager.resetRunningStarted()
-        korgeManager.resetSceneLoaded()
-        korgeManager.introFinished = false
-        korgeManager.resetNinjaPosition()
-        korgeManager.cancelCurrentScene()
-        korgeManager.playRestart()
-        korgeManager.signalGameRestart()
         _state.update { st ->
             st.copy(
                 previousScreen = st.screen,
                 screen = Screen.GAME,
-                size = size,
-                puzzle = puzzle,
-                grid = grid,
                 selected = null,
-                errors = emptySet(),
                 won = false,
                 isSolved = false,
                 showCongrats = false,
                 defeated = false,
                 showDefeat = false,
                 timerSeconds = 0,
-                timerRunning = true,
-                gameKey = st.gameKey + 1,
-
-                difficulty = difficulty,
-                ninjaScreenX = 500f,
+                timerRunning = false,
                 mistakeCount = 0,
-                isCountdownActive = false,
+                isCountdownActive = true,
                 forceQuitInPause = false,
-                pauseCount = 0,
-                pauseTimeMs = 0L
+                isGenerating = true
             )
         }
-        pauseStartTime = null
-        korgeManager.updateNinjaScreenX(500f)
+        viewModelScope.launch {
+            val puzzle = withContext(Dispatchers.Default) { generatePuzzle(size, difficulty) }
+            val grid = puzzle.initial.map { it.toMutableList().toList() }
+            korgeManager.updateAggression(0f)
+            korgeManager.resetBoost()
+            korgeManager.resetRunningStarted()
+            korgeManager.resetSceneLoaded()
+            korgeManager.introFinished = false
+            korgeManager.resetNinjaPosition()
+            korgeManager.cancelCurrentScene()
+            korgeManager.playRestart()
+            korgeManager.signalGameRestart()
+            _state.update { st ->
+                st.copy(
+                    size = size,
+                    puzzle = puzzle,
+                    grid = grid,
+                    timerRunning = true,
+                    gameKey = st.gameKey + 1,
+
+                    difficulty = difficulty,
+                    ninjaScreenX = 500f,
+                    pauseCount = 0,
+                    pauseTimeMs = 0L
+                )
+            }
+            pauseStartTime = null
+            korgeManager.updateNinjaScreenX(500f)
+        }
+    }
+
+    fun finishGenerating() {
+        if (_state.value.isGenerating) {
+            _state.update { it.copy(isGenerating = false) }
+        }
     }
 
     // ── Cell input ───────────────────────────────────────────────────────────
@@ -290,7 +305,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     fun pauseTimer() { stopTimer() }
 
     fun resumeTimer() {
-        if (_state.value.screen == Screen.GAME && !_state.value.won) startTimer()
+        if (_state.value.screen == Screen.GAME && !_state.value.won && !_state.value.isGenerating) startTimer()
     }
 
     // ── Pause / Resume ───────────────────────────────────────────────────────
@@ -298,6 +313,7 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
     fun pause() {
         if (Log.isLoggable("FutoshikiDebug", Log.DEBUG)) Log.d("FutoshikiDebug", "pause() called, current screen=${_state.value.screen}")
         if (_state.value.screen != Screen.GAME) return
+        if (_state.value.isCountdownActive) return
         SoundManager.play(Sound.BUTTON)
         val isEndGame = _state.value.won || _state.value.isSolved || _state.value.defeated
         stopTimer()

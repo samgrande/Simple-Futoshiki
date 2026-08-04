@@ -53,6 +53,7 @@ fun TimerPill(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
+                enabled = enabled,
                 onClick = onClick
             )
             .padding(horizontal = 10.dp, vertical = 4.dp),

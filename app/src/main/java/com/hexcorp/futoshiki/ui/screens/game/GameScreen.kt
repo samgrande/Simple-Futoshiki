@@ -47,7 +47,8 @@ fun GameScreen(
     state: com.hexcorp.futoshiki.game.GameState,
     showKorge: Boolean = true,
 ) {
-    val puzzle    = state.puzzle ?: return
+    val puzzle    = state.puzzle
+    if (puzzle == null && !state.isGenerating) return
     val size      = state.size
     val grid      = state.grid
     val selected  = state.selected
@@ -111,8 +112,14 @@ fun GameScreen(
         }
     }
 
-    // Hold the timer while the countdown overlay is active
+    // Hold the timer while the countdown overlay is active.
+    // prevShowCountdown skips the initial composition (generation/PREPARING phase)
+    // so the timer only starts once the countdown has actually run.
+    var prevShowCountdown by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(showCountdown) {
+        val prev = prevShowCountdown
+        prevShowCountdown = showCountdown
+        if (prev == null) return@LaunchedEffect
         viewModel.setCountdownActive(showCountdown)
         if (showCountdown) {
             viewModel.pauseTimer()
@@ -412,20 +419,30 @@ fun GameScreen(
                             .graphicsLayer { alpha = gridAlpha },
                         contentAlignment = Alignment.Center
                     ) {
-                        PuzzleBoard(
-                            puzzle       = puzzle,
-                            grid         = grid,
-                            size         = size,
-                            selected     = selected,
-                            errors       = errors,
-                            cellSizeDp   = cellSizeDp,
-                            arrowSlotDp  = arrowSlotDp,
-                            gameKey      = boardKey,
-                            isSolved     = state.isSolved || state.won,
-                            onCellTap    = { r, c -> if (!state.isSolved && !state.won) viewModel.selectCell(r, c) },
-                            onCellClear  = { r, c -> if (!state.isSolved && !state.won) viewModel.clearCell(r, c) },
-                            modifier     = Modifier.padding(horizontal = hPad)
-                        )
+                        if (state.isGenerating && !showCountdown) {
+                            Text(
+                                text = "PREPARING BOARD…",
+                                color = FutoshikiColors.onSurface().copy(alpha = 0.85f),
+                                fontSize = 16.sp,
+                                fontFamily = com.hexcorp.futoshiki.ui.theme.PixelF,
+                                letterSpacing = 2.sp
+                            )
+                        } else if (!state.isGenerating && puzzle != null) {
+                            PuzzleBoard(
+                                puzzle       = puzzle,
+                                grid         = grid,
+                                size         = size,
+                                selected     = selected,
+                                errors       = errors,
+                                cellSizeDp   = cellSizeDp,
+                                arrowSlotDp  = arrowSlotDp,
+                                gameKey      = boardKey,
+                                isSolved     = state.isSolved || state.won,
+                                onCellTap    = { r, c -> if (!state.isSolved && !state.won) viewModel.selectCell(r, c) },
+                                onCellClear  = { r, c -> if (!state.isSolved && !state.won) viewModel.clearCell(r, c) },
+                                modifier     = Modifier.padding(horizontal = hPad)
+                            )
+                        }
                     }
 
                     Spacer(Modifier.height(commonSpacing))
@@ -456,7 +473,7 @@ fun GameScreen(
                                     textAlign = TextAlign.Center
                                 )
                             }
-                        } else if (!showCountdown) {
+                        } else if (!showCountdown && !state.isGenerating) {
                             NumberPad(
                                 size         = size,
                                 buttonSizeDp = numpadBtnDp,
@@ -489,7 +506,7 @@ fun GameScreen(
             }
 
             AnimatedVisibility(
-                visible = !showCountdown,
+                visible = !showCountdown && !state.isGenerating,
                 enter = fadeIn(tween(600, delayMillis = 500)) + 
                         slideInVertically(tween(600, delayMillis = 500)) { it / 2 },
                 label = "footerEntrance",
@@ -503,6 +520,7 @@ fun GameScreen(
                 GameFooter(
                     isSolved      = state.isSolved || state.won || state.showCongrats || state.showDefeat,
                     showCountdown = showCountdown,
+                    enabled       = !showCountdown && !state.isGenerating,
                     onClearAll    = { viewModel.clearAll() },
                     onSolve       = { viewModel.solve() },
                     isSolveMode   = isSolveMode,
@@ -542,7 +560,10 @@ fun GameScreen(
         ) {
             CountdownOverlay(
                 ninjaRunning = ninjaRunning,
-                onDone       = { countdownFinished = true },
+                onDone       = {
+                    countdownFinished = true
+                    viewModel.finishGenerating()
+                },
                 forceFullCountdown = isFreshGame,
                 modifier     = Modifier.fillMaxSize()
             )

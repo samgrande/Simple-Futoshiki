@@ -64,6 +64,45 @@ class PuzzleEngineTest {
     }
 
     @Test
+    fun `generatePuzzle never returns a degenerate unplayable puzzle`() {
+        for (size in 3..6) {
+            for (diff in Difficulty.entries) {
+                for (seed in 1L..3L) {
+                    val puzzle = generatePuzzle(size, diff, Random(seed * 100L + size))
+                    val tag = "size=$size diff=$diff seed=$seed"
+                    val count = countSolutions(puzzle.initial, puzzle.constraints, size)
+                    assertTrue("not unique: $tag (solutions=$count)", count == 1)
+                    assertTrue("no arrows: $tag", puzzle.constraints.isNotEmpty())
+                    assertTrue(
+                        "fully prefilled (unwinnable): $tag",
+                        puzzle.initial.any { row -> row.any { it == 0 } }
+                    )
+                    assertTrue("solution invalid: $tag", validateGrid(puzzle.solution, size, puzzle).isEmpty())
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `size 6 easy is denser than medium which is denser than hard`() {
+        fun avgFill(diff: Difficulty): Double {
+            var total = 0
+            var n = 0
+            for (seed in 1L..3L) {
+                val p = generatePuzzle(6, diff, Random(seed * 100L + 6))
+                total += p.initial.sumOf { row -> row.count { it != 0 } }
+                n++
+            }
+            return total.toDouble() / n
+        }
+        val easy = avgFill(Difficulty.EASY)
+        val medium = avgFill(Difficulty.MEDIUM)
+        val hard = avgFill(Difficulty.HARD)
+        assertTrue("easy=$easy medium=$medium hard=$hard", easy > medium)
+        assertTrue("easy=$easy medium=$medium hard=$hard", medium > hard)
+    }
+
+    @Test
     fun `validateGrid returns no errors for correct solution`() {
         val puzzle = generatePuzzle(4, Difficulty.EASY, Random(42))
         assertTrue(validateGrid(puzzle.solution, 4, puzzle).isEmpty())

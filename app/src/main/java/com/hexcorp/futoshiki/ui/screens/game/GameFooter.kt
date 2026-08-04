@@ -39,6 +39,7 @@ import com.hexcorp.futoshiki.audio.SoundManager
 fun GameFooter(
     isSolved: Boolean,
     showCountdown: Boolean,
+    enabled: Boolean = true,
     onClearAll: () -> Unit,
     onSolve: () -> Unit,
     isSolveMode: Boolean,
@@ -89,6 +90,7 @@ fun GameFooter(
                 PauseButton(
                     onClick = onPauseClick,
                     size = buttonHeight,
+                    enabled = enabled,
                     modifier = Modifier
                 )
 
@@ -100,6 +102,7 @@ fun GameFooter(
                             onSolveModeChange(false)
                         },
                         height = buttonHeight,
+                        enabled = enabled,
                         modifier = Modifier.weight(1f)
                     )
                 } else {
@@ -108,6 +111,7 @@ fun GameFooter(
                         onClick = onClearAll,
                         onLongClick = { onSolveModeChange(true) },
                         height = buttonHeight,
+                        enabled = enabled,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -141,6 +145,7 @@ fun ResetButton(
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
     height: Dp = 64.dp,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
@@ -199,6 +204,7 @@ fun ResetButton(
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = null, // Disable default ripple
+                enabled = enabled,
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     SoundManager.play(Sound.BUTTON)
@@ -221,6 +227,7 @@ fun ResetButton(
 fun PauseButton(
     onClick: () -> Unit,
     size: Dp = 64.dp,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
@@ -235,6 +242,7 @@ fun PauseButton(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
+                enabled = enabled,
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     SoundManager.play(Sound.BUTTON)
@@ -267,6 +275,7 @@ fun PauseButton(
 fun SolveButton(
     onClick: () -> Unit,
     height: Dp = 64.dp,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
@@ -284,6 +293,7 @@ fun SolveButton(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
+                enabled = enabled,
                 onClick = {
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
                     SoundManager.play(Sound.BUTTON)

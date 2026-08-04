@@ -43,5 +43,6 @@ data class GameState(
     val mistakeCount: Int = 0,
     val isCountdownActive: Boolean = false,
     val pauseCount: Int = 0,
-    val pauseTimeMs: Long = 0L
+    val pauseTimeMs: Long = 0L,
+    val isGenerating: Boolean = false
 )

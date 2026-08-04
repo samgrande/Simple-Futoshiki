@@ -114,18 +114,42 @@ fun generateConstraints(solution: List<List<Int>>, size: Int, count: Int, rng: R
 
 // ── Full puzzle builder ───────────────────────────────────────────────────────
 
-private fun fillPercent(difficulty: Difficulty, rng: Random = Random.Default): Double {
-    return when (difficulty) {
-        Difficulty.EASY   -> rng.nextDouble(0.50, 0.60)
-        Difficulty.MEDIUM -> rng.nextDouble(0.30, 0.40)
-        Difficulty.HARD   -> rng.nextDouble(0.00, 0.20)
-    }
-}
+// Each difficulty starts at its nominal fill budget and escalates through tiers
+// if a unique solution can't be reached, so a playable puzzle is always returned.
+// Boards 4x4 and 5x5 keep the original fill profile; 6x6+ uses denser easy/medium
+// tiers so they read clearly easier than hard (which stays sparse and compensates
+// with extra constraints).
+private data class FillTier(val min: Double, val max: Double, val cap: Double)
 
-private fun maxFillPercent(difficulty: Difficulty): Double = when (difficulty) {
-    Difficulty.EASY   -> 0.60
-    Difficulty.MEDIUM -> 0.40
-    Difficulty.HARD   -> 0.20
+private fun fillTiers(size: Int, difficulty: Difficulty): List<FillTier> {
+    val isBig = size >= 6
+    return when (difficulty) {
+        Difficulty.EASY -> if (isBig) listOf(
+            FillTier(0.60, 0.70, 0.70),
+            FillTier(0.70, 0.75, 0.75)
+        ) else listOf(
+            FillTier(0.50, 0.60, 0.60),
+            FillTier(0.60, 0.65, 0.65)
+        )
+        Difficulty.MEDIUM -> if (isBig) listOf(
+            FillTier(0.45, 0.55, 0.55),
+            FillTier(0.55, 0.60, 0.60)
+        ) else listOf(
+            FillTier(0.30, 0.40, 0.40),
+            FillTier(0.40, 0.50, 0.50),
+            FillTier(0.50, 0.55, 0.55)
+        )
+        Difficulty.HARD -> if (isBig) listOf(
+            FillTier(0.00, 0.20, 0.20),
+            FillTier(0.20, 0.30, 0.30),
+            FillTier(0.30, 0.40, 0.40)
+        ) else listOf(
+            FillTier(0.00, 0.20, 0.20),
+            FillTier(0.20, 0.35, 0.35),
+            FillTier(0.35, 0.45, 0.45),
+            FillTier(0.45, 0.55, 0.55)
+        )
+    }
 }
 
 private fun hasEmptyCellsInAllRowsAndCols(grid: Array<IntArray>, size: Int): Boolean {
@@ -157,23 +181,15 @@ private fun makeRowColSatisfied(grid: Array<IntArray>, size: Int, rng: Random) {
     }
 }
 
-fun generatePuzzle(size: Int, difficulty: Difficulty = Difficulty.EASY, rng: Random = Random.Default): Puzzle {
-    val totalCells = size * size
-    val targetFill = (totalCells * fillPercent(difficulty, rng)).toInt().coerceAtLeast(1)
-    val maxFill = (totalCells * maxFillPercent(difficulty)).toInt().coerceAtLeast(1)
-
-    val baseConstraints = when (size) {
-        3 -> 2; 4 -> 4; 5 -> 6; else -> 8
-    }
-    // HARD = more constraints (compensates for fewer prefilled cells)
-    // EASY = fewer constraints (more ambiguity offset by more prefilled)
-    val constraintCount = when (difficulty) {
-        Difficulty.EASY   -> (baseConstraints - 1).coerceAtLeast(1)
-        Difficulty.MEDIUM -> baseConstraints
-        Difficulty.HARD   -> baseConstraints + 2
-    }
-
-    val maxAttempts = 200
+private fun tryFillLevel(
+    size: Int,
+    constraintCount: Int,
+    targetFill: Int,
+    maxFill: Int,
+    totalCells: Int,
+    rng: Random,
+    maxAttempts: Int = 200
+): Puzzle? {
     repeat(maxAttempts) {
         val solution = generateSolution(size, rng)
         val constraints = generateConstraints(solution, size, constraintCount, rng)
@@ -210,10 +226,46 @@ fun generatePuzzle(size: Int, difficulty: Difficulty = Difficulty.EASY, rng: Ran
         }
         if (exceeded) return@repeat
     }
+    return null
+}
 
-    // Fallback after exhausting attempts: return solution as fully-filled grid
-    val fallbackSolution = generateSolution(size, rng)
-    return Puzzle(fallbackSolution, emptyList(), fallbackSolution.map { it.toList() })
+fun generatePuzzle(size: Int, difficulty: Difficulty = Difficulty.EASY, rng: Random = Random.Default): Puzzle {
+    val totalCells = size * size
+    val baseConstraints = when (size) {
+        3 -> 2; 4 -> 4; 5 -> 6; else -> 10
+    }
+    // HARD = more constraints (compensates for fewer prefilled cells)
+    // EASY = fewer constraints (more ambiguity offset by more prefilled)
+    // On 6x6+ hard needs extra arrows to stay unique while keeping the board sparse.
+    val hardBonus = if (size >= 6) 4 else 2
+    val constraintCount = when (difficulty) {
+        Difficulty.EASY   -> (baseConstraints - 1).coerceAtLeast(1)
+        Difficulty.MEDIUM -> baseConstraints
+        Difficulty.HARD   -> baseConstraints + hardBonus
+    }
+
+    for (tier in fillTiers(size, difficulty)) {
+        val targetFill = (totalCells * rng.nextDouble(tier.min, tier.max)).toInt().coerceAtLeast(1)
+        val maxFill = (totalCells * tier.cap).toInt().coerceAtLeast(1)
+        val puzzle = tryFillLevel(size, constraintCount, targetFill, maxFill, totalCells, rng)
+        if (puzzle != null) return puzzle
+    }
+
+    // Absolute last resort: always return a playable, unique, winnable puzzle.
+    return guaranteedPlayablePuzzle(size, constraintCount, rng)
+}
+
+// A fully solved grid with exactly one cell cleared is guaranteed to have a
+// unique completion (the cleared value is forced by its row), so this is a safe
+// final fallback that keeps constraints (arrows) and remains playable.
+private fun guaranteedPlayablePuzzle(size: Int, constraintCount: Int, rng: Random): Puzzle {
+    val solution = generateSolution(size, rng)
+    val constraints = generateConstraints(solution, size, constraintCount, rng)
+    val grid = solution.map { it.toMutableList() }
+    val r = rng.nextInt(size)
+    val c = rng.nextInt(size)
+    grid[r][c] = 0
+    return Puzzle(solution, constraints, grid.map { it.toList() })
 }
 
 // ── Validation ────────────────────────────────────────────────────────────────

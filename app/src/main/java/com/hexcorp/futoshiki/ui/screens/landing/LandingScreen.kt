@@ -217,7 +217,6 @@ fun LandingScreen(
                         startExpanded = startExpanded,
                         onStartToggle = { startExpanded = !startExpanded },
                         onStart = {
-                            korgeManager.gameWorld?.startGame(skipIntro = false)
                             onStart(selectedSize, selectedDifficulty)
                         },
                         onTheming = onTheming,
