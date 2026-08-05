@@ -115,6 +115,9 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
                 isGenerating = true
             )
         }
+        // Reset the KorGE scene to menu idle while the board is being prepared,
+        // so no leftover animation plays during the PREPARING phase.
+        korgeManager.playMenuIdle()
         viewModelScope.launch {
             val puzzle = withContext(Dispatchers.Default) { generatePuzzle(size, difficulty) }
             val grid = puzzle.initial.map { it.toMutableList().toList() }
@@ -314,7 +317,6 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
         if (Log.isLoggable("FutoshikiDebug", Log.DEBUG)) Log.d("FutoshikiDebug", "pause() called, current screen=${_state.value.screen}")
         if (_state.value.screen != Screen.GAME) return
         if (_state.value.isCountdownActive) return
-        SoundManager.play(Sound.BUTTON)
         val isEndGame = _state.value.won || _state.value.isSolved || _state.value.defeated
         stopTimer()
         pauseStartTime = System.currentTimeMillis()
@@ -329,7 +331,6 @@ class FutoshikiViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun resume() {
         Log.d("FutoshikiDebug", "resume() called, current screen=${_state.value.screen}")
-        SoundManager.play(Sound.BUTTON)
         val isWon = _state.value.won
         val isEndGame = isWon || _state.value.isSolved || _state.value.defeated
         val elapsed = pauseStartTime?.let { System.currentTimeMillis() - it } ?: 0L
