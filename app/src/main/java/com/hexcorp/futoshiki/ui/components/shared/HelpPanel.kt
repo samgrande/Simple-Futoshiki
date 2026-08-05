@@ -17,6 +17,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hexcorp.futoshiki.audio.Sound
+import com.hexcorp.futoshiki.audio.SoundManager
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import com.hexcorp.futoshiki.ui.theme.PixelF
@@ -42,8 +44,10 @@ fun HelpPanel(
                         val threshold = 60f
                         if (dragAccum < -threshold && currentSection < 1) {
                             currentSection++
+                            SoundManager.play(Sound.SWIPE)
                         } else if (dragAccum > threshold && currentSection > 0) {
                             currentSection--
+                            SoundManager.play(Sound.SWIPE)
                         }
                         dragAccum = 0f
                     },

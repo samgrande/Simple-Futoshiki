@@ -451,7 +451,10 @@ fun GameScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(numpadBtnDp),
+                            .then(
+                                if (state.isSolved) Modifier.heightIn(min = numpadBtnDp, max = 72.dp)
+                                else Modifier.height(numpadBtnDp)
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         if (state.isSolved) {
