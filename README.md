@@ -25,28 +25,24 @@
 
 <p align="center">
   <a href="https://f-droid.org/en/packages/com.hexcorp.futoshiki/">
-    <img src="https://img.shields.io/badge/Get%20it%20on-F--Droid-0880C4?style=for-the-badge&logo=fdroid" alt="Get it on F-Droid"/>
+    <img src="https://f-droid.org/badge/get-it-on.png"
+        alt="Get it on F-Droid"
+        height="80">
   </a>
 </p>
-
----
 
 ## What is Futoshiki?
 
 Futoshiki is a Japanese logic puzzle played on a square grid. The objective is to fill the grid with numbers so that no digit repeats in any row or column, while satisfying the "greater than" (`>`) / "less than" (`<`) inequality constraints between adjacent cells.
 
----
-
 ## Screenshots
 
 <p align="center">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="200" alt="Gameplay"/>
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="200" alt="Puzzle solving"/>
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="200" alt="Theme selection"/>
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="200" alt="Game screen"/>
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="180" alt="Main menu" title="Main menu"/>
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="180" alt="Game screen" title="Game screen"/>
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="180" alt="Win screen" title="Win screen"/>
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="180" alt="Help screen" title="Help screen"/>
 </p>
-
----
 
 ## Features
 
@@ -56,41 +52,6 @@ Futoshiki is a Japanese logic puzzle played on a square grid. The objective is t
 - **Animated ninja vs dragon chase** powered by KorGE
 - **Custom theming** with 4 color themes and multiple theme modes
 - **Pause & resume** with timer and ranking system
-- **No ads, no tracking, no network permissions** — only `VIBRATE` for haptic feedback
+- **No ads, no tracking, no network permissions**
 
----
 
-## Building
-
-```bash
-# Debug APK (for local testing)
-./build.sh debug
-
-# Release APK (unsigned — F-Droid signs with its own key)
-./build.sh release
-
-# Release AAB (for Play Store)
-./build.sh aab
-```
-
-See [DEV-Notes.md](DEV-Notes.md) for detailed build instructions, keystore setup, and the release workflow.
-
----
-
-## License
-
-```
-Copyright 2026 HeX
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-```
