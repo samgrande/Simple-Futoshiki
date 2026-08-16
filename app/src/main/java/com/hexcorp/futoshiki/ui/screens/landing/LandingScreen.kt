@@ -8,10 +8,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.rememberScrollState
+import com.hexcorp.futoshiki.ui.layout.contentSafePadding
+import com.hexcorp.futoshiki.ui.layout.rememberLayoutMetrics
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -92,14 +91,10 @@ fun LandingScreen(
             .fillMaxSize(),
         contentAlignment = Alignment.TopCenter
     ) {
-        val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        val vh = maxHeight - navBarBottom
-
-        val isSmallScreen = vh < 800.dp
-        val headerH = if (isSmallScreen) vh * 0.07f else vh * 0.09f
-        val ninjaH = if (isSmallScreen) 100.dp else 135.dp
-        val korgeGap = if (isSmallScreen) 14.dp else 16.dp
-        val korgeHeight = headerH + korgeGap + ninjaH
+        val metrics = rememberLayoutMetrics(maxHeight)
+        val vh = metrics.vh
+        val isSmallScreen = metrics.isSmallScreen
+        val korgeHeight = metrics.korgeHeight
 
         val titleSize = if (isSmallScreen) 42.sp else 46.sp
         val buttonSpacing = if (isSmallScreen) 28.dp else 35.dp
@@ -127,7 +122,13 @@ fun LandingScreen(
             modifier = Modifier
                 .widthIn(max = 420.dp)
                 .fillMaxHeight()
+                // Top inset is required: the title/menu offsets below (-vh * 0.05f and
+                // -vh * 0.10f) are tuned to sit just under the status bar. Dropping
+                // statusBarsPadding() lifts the whole logo+menu stack into the horizon.
+                // The bottom inset is the actual fix — this Column previously had none,
+                // so the weight(1f)-parked footer rendered under the navigation bar.
                 .statusBarsPadding()
+                .contentSafePadding()
                 .padding(horizontal = 20.dp)
                 .zIndex(1f),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -287,8 +288,10 @@ fun LandingScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .fillMaxWidth()
+                        // Opaque full-screen panel, not aligned to the KorGE box, so it insets
+                        // both edges.
                         .statusBarsPadding()
-                        .navigationBarsPadding()
+                        .contentSafePadding()
                         .padding(horizontal = 20.dp)
                 ) {
                     HelpPanel(

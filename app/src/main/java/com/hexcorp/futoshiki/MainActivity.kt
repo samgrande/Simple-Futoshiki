@@ -47,6 +47,7 @@ import com.hexcorp.futoshiki.ui.theme.ThemeMode
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
 import com.hexcorp.futoshiki.ui.theme.accentFor
+import com.hexcorp.futoshiki.ui.layout.rememberLayoutMetrics
 import com.hexcorp.futoshiki.ui.korge.KorGEView
 import com.hexcorp.futoshiki.ui.components.shared.TimerPill
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
@@ -249,14 +250,9 @@ fun FutoshikiApp(
     ) {
         var mainContainerCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
         BoxWithConstraints(modifier = Modifier.fillMaxSize().onGloballyPositioned { mainContainerCoords = it }) {
-            val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-            val vh = maxHeight - navBarBottom
-            
-            val isSmallScreen = vh < 800.dp
-            val headerH = if (isSmallScreen) vh * 0.07f else vh * 0.09f
-            val ninjaH = if (isSmallScreen) 100.dp else 135.dp
-            val korgeGap = if (isSmallScreen) 14.dp else 16.dp
-            val korgeHeight = headerH + korgeGap + ninjaH
+            val metrics = rememberLayoutMetrics(maxHeight)
+            val isSmallScreen = metrics.isSmallScreen
+            val korgeHeight = metrics.korgeHeight
 
 // 1. Shared KorGE rendered once at the top (hidden but kept for fast theme exit)
             Box(

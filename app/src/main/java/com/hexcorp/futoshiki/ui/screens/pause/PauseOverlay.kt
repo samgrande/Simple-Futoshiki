@@ -7,10 +7,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.material3.Text
+import com.hexcorp.futoshiki.ui.layout.contentSafePadding
+import com.hexcorp.futoshiki.ui.layout.rememberLayoutMetrics
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -86,14 +85,9 @@ fun PauseOverlay(
     BoxWithConstraints(
         modifier = modifier.fillMaxSize()
     ) {
-        val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        val vh = maxHeight - navBarBottom
-
-        val isSmallScreen = vh < 800.dp
-        val headerH = if (isSmallScreen) vh * 0.07f else vh * 0.09f
-        val ninjaH = if (isSmallScreen) 100.dp else 135.dp
-        val korgeGap = if (isSmallScreen) 14.dp else 16.dp
-        val korgeHeight = headerH + korgeGap + ninjaH
+        val metrics = rememberLayoutMetrics(maxHeight)
+        val isSmallScreen = metrics.isSmallScreen
+        val korgeHeight = metrics.korgeHeight
 
         Box(
             modifier = Modifier
@@ -132,7 +126,15 @@ fun PauseOverlay(
                 modifier = Modifier
                     .widthIn(max = 420.dp)
                     .fillMaxHeight()
-                    .systemBarsPadding()
+                    // Mirrors LandingScreen: status bar inset on top (the korgeHeight spacer
+                    // below is measured from there), nav bar + display cutout on the bottom.
+                    // Equivalent to the original systemBarsPadding(), plus cutout safety.
+                    // NOTE: unlike systemBarsPadding(), this doesn't inset left/right. That's
+                    // fine only because AndroidManifest.xml locks screenOrientation="portrait"
+                    // (no horizontal nav bar, no landscape cutout). Revisit if that lock is
+                    // ever lifted.
+                    .statusBarsPadding()
+                    .contentSafePadding()
                     .padding(horizontal = 20.dp, vertical = if (isSmallScreen) 30.dp else 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
