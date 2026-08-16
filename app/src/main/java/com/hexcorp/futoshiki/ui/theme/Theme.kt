@@ -115,14 +115,17 @@ object FutoshikiColors {
 
 }
 
-// Dynamic accent provider
-@Composable
-fun accentColor(): Color = when (LocalAppTheme.current) {
+/** Accent for a given theme. Non-composable so callers outside the theme scope can use it too. */
+fun accentFor(theme: AppTheme): Color = when (theme) {
     AppTheme.FIRE  -> FutoshikiColors.FireAccent
     AppTheme.WATER -> FutoshikiColors.WaterAccent
     AppTheme.EARTH -> FutoshikiColors.EarthAccent
     AppTheme.WOOD  -> FutoshikiColors.WoodAccent
 }
+
+// Dynamic accent provider
+@Composable
+fun accentColor(): Color = accentFor(LocalAppTheme.current)
 
 val LocalAppTheme = staticCompositionLocalOf { AppTheme.FIRE }
 val LocalIsDark = staticCompositionLocalOf { false }
@@ -170,12 +173,7 @@ fun FutoshikiTheme(
         }
     }
 
-    val accent = when (theme) {
-        AppTheme.FIRE  -> FutoshikiColors.FireAccent
-        AppTheme.WATER -> FutoshikiColors.WaterAccent
-        AppTheme.EARTH -> FutoshikiColors.EarthAccent
-        AppTheme.WOOD  -> FutoshikiColors.WoodAccent
-    }
+    val accent = accentFor(theme)
 
     val colorScheme = if (isDark) {
         darkColorScheme(
