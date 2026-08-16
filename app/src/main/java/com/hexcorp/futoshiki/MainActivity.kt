@@ -2,6 +2,7 @@ package com.hexcorp.futoshiki
 
 import android.annotation.SuppressLint
 import android.graphics.drawable.ColorDrawable
+import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import android.widget.FrameLayout
@@ -67,6 +68,19 @@ class MainActivity : FragmentActivity() {
 
         window.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
         enableEdgeToEdge()
+
+        // enableEdgeToEdge() leaves navigation bar contrast enforcement on, so the
+        // platform paints a translucent system-accent scrim over the nav bar instead
+        // of letting our own background show through. We draw a full-bleed background
+        // and pick bar icon colours from the surface behind each bar (see
+        // FutoshikiTheme), so opt out and own the whole window.
+        //
+        // The status bar equivalent is deliberately omitted: isStatusBarContrastEnforced
+        // is deprecated as of API 35, and it is a no-op here anyway -- the status bar
+        // already renders the unscrimmed KorGE sky.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
 
         val root = FrameLayout(this).apply {
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
