@@ -7,6 +7,7 @@ import korlibs.io.file.std.*
 import korlibs.korge.view.*
 import korlibs.math.geom.*
 import kotlinx.coroutines.*
+import com.hexcorp.futoshiki.ui.theme.SkyColor
 
 class GameWorld(
     private val assets: AssetManager,
@@ -37,28 +38,27 @@ class GameWorld(
     private var currentAnimationJob: Job? = null
     private val animationScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
+    /**
+     * Resolves the sky colour through [SkyColor], the shared source of truth.
+     *
+     * The status bar icon contrast reads from that same function, so the two can never
+     * disagree. Do not inline this maths back in here — that drift is exactly what caused
+     * white status bar icons on a near-white sky in dark mode.
+     */
+    private fun resolveSky(tinted: Boolean, appDark: Boolean, accentHex: String): RGBA {
+        val base = Colors[accentHex]
+        // Preserve the source color's alpha instead of hardcoding opaque, so a
+        // translucent accent (none exist today, but nothing stops one) survives
+        // the round-trip through SkyColor.argb's plain-Int representation.
+        val accentArgb = (base.a shl 24) or (base.r shl 16) or (base.g shl 8) or base.b
+        val argb = SkyColor.argb(tinted, appDark, accentArgb)
+        val alpha = (argb ushr 24) and 0xFF
+        return RGBA((argb ushr 16) and 0xFF, (argb ushr 8) and 0xFF, argb and 0xFF, alpha)
+    }
+
     suspend fun setupWorld() {
         // 0. Setup Sky Background Color based on theme
-        val skyColor = if (isSkyboxDark) {
-            val base = Colors[skyColorHex]
-            if (isAppDark) {
-                RGBA(
-                    (base.r * 0.7).toInt(),
-                    (base.g * 0.7).toInt(),
-                    (base.b * 0.7).toInt(),
-                    base.a
-                )
-            } else {
-                // Mix with white to make it a light pastel version for Day mode
-                val ratio = 0.85
-                RGBA(
-                    (base.r * (1 - ratio) + 255 * ratio).toInt(),
-                    (base.g * (1 - ratio) + 255 * ratio).toInt(),
-                    (base.b * (1 - ratio) + 255 * ratio).toInt(),
-                    base.a
-                )
-            }
-        } else Colors["#f5f2f2"]
+        val skyColor = resolveSky(isSkyboxDark, isAppDark, skyColorHex)
         val bg = SolidRect(20000, 1000, skyColor).apply {
             anchor(0.5, 0.5)
             x = 0.0
@@ -165,26 +165,7 @@ class GameWorld(
     }
 
     fun updateTheme(isSkyboxDark: Boolean, isAppDark: Boolean, skyColorHex: String) {
-        val skyColor = if (isSkyboxDark) {
-            val base = Colors[skyColorHex]
-            if (isAppDark) {
-                RGBA(
-                    (base.r * 0.7).toInt(),
-                    (base.g * 0.7).toInt(),
-                    (base.b * 0.7).toInt(),
-                    base.a
-                )
-            } else {
-                // Mix with white to make it a light pastel version for Day mode
-                val ratio = 0.85
-                RGBA(
-                    (base.r * (1 - ratio) + 255 * ratio).toInt(),
-                    (base.g * (1 - ratio) + 255 * ratio).toInt(),
-                    (base.b * (1 - ratio) + 255 * ratio).toInt(),
-                    base.a
-                )
-            }
-        } else Colors["#f5f2f2"]
+        val skyColor = resolveSky(isSkyboxDark, isAppDark, skyColorHex)
         
         children.firstOrNull { it is SolidRect }?.let { 
             (it as SolidRect).color = skyColor

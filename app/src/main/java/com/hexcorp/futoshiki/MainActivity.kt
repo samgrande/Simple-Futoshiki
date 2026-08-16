@@ -2,6 +2,7 @@ package com.hexcorp.futoshiki
 
 import android.annotation.SuppressLint
 import android.graphics.drawable.ColorDrawable
+import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import android.widget.FrameLayout
@@ -39,15 +40,21 @@ import com.hexcorp.futoshiki.ui.screens.game.GameScreen
 import com.hexcorp.futoshiki.ui.screens.game.shareScreenshot
 import com.hexcorp.futoshiki.ui.screens.landing.LandingScreen
 import com.hexcorp.futoshiki.ui.screens.theming.ThemingScreen
+import com.hexcorp.futoshiki.ui.theme.AppTheme
 import com.hexcorp.futoshiki.ui.theme.FutoshikiTheme
+import com.hexcorp.futoshiki.ui.theme.SkyColor
 import com.hexcorp.futoshiki.ui.theme.ThemeMode
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
+import com.hexcorp.futoshiki.ui.theme.accentFor
+import com.hexcorp.futoshiki.ui.layout.rememberLayoutMetrics
 import com.hexcorp.futoshiki.ui.korge.KorGEView
 import com.hexcorp.futoshiki.ui.components.shared.TimerPill
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -62,6 +69,19 @@ class MainActivity : FragmentActivity() {
 
         window.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
         enableEdgeToEdge()
+
+        // enableEdgeToEdge() leaves navigation bar contrast enforcement on, so the
+        // platform paints a translucent system-accent scrim over the nav bar instead
+        // of letting our own background show through. We draw a full-bleed background
+        // and pick bar icon colours from the surface behind each bar (see
+        // FutoshikiTheme), so opt out and own the whole window.
+        //
+        // The status bar equivalent is deliberately omitted: isStatusBarContrastEnforced
+        // is deprecated as of API 35, and it is a no-op here anyway -- the status bar
+        // already renders the unscrimmed KorGE sky.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
 
         val root = FrameLayout(this).apply {
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
@@ -93,6 +113,41 @@ class MainActivity : FragmentActivity() {
             return true
         }
         return super.dispatchKeyEvent(event)
+    }
+}
+
+/**
+ * Resolves the colour actually painted behind the status bar, so the system icons can pick a
+ * contrasting shade.
+ *
+ * The app is edge-to-edge, so on the gameplay screens this is the KorGE sky rather than the app
+ * background — and the sky is near-white regardless of dark mode. This mirrors the overlay stack
+ * that [FutoshikiApp] draws over the KorGE box; keep the two in step.
+ */
+private fun statusBarBackgroundFor(
+    screen: Screen,
+    theme: AppTheme,
+    isDark: Boolean,
+    isSkyboxTinted: Boolean,
+    isCovered: Boolean,
+    isPaused: Boolean,
+    isPauseMenuSolid: Boolean,
+    isSolutionOverlayVisible: Boolean
+): Color {
+    val appBackground = if (isDark) FutoshikiColors.BackgroundDark else FutoshikiColors.Background
+
+    // These paint over the KorGE box completely, so the sky is irrelevant.
+    if (screen == Screen.THEMING || isCovered) return appBackground
+    if (isPaused && isPauseMenuSolid) return appBackground
+
+    val sky = Color(SkyColor.argb(isSkyboxTinted, isDark, accentFor(theme).toArgb()))
+
+    // Pause and solution states dim the sky rather than replacing it.
+    val scrim = if (isDark) Color.Black else Color.White
+    return when {
+        isPaused -> scrim.copy(alpha = 0.5f).compositeOver(sky)
+        isSolutionOverlayVisible -> scrim.copy(alpha = 0.7f).compositeOver(sky)
+        else -> sky
     }
 }
 
@@ -181,18 +236,23 @@ fun FutoshikiApp(
 
     FutoshikiTheme(
         theme = state.theme,
-        isDark = isDark
+        isDark = isDark,
+        statusBarBackground = statusBarBackgroundFor(
+            screen = state.screen,
+            theme = state.theme,
+            isDark = isDark,
+            isSkyboxTinted = isSkyboxDark,
+            isCovered = showCover,
+            isPaused = isPaused,
+            isPauseMenuSolid = state.showConfirmQuit || state.showConfirmNewGame || state.showHelp,
+            isSolutionOverlayVisible = isGame && state.isSolved && !state.showCongrats
+        )
     ) {
         var mainContainerCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
         BoxWithConstraints(modifier = Modifier.fillMaxSize().onGloballyPositioned { mainContainerCoords = it }) {
-            val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-            val vh = maxHeight - navBarBottom
-            
-            val isSmallScreen = vh < 800.dp
-            val headerH = if (isSmallScreen) vh * 0.07f else vh * 0.09f
-            val ninjaH = if (isSmallScreen) 100.dp else 135.dp
-            val korgeGap = if (isSmallScreen) 14.dp else 16.dp
-            val korgeHeight = headerH + korgeGap + ninjaH
+            val metrics = rememberLayoutMetrics(maxHeight)
+            val isSmallScreen = metrics.isSmallScreen
+            val korgeHeight = metrics.korgeHeight
 
 // 1. Shared KorGE rendered once at the top (hidden but kept for fast theme exit)
             Box(

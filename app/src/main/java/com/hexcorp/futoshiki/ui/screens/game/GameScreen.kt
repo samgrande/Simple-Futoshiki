@@ -27,9 +27,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.asPaddingValues
+import com.hexcorp.futoshiki.ui.layout.contentSafePadding
+import com.hexcorp.futoshiki.ui.layout.rememberLayoutMetrics
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -212,15 +211,15 @@ fun GameScreen(
         modifier = Modifier.fillMaxSize()
     ) {
         val vw = maxWidth
-        val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        val vh = maxHeight - navBarBottom
+        val metrics = rememberLayoutMetrics(maxHeight)
+        val vh = metrics.vh
 
         val hPad = 20.dp
         val usableW = (vw - hPad * 2).coerceAtMost(450.dp)
 
-        val isSmallScreen = vh < 800.dp
-        val headerH = if (isSmallScreen) vh * 0.07f else vh * 0.09f
-        val ninjaH = if (isSmallScreen) 100.dp else 135.dp
+        val isSmallScreen = metrics.isSmallScreen
+        val headerH = metrics.headerH
+        val ninjaH = metrics.ninjaH
         val footerBtnH = if (isSmallScreen) 58.dp else 64.dp
         val numpadBtnMaxH = if (isSmallScreen) vh * 0.065f else vh * 0.075f
 
@@ -239,8 +238,8 @@ fun GameScreen(
         val boardBudgetH = vh - headerH - ninjaH - gridTopSpaceTarget - numpadBtnMaxH - footerTotalH - 24.dp
         val totalTopSpace = vh * 0.26f
 
-        val korgeGap = if (isSmallScreen) 14.dp else 16.dp
-        val korgeHeight = headerH + korgeGap + ninjaH
+        val korgeGap = metrics.korgeGap
+        val korgeHeight = metrics.korgeHeight
 
         // Cover alpha: 1 until scene is loaded, then fades to 0. Hides the green flash from
         // KorGE's uninitialized background color before assets are ready.
@@ -352,7 +351,7 @@ fun GameScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .navigationBarsPadding()
+                    .contentSafePadding()
                     .pointerInput(Unit) {
                         detectTapGestures {
                             viewModel.deselectCell()
@@ -517,7 +516,7 @@ fun GameScreen(
                     Modifier
                         .align(Alignment.BottomCenter)
                         .zIndex(30f)
-                        .navigationBarsPadding()
+                        .contentSafePadding()
                 }
             ) {
                 GameFooter(
