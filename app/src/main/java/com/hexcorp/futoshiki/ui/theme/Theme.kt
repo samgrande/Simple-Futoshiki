@@ -7,6 +7,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.Font
@@ -146,10 +147,26 @@ val Yuji = FontFamily(
 
 // ── Material theme wrapper ────────────────────────────────────────────────────
 
+/**
+ * Relative-luminance crossover at which dark icons beat light icons on a given backdrop.
+ *
+ * Solving the WCAG contrast ratios `(L + 0.05) / 0.05` (black icons) against
+ * `1.05 / (L + 0.05)` (white icons) gives `L = sqrt(1.05 * 0.05) - 0.05 ≈ 0.179`. Above this
+ * the surface is "light" and wants dark icons; below it, the reverse.
+ */
+private const val LIGHT_SURFACE_LUMINANCE = 0.179f
+
+/**
+ * @param statusBarBackground the colour actually painted behind the status bar. Because the app
+ *   is edge-to-edge this is usually the KorGE sky, **not** the app background — and the sky does
+ *   not follow dark mode. Pass it so the status bar icons get real contrast. When null, the app
+ *   background is assumed.
+ */
 @Composable
 fun FutoshikiTheme(
     theme: AppTheme = AppTheme.FIRE,
     isDark: Boolean = false,
+    statusBarBackground: Color? = null,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -193,13 +210,28 @@ fun FutoshikiTheme(
         )
     }
 
+    // System bar icon contrast is decided per-bar, from whatever is actually painted behind
+    // each one — not from `isDark`.
+    //
+    // The status bar sits over the KorGE sky, which is `SkyColor.NEUTRAL` (#F5F2F2) unless the
+    // user enabled the accent-tinted skybox. That stays near-white even in dark mode, so keying
+    // it off `isDark` produced white icons on a white sky.
+    //
+    // The navigation bar does sit over the app background, so that one still tracks the theme.
+    val appBackground = if (isDark) FutoshikiColors.BackgroundDark else FutoshikiColors.Background
+    val statusBarSurface = statusBarBackground ?: appBackground
+
+    val lightStatusBar = statusBarSurface.luminance() > LIGHT_SURFACE_LUMINANCE
+    val lightNavigationBar = appBackground.luminance() > LIGHT_SURFACE_LUMINANCE
+
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             val controller = WindowCompat.getInsetsController(window, view)
-            controller.isAppearanceLightStatusBars = !isDark
-            controller.isAppearanceLightNavigationBars = !isDark
+            // "light bar" means the bar's backdrop is light, so draw dark icons on it.
+            controller.isAppearanceLightStatusBars = lightStatusBar
+            controller.isAppearanceLightNavigationBars = lightNavigationBar
         }
     }
 

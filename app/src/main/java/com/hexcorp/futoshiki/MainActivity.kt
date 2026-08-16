@@ -39,15 +39,20 @@ import com.hexcorp.futoshiki.ui.screens.game.GameScreen
 import com.hexcorp.futoshiki.ui.screens.game.shareScreenshot
 import com.hexcorp.futoshiki.ui.screens.landing.LandingScreen
 import com.hexcorp.futoshiki.ui.screens.theming.ThemingScreen
+import com.hexcorp.futoshiki.ui.theme.AppTheme
 import com.hexcorp.futoshiki.ui.theme.FutoshikiTheme
+import com.hexcorp.futoshiki.ui.theme.SkyColor
 import com.hexcorp.futoshiki.ui.theme.ThemeMode
 import com.hexcorp.futoshiki.ui.theme.FutoshikiColors
 import com.hexcorp.futoshiki.ui.theme.PixelF
+import com.hexcorp.futoshiki.ui.theme.accentFor
 import com.hexcorp.futoshiki.ui.korge.KorGEView
 import com.hexcorp.futoshiki.ui.components.shared.TimerPill
 import com.hexcorp.futoshiki.ui.theme.LocalIsDark
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -93,6 +98,41 @@ class MainActivity : FragmentActivity() {
             return true
         }
         return super.dispatchKeyEvent(event)
+    }
+}
+
+/**
+ * Resolves the colour actually painted behind the status bar, so the system icons can pick a
+ * contrasting shade.
+ *
+ * The app is edge-to-edge, so on the gameplay screens this is the KorGE sky rather than the app
+ * background — and the sky is near-white regardless of dark mode. This mirrors the overlay stack
+ * that [FutoshikiApp] draws over the KorGE box; keep the two in step.
+ */
+private fun statusBarBackgroundFor(
+    screen: Screen,
+    theme: AppTheme,
+    isDark: Boolean,
+    isSkyboxTinted: Boolean,
+    isCovered: Boolean,
+    isPaused: Boolean,
+    isPauseMenuSolid: Boolean,
+    isSolutionOverlayVisible: Boolean
+): Color {
+    val appBackground = if (isDark) FutoshikiColors.BackgroundDark else FutoshikiColors.Background
+
+    // These paint over the KorGE box completely, so the sky is irrelevant.
+    if (screen == Screen.THEMING || isCovered) return appBackground
+    if (isPaused && isPauseMenuSolid) return appBackground
+
+    val sky = Color(SkyColor.argb(isSkyboxTinted, isDark, accentFor(theme).toArgb()))
+
+    // Pause and solution states dim the sky rather than replacing it.
+    val scrim = if (isDark) Color.Black else Color.White
+    return when {
+        isPaused -> scrim.copy(alpha = 0.5f).compositeOver(sky)
+        isSolutionOverlayVisible -> scrim.copy(alpha = 0.7f).compositeOver(sky)
+        else -> sky
     }
 }
 
@@ -181,7 +221,17 @@ fun FutoshikiApp(
 
     FutoshikiTheme(
         theme = state.theme,
-        isDark = isDark
+        isDark = isDark,
+        statusBarBackground = statusBarBackgroundFor(
+            screen = state.screen,
+            theme = state.theme,
+            isDark = isDark,
+            isSkyboxTinted = isSkyboxDark,
+            isCovered = showCover,
+            isPaused = isPaused,
+            isPauseMenuSolid = state.showConfirmQuit || state.showConfirmNewGame || state.showHelp,
+            isSolutionOverlayVisible = isGame && state.isSolved && !state.showCongrats
+        )
     ) {
         var mainContainerCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
         BoxWithConstraints(modifier = Modifier.fillMaxSize().onGloballyPositioned { mainContainerCoords = it }) {
